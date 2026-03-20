@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A3D2B30B-CE88-45C0-87D4-C85DC017AF02}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AskAI", "src\AskAI\AskAI.csproj", "{FCD38A3E-1E71-45B0-9657-2CD4B4D11A74}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{294C9FF3-E237-461D-BB8C-467D38A1242A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AskAI.Tests", "tests\AskAI.Tests\AskAI.Tests.csproj", "{83DA74E4-45B8-4555-900B-8F8CDBD46D99}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FCD38A3E-1E71-45B0-9657-2CD4B4D11A74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCD38A3E-1E71-45B0-9657-2CD4B4D11A74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCD38A3E-1E71-45B0-9657-2CD4B4D11A74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCD38A3E-1E71-45B0-9657-2CD4B4D11A74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83DA74E4-45B8-4555-900B-8F8CDBD46D99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83DA74E4-45B8-4555-900B-8F8CDBD46D99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83DA74E4-45B8-4555-900B-8F8CDBD46D99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83DA74E4-45B8-4555-900B-8F8CDBD46D99}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FCD38A3E-1E71-45B0-9657-2CD4B4D11A74} = {A3D2B30B-CE88-45C0-87D4-C85DC017AF02}
+		{83DA74E4-45B8-4555-900B-8F8CDBD46D99} = {294C9FF3-E237-461D-BB8C-467D38A1242A}
+	EndGlobalSection
+EndGlobal
