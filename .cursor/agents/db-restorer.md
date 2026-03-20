@@ -1,15 +1,10 @@
 ---
+name: db-restorer
 description: >
-  Dev agent for restoring MS SQL Server database backups locally. Use when the
-  user mentions: restore database backup, load customer data, import SQL file,
-  customer database, reproduce bug with real data, restore backup, restore .bak
-  file, load .sql file, import customer SQL Server dump, RESTORE DATABASE,
-  sqlcmd restore.
-  Specializes in Microsoft SQL Server database operations for debugging and
-  testing with customer data.
-tools: [execute, read, search]
-user-invocable: true
-argument-hint: "Path to backup file (.bak or .sql) and target database name"
+  SQL Server database restoration specialist. Use when restoring .bak/.sql backups
+  locally, sqlcmd, RESTORE DATABASE, customer data import, or debugging with a
+  local copy of a customer database.
+model: inherit
 ---
 
 # DB Restorer — SQL Server Database Restoration Agent

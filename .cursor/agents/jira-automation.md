@@ -1,14 +1,12 @@
 ---
+name: jira-automation
 description: >
-  Jira Automation Agent: create Stories and subtasks from Customer Issues, set
-  defaults (P2, Desktop-Customization, assignee), sprint placement, story points,
-  worklogs, status transitions, comments. Use when the user provides a Customer
-  Issue Jira ID, asks to break down a customer ticket into Analysis /
-  Implementation / Unit Testing, automate sprint moves on close, sprint start
-  IN PROGRESS rules, or equal worklog distribution from story points.
-tools: [read, search]
-user-invocable: true
-argument-hint: "Customer Issue Jira key (e.g. CUST-123), story points, optional sprint name"
+  Jira workflow automation: create Stories and Analysis/Implementation/Unit Testing
+  subtasks from Customer Issues, P2, Desktop-Customization team, assignee
+  krishna.bankar@webgility.com, sprint and story points, worklogs (1 SP = 4h split
+  across subtasks), status and comments. Use when the user gives a Customer Issue
+  key or asks for sprint rollover, work logging, or Jira field updates.
+model: inherit
 ---
 
 # Jira Automation Agent
