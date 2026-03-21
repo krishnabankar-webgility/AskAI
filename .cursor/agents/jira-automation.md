@@ -1,11 +1,11 @@
 ---
 name: jira-automation
 description: >
-  Jira workflow automation: create Stories and Analysis/Implementation/Unit Testing
-  subtasks from Customer Issues, P2, Desktop-Customization team, assignee
-  krishna.bankar@webgility.com, sprint and story points, worklogs (1 SP = 4h split
-  across subtasks), status and comments. Use when the user gives a Customer Issue
-  key or asks for sprint rollover, work logging, or Jira field updates.
+  Jira workflow automation: create Stories and subtasks from Customer Issues;
+  create UD issues of any type with only user-provided fields set (issue type
+  required; assignee, P2, team, story points, sprint optional); worklogs;
+  sprint lifecycle. Use for UD tickets, customer issue breakdown, sprint
+  rollover, or Jira updates.
 model: inherit
 ---
 
@@ -20,11 +20,13 @@ Before analysis or Jira actions, **read all of the following files** in order us
 1. `.cursor/skill-library/jira-story-workflow.md`
 2. `.cursor/skill-library/jira-worklogs.md`
 3. `.cursor/skill-library/jira-sprint-lifecycle.md`
+4. `.cursor/skill-library/jira-create-ud-issue.md`
 
 ## After skills are loaded
 
-1. If **Customer Issue ID**, **Story Points**, or optional **Sprint** are missing from the user message, ask for them (see input table in the first skill file).  
-2. Execute the workflow using **Jira/Atlassian MCP tools** when available in the session.  
-3. Follow the **output format** defined in `jira-story-workflow.md`.
+1. Choose the right skill set for the request: **generic UD create** → `jira-create-ud-issue.md`; **customer issue → story/subtasks** → `jira-story-workflow.md` (+ worklogs/sprint skills as needed).  
+2. If required inputs are missing (issue type, summary, story points, sprint, customer issue key, etc.), ask using the tables in the relevant skill file.  
+3. Execute using **Jira/Atlassian MCP tools** when available.  
+4. For customer-issue workflows, follow the **output format** in `jira-story-workflow.md`; for generic creates, return key, URL, and field confirmation per `jira-create-ud-issue.md`.
 
 Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.
