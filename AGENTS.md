@@ -35,7 +35,7 @@ The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, 
 
 **How to run project subagents** (in **Agent** mode, `Ctrl+I`):
 
-- Type **`/db-restorer`** then your request (SQL Server backup restore workflow).
+- Type **`/db-automation`** then your request (SQL Server workflows; restore lives in `db-restore.md`; more DB skills can be added under the same agent).
 - Type **`/jira-automation`** then your request (customer issue key, story points, etc.).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for CUST-123.*
@@ -50,6 +50,6 @@ Cursor does **not** support a built-in “this subagent may only load skills A, 
 2. Keep each **subagent** in `.cursor/agents/<name>.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
 3. Maintain the human map in **`.cursor/agent-skill-bindings.md`** when you add agents or change assignments.
 
-**Example:** `/jira-automation` loads `jira-story-workflow.md`, `jira-worklogs.md`, and `jira-sprint-lifecycle.md` only. Another agent can load `skill1.md` + `skill2.md` only by listing just those paths in its agent file.
+**Example:** `/jira-automation` loads `jira-story-workflow.md`, `jira-worklogs.md`, and `jira-sprint-lifecycle.md` only. **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills.
 
 The model loads those files at runtime via its read tool, so context stays **scoped to what that agent declares**, not every skill in the repo.

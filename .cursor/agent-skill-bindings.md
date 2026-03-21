@@ -5,7 +5,7 @@ Cursor subagents do not support a native `skills: [...]` field. Each agent in `.
 | Agent (`/name`) | Skill files (under `.cursor/skill-library/`) |
 |-----------------|-----------------------------------------------|
 | `jira-automation` | `jira-story-workflow.md`, `jira-worklogs.md`, `jira-sprint-lifecycle.md`, `jira-create-ud-issue.md` |
-| `db-restorer` | *(single file today — split into multiple `.md` here and list them in `db-restorer.md` when needed)* |
+| `db-automation` | `db-restore.md` *(append more `db-*.md` skills to `db-automation.md`’s read list as you add them)* |
 
 To add **agent2** with only `skill3.md`:
 
