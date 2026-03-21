@@ -1,8 +1,8 @@
 # Skill: Jira worklogs and story completion
 
-Use this skill for story-point-to-hours conversion, per-subtask worklogs, and closing Stories with consistent logging.
+Use this skill for story-point-to-hours conversion, **Original Estimate** on subtasks, per-subtask worklogs, and closing Stories with consistent logging.
 
-## 4. Worklog automation logic
+## 4. Worklog and Original Estimate logic
 
 ### 4.1 Conversion
 
@@ -13,7 +13,7 @@ Examples:
 - `2 SP` → 8 hours total  
 - `2.5 SP` → 10 hours total  
 
-### 4.2 Distribution
+### 4.2 Canonical hours per subtask (formula)
 
 Divide **total hours equally** across the **three** subtasks:
 
@@ -21,20 +21,38 @@ Divide **total hours equally** across the **three** subtasks:
 \text{hours per subtask} = \frac{\text{Story Points} \times 4}{3}
 \]
 
-Round to **one decimal** for logging if the tool allows; otherwise round to nearest **0.25h** and document rounding in the output.
+Round to **one decimal** when storing/logging if the tool allows; otherwise round to the nearest **0.25h**. **Use the same rounded value everywhere** (Original Estimate and worklogs) so the issue and automation stay consistent.
 
-### 4.3 When to log
+Convert that number to Jira duration strings for API calls (e.g. `4.75h`, or `4h 45m` when you prefer hours+minutes).
 
-- **When a subtask moves to DONE:** Log work on that subtask = **one third** of total (per §4.2), **unless** work was already logged for that subtask—then **do not duplicate**; adjust only if the user asks.  
-- **When the Story moves to DONE:**  
-  - Ensure **all subtasks** are **DONE** (transition any that are not, if workflow allows).  
-  - For any subtask that **never received** its share of worklog, **log the remaining** allocated hours so the **sum of worklogs** matches **SP × 4** (minus what was already logged).
+### 4.3 Original Estimate immediately after subtask create
 
-Always leave a brief **comment** on the Story when bulk-updating subtasks or worklogs for traceability.
+**As soon as each subtask exists** (Analysis, Implementation, Unit Testing under the Story):
+
+1. Compute **hours per subtask** from §4.2 using the Story’s **Story Points** (from the Story issue, same value as `customfield_10053` when applicable).  
+2. Call **`editJiraIssue`** with **`fields.timetracking.originalEstimate`** set to that duration (Jira’s time-tracking field shape, e.g. `{ "timetracking": { "originalEstimate": "4h 45m" } }` — confirm shape with `getJiraIssueTypeMetaWithFields` / API if the project differs).  
+3. Apply **once per subtask**; all three get the **same** OE under this workflow.
+
+If `editJiraIssue` rejects `timetracking`, note the error on the Story and fall back to documenting the intended OE in the reply until the field is enabled or mapped correctly.
+
+### 4.4 When to log work (aligned to Original Estimate)
+
+**Source of truth:** The worklog amount should **match that subtask’s Original Estimate** (the value set in §4.3). If OE was never set, use the §4.2 formula once, set OE if possible, then log the same duration.
+
+**Idempotency:** If the subtask **already has** work logged that satisfies the intent (total time spent ≥ OE, or the user explicitly logged differently), **do not add a duplicate** worklog unless the user asks to correct it.
+
+- **When a subtask moves to Done:** Call **`addWorklogToJiraIssue`** with **`timeSpent`** equal to that subtask’s **Original Estimate** (same string you would use for OE, e.g. `4h 45m`). Optional short **`commentBody`** (e.g. “Auto: matches Original Estimate on Done”).  
+- **When the Story moves to Done** (or the user asks to complete the Story):  
+  1. For **each** child subtask whose status is **In Progress** (or your project’s equivalent), **transition it to Done** first (respect workflow; use `getTransitionsForJiraIssue` / `transitionJiraIssue`).  
+  2. For **each** subtask (including those just moved and any already Done): ensure a worklog equal to **Original Estimate** per the idempotency rule above — add **`addWorklogToJiraIssue`** only where time is still missing.  
+  3. Then transition the **Story** to Done if not already.  
+
+Always leave a brief **comment** on the Story when bulk-transitioning subtasks or backfilling worklogs for traceability.
 
 ## 5. Story completion rule
 
 When the **Story** is set to **DONE** (or user asks to complete the Story):
 
-1. Mark **Analysis**, **Implementation**, and **Unit Testing** subtasks **DONE** (in sensible order if the workflow requires).  
-2. Apply **§4.3** so worklogs are complete and consistent.  
+1. **Sweep subtasks:** Move every **In Progress** subtask to **Done** (Analysis, Implementation, Unit Testing — sensible order if the workflow requires).  
+2. **Worklogs:** Apply **§4.4** so each subtask is credited **Original Estimate** hours without double-counting.  
+3. **Story:** Transition the Story to **Done** when subtasks and logging are consistent with policy.

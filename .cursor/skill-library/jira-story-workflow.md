@@ -43,6 +43,8 @@ Create under the new Story:
 
 Ensure subtasks are **children of the Story** (standard subtask issue type).
 
+**Original Estimate (mandatory for this workflow):** Immediately after each subtask is created, set **Original Estimate** from the Story’s **Story Points** using the formula in **`jira-worklogs.md` §4.2–4.3** (`editJiraIssue` → `timetracking.originalEstimate`). All three subtasks get the same OE (one third of SP×4 hours, same rounding as the worklog skill).
+
 ### 2.3 Default Story settings
 
 Apply unless the user overrides in the prompt:
@@ -77,8 +79,8 @@ After each run, reply with:
 1. **Story ID**  
 2. **Subtask IDs** (Analysis, Implementation, Unit Testing)  
 3. **Assigned sprint** (name + dates if available)  
-4. **Worklog per subtask** (hours logged, date if set)  
-5. **Actions performed** (creates, transitions, comments, assignments, field updates)  
+4. **Original Estimate per subtask** (duration set) and **worklog per subtask** (hours logged, date if set)  
+5. **Actions performed** (creates, OE updates, transitions, comments, assignments, field updates)  
 6. **Anything blocked** (permissions, workflow, missing fields)  
 
 ## Quick reference — template inputs
