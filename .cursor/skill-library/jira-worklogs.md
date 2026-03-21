@@ -43,7 +43,7 @@ If `editJiraIssue` rejects `timetracking`, note the error on the Story and fall 
 
 - **When a subtask moves to Done:** Call **`addWorklogToJiraIssue`** with **`timeSpent`** equal to that subtask’s **Original Estimate** (same string you would use for OE, e.g. `4h 45m`). Optional short **`commentBody`** (e.g. “Auto: matches Original Estimate on Done”).  
 - **When the Story moves to Done** (or the user asks to complete the Story):  
-  1. For **each** child subtask whose status is **In Progress** (or your project’s equivalent), **transition it to Done** first (respect workflow; use `getTransitionsForJiraIssue` / `transitionJiraIssue`).  
+  1. For **each** child subtask that is **not Done** (e.g. **To Do**, **In Progress**, or any other non-terminal status), **transition it to Done** (respect workflow: chain transitions if the project requires **To Do → In Progress → Done**; use `getTransitionsForJiraIssue` / `transitionJiraIssue`). **Do not** leave subtasks open when the Story is completed—same hierarchy rule as `jira-sprint-lifecycle.md`.  
   2. For **each** subtask (including those just moved and any already Done): ensure a worklog equal to **Original Estimate** per the idempotency rule above — add **`addWorklogToJiraIssue`** only where time is still missing.  
   3. Then transition the **Story** to Done if not already.  
 
@@ -53,6 +53,6 @@ Always leave a brief **comment** on the Story when bulk-transitioning subtasks o
 
 When the **Story** is set to **DONE** (or user asks to complete the Story):
 
-1. **Sweep subtasks:** Move every **In Progress** subtask to **Done** (Analysis, Implementation, Unit Testing — sensible order if the workflow requires).  
+1. **Sweep subtasks:** Move **every** subtask that is **not Done** to **Done** (Analysis, Implementation, Unit Testing — include **To Do** and **In Progress**; use legal transition chains per workflow).  
 2. **Worklogs:** Apply **§4.4** so each subtask is credited **Original Estimate** hours without double-counting.  
 3. **Story:** Transition the Story to **Done** when subtasks and logging are consistent with policy.
