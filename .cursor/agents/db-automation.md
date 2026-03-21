@@ -1,10 +1,10 @@
 ---
 name: db-automation
 description: >
-  SQL Server database operations using default instance WGIN-NTB-276\SQLEXPRESS
-  (sqlcmd, restore, DDL/DML unless user overrides). Restore from .bak/.sql/.sql.gz;
-  user supplies database catalog and table names when relevant. Umbrella agent—
-  add more db-*.md skills to the read list below.
+  SQL Server database operations (sqlcmd, restore, DDL/DML). User supplies the
+  server/instance when needed—no hostname stored in repo. Restore from
+  .bak/.sql/.sql.gz; user supplies catalog and table names when relevant. Umbrella
+  agent—add more db-*.md skills to the read list below.
 model: inherit
 ---
 
@@ -23,7 +23,7 @@ When you add new database skills (e.g. backup export, schema compare, migration 
 ## After skills are loaded
 
 1. Pick the skill that matches the user request (restore / import → `db-restore.md`; future topics → their new files).  
-2. Use **`WGIN-NTB-276\SQLEXPRESS`** for every `sqlcmd -S` and connection string (see `db-restore.md`) unless the user names another server.  
+2. **SQL Server instance:** If the user did not give a server (e.g. `localhost\SQLEXPRESS`, `host\INSTANCE`), **ask** before any `sqlcmd` or connection string. Use **only** that value for every `-S` and connection string in the session—**never** hardcode a machine name in repo files.  
 3. **Credentials:** Never store usernames/passwords in repo files. If login method is unclear or restore fails with auth errors, **ask** whether to use Windows integrated (`-E`) or SQL auth (`-U`/`-P`) and have secrets only in the chat session or the user’s SSMS—not in committed scripts.  
 4. Follow **Constraints** and workflows in that skill; use the shell and `sqlcmd` as described there.  
 5. Return summaries using the **Output format** section of the skill you applied.
