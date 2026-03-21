@@ -2,10 +2,12 @@
 name: jira-automation
 description: >
   Jira workflow automation: create Stories and subtasks from Customer Issues;
-  create UD issues of any type with only user-provided fields set (issue type
-  required; assignee, P2, team, story points, sprint optional); worklogs;
-  sprint lifecycle. Use for UD tickets, customer issue breakdown, sprint
-  rollover, or Jira updates.
+  set subtask Original Estimate from story points (formula in jira-worklogs);
+  on subtask Done log work equal to OE; on Story Done move In Progress
+  subtasks to Done and backfill worklogs to OE; create UD issues of any type
+  with only user-provided fields set (issue type required; assignee, P2, team,
+  story points, sprint optional); sprint lifecycle. Use for UD tickets,
+  customer issue breakdown, sprint rollover, or Jira updates.
 model: inherit
 ---
 
@@ -24,9 +26,9 @@ Before analysis or Jira actions, **read all of the following files** in order us
 
 ## After skills are loaded
 
-1. Choose the right skill set for the request: **generic UD create** → `jira-create-ud-issue.md`; **customer issue → story/subtasks** → `jira-story-workflow.md` (+ worklogs/sprint skills as needed).  
+1. Choose the right skill set for the request: **generic UD create** → `jira-create-ud-issue.md`; **customer issue → story/subtasks** → `jira-story-workflow.md` (+ `jira-worklogs.md` for OE + worklogs + Story Done sweep).  
 2. If required inputs are missing (issue type, summary, story points, sprint, customer issue key, etc.), ask using the tables in the relevant skill file.  
-3. Execute using **Jira/Atlassian MCP tools** when available.  
+3. Execute using **Jira/Atlassian MCP tools** when available. For Customer Issue → Story flows: after creating subtasks, set **Original Estimate** per `jira-worklogs.md`; on **subtask Done** log **`timeSpent` = OE**; on **Story Done**, transition **In Progress** subtasks to **Done** then backfill worklogs to OE where missing (`jira-worklogs.md` §4–5).  
 4. For customer-issue workflows, follow the **output format** in `jira-story-workflow.md`; for generic creates, return key, URL, and field confirmation per `jira-create-ud-issue.md`.
 
 Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.

@@ -32,7 +32,7 @@ Preserve **To Do** subtasks as-is when moving; only change sprint membership unl
 ## 8. Intelligent behavior
 
 - Keep **Story → Subtasks** hierarchy consistent; **no orphan subtasks** (all three under the Story).  
-- Align **status**, **sprint**, and **worklogs** after each batch of changes; reconcile totals.  
+- Align **status**, **sprint**, and **worklogs** after each batch of changes; reconcile totals. Story completion with **Original Estimate** and subtask worklogs → **`jira-worklogs.md` §4–5**.  
 - **Avoid duplicate** Stories for the same Customer Issue + same breakdown.  
 - **Avoid duplicate** sprints with the same intent (search before creating Ad-hoc).  
 - Prefer **project conventions** for fields (Team, QA Date, etc.) discovered from the Customer Issue or project metadata.
