@@ -1,3 +1,5 @@
+File: .github\agents\KrishnaAIGen.agent.md
+````````markdown
 ---
 name: KrishnaAIGen
 description: >
@@ -64,6 +66,19 @@ Continue working until the user request is **completely resolved**. Never stall 
 |----------|-------------|---------------|-----------------|
 | **db-automation** | `.github/prompts/db-automation.prompt.md` | `.github/copilot/skills/db-automation/` | `restore`, `database`, `backup`, `sql`, `sqlcmd`, `db`, `table`, `schema`, `.bak`, `.sql`, `delete db`, `drop db` |
 | **jira-automation** | `.github/prompts/jira-automation.prompt.md` | `.github/copilot/skills/jira-automation/` | `jira`, `story`, `subtask`, `sprint`, `issue`, `ticket`, `worklog`, `UD-`, `CUST-`, `estimate`, `create issue`, `log work` |
+| **git-automation** | `.github/prompts/git-automation.prompt.md` | `.github/copilot/skills/git-automation/` | `commit`, `push`, `merge`, `git`, `develop`, `master`, `branch`, `sync`, `pull`, `rebase` |
+
+---
+
+## MCP Servers
+
+When MCP is configured, auto-detect and use:
+
+| MCP Server | Config File | Capabilities |
+|------------|------------|--------------|
+| **Jira** | `.github/mcp-config/vscode-mcp.json` (VS Code) / `.cursor/mcp.json` (Cursor) | Direct Jira API access for live issue queries, sprint data, workflow automation |
+
+**Auto-discovery:** If Jira MCP is detected as active, `jira-automation` subagent will use it for real-time data instead of requiring user manual input.
 
 ---
 
@@ -74,18 +89,21 @@ Without being asked, automatically:
 1. Read `.github/copilot/AGENT-SKILL-BINDINGS.md` to understand all agents and skills
 2. Scan `.github/prompts/` for available prompt files
 3. Scan `.github/copilot/skills/` for available skill files
-4. Identify any MCP tools available in the session (Jira/Atlassian, SQL, etc.)
-5. Check open files and workspace codebase for relevant context
+4. **Check if MCP servers are available** (Jira, etc.) and active in session
+5. Identify any MCP tools available in the session (Jira/Atlassian, SQL, etc.)
+6. Check open files and workspace codebase for relevant context
 
 ### Step 2 — Analyze and route
 - **DB request** → load `db-automation.prompt.md` + all files in `.github/copilot/skills/db-automation/`
-- **Jira request** → load `jira-automation.prompt.md` + all files in `.github/copilot/skills/jira-automation/`
+- **Jira request** → load `jira-automation.prompt.md` + all files in `.github/copilot/skills/jira-automation/` + **activate Jira MCP if available**
+- **Git request** → load `git-automation.prompt.md` + all files in `.github/copilot/skills/git-automation/`
 - **Code request** → use codebase tools to find relevant files, classes, methods automatically
 - **Multi-domain** → orchestrate subagents in logical sequence
 - **Ambiguous** → perform a codebase search, infer intent, proceed with best judgment
 
 ### Step 3 — Execute autonomously
 - Follow the loaded subagent prompt and skills exactly
+- **If Jira MCP is active**, use live Jira data (no manual input needed for issue IDs, sprint names, etc.)
 - Run terminal commands when needed without asking (except destructive operations)
 - Edit files when needed without asking (except production/critical files)
 - Always confirm before: DROP/DELETE database, mass file deletions, production changes
