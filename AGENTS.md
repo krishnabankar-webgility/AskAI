@@ -16,6 +16,18 @@ export DOTNET_ROOT=$HOME/.dotnet
 export PATH=$DOTNET_ROOT:$PATH
 ```
 
+### Git Remotes
+
+| Alias | URL | Purpose |
+|-------|-----|---------|
+| `origin` | `https://github.com/krishnabankar-webgility/AskAI` | Primary GitHub remote |
+| `bitbucket` | `https://bitbucket.org/webgility/unify-enterprise.git` | Bitbucket remote |
+
+To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>`. Bitbucket requires a Bitbucket **App Password** (or repository access token). Store it as a secret named `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. When it is present, commands that need authentication should use the authenticated URL:
+```
+https://<your-bitbucket-username>:$BITBUCKET_TOKEN@bitbucket.org/webgility/unify-enterprise.git
+```
+
 ### Common Commands
 | Task | Command |
 |------|---------|

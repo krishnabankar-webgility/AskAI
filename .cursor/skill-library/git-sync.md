@@ -3,6 +3,15 @@
 ## Purpose
 Safely perform day-to-day Git automation for shared branches, especially synchronizing `develop` after `master` receives merges.
 
+## Configured remotes
+
+| Alias | URL | Purpose |
+|-------|-----|---------|
+| `origin` | `https://github.com/krishnabankar-webgility/AskAI` | Primary GitHub remote (default push/fetch) |
+| `bitbucket` | `https://bitbucket.org/webgility/unify-enterprise.git` | Bitbucket mirror / source remote |
+
+Use `origin` for all normal branch operations unless the user explicitly requests Bitbucket. To fetch or push to Bitbucket, substitute `bitbucket` for `origin` in any command. Authentication for Bitbucket requires a Bitbucket **App Password** (or repository access token) stored as the `BITBUCKET_TOKEN` secret in Cursor Dashboard → Cloud Agents → Secrets (injected as an environment variable at runtime). Use the URL form `https://<username>:<BITBUCKET_TOKEN>@bitbucket.org/webgility/unify-enterprise.git` when authentication is needed.
+
 ## Primary workflow: sync develop with master
 
 Use this exact flow unless user specifies a different branch strategy:
