@@ -23,7 +23,7 @@ export PATH=$DOTNET_ROOT:$PATH
 | `origin` | `https://github.com/krishnabankar-webgility/AskAI` | Primary GitHub remote |
 | `bitbucket` | `https://bitbucket.org/webgility/unify-enterprise.git` | Bitbucket remote |
 
-To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>`. Bitbucket requires a **Bitbucket HTTP Access Token** (repository-scoped). Store it as a secret named `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. When it is present, the remote must be configured with the authenticated URL:
+To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>`. Bitbucket requires a **Bitbucket HTTP Access Token** (repository-scoped). Store it as a secret named `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. When it is present, the remote must be configured with the authenticated URL using the `x-token-auth` scheme:
 ```
 https://x-token-auth:{BITBUCKET_TOKEN}@bitbucket.org/webgility/unify-enterprise.git
 ```
@@ -33,7 +33,13 @@ ENCODED=$(python3 -c "import os,urllib.parse; print(urllib.parse.quote(os.enviro
 git remote set-url bitbucket "https://x-token-auth:${ENCODED}@bitbucket.org/webgility/unify-enterprise.git"
 ```
 
-> **Important — token type:** `BITBUCKET_TOKEN` must be a **Bitbucket HTTP Access Token** created from the **repository settings → Access tokens** page (or Bitbucket profile → HTTP access tokens). It is **not** an Atlassian API token generated at `id.atlassian.com/manage-api-tokens` (those start with `ATATT` and only work for Jira/Confluence REST APIs). The correct token for Bitbucket git authentication is created directly in Bitbucket with at minimum the **Repositories: Read** scope (add **Write** for push).
+**Verified alternative (confirmed working 2026-03-25):** the current token also authenticates using the account username slug + token as password:
+```bash
+git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket.org/webgility/unify-enterprise.git"
+```
+> **Important — username slug vs. email:** the Bitbucket account slug is `krishnabankar`. Using the email address (`krishna.bankar@webgility.com`) as the URL username fails because `@` breaks URL parsing.
+
+> **Important — token type:** `BITBUCKET_TOKEN` must be a **Bitbucket HTTP Access Token** created from the **repository settings → Access tokens** page (or Bitbucket profile → HTTP access tokens). It is **not** an Atlassian API token generated at `id.atlassian.com/manage-api-tokens` (those only work for Jira/Confluence REST APIs). The correct token for Bitbucket git authentication is created directly in Bitbucket with at minimum the **Repositories: Read** scope (add **Write** for push).
 >
 > **As of September 9, 2025, Bitbucket has replaced App Passwords with API tokens** (scoped HTTP access tokens). The old App Passwords page now redirects to "Go to API tokens". Create the token from the Bitbucket repository or workspace settings under **Access tokens** / **HTTP access tokens**.
 >
