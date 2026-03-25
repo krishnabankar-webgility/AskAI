@@ -10,7 +10,9 @@ Safely perform day-to-day Git automation for shared branches, especially synchro
 | `origin` | `https://github.com/krishnabankar-webgility/AskAI` | Primary GitHub remote (default push/fetch) |
 | `bitbucket` | `https://bitbucket.org/webgility/unify-enterprise.git` | Bitbucket mirror / source remote |
 
-Use `origin` for all normal branch operations unless the user explicitly requests Bitbucket. To fetch or push to Bitbucket, substitute `bitbucket` for `origin` in any command. Authentication for Bitbucket requires a Bitbucket **App Password** (or repository access token) stored as the `BITBUCKET_TOKEN` secret in Cursor Dashboard → Cloud Agents → Secrets (injected as an environment variable at runtime). Use the URL form `https://<username>:<BITBUCKET_TOKEN>@bitbucket.org/webgility/unify-enterprise.git` when authentication is needed.
+Use `origin` for all normal branch operations unless the user explicitly requests Bitbucket. To fetch or push to Bitbucket, substitute `bitbucket` for `origin` in any command.
+
+**Authentication (Cloud Agent):** store **`BITBUCKET_USERNAME`** (account slug) and **`BITBUCKET_TOKEN`** (Bitbucket **HTTP access token**, not an Atlassian API token) in Cursor Dashboard → Cloud Agents → Secrets. Set the remote URL with URL-encoded token if needed — full patterns and PR/MCP notes are in **`bitbucket-unify-enterprise.md`**. For **`/bitbucket-automation`**, read that file after this one.
 
 ## Primary workflow: sync develop with master
 

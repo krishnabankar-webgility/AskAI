@@ -21,9 +21,28 @@ export PATH=$DOTNET_ROOT:$PATH
 | Alias | URL | Purpose |
 |-------|-----|---------|
 | `origin` | `https://github.com/krishnabankar-webgility/AskAI` | Primary GitHub remote |
-| `bitbucket` | `https://bitbucket.org/webgility/unify-enterprise.git` | Bitbucket remote |
+| `bitbucket` | `https://bitbucket.org/webgility/unify-enterprise.git` | Bitbucket — `unify-enterprise` |
 
-To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>`. Bitbucket requires a **Bitbucket HTTP Access Token** (repository-scoped). Store it as a secret named `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. When it is present, the remote must be configured with the authenticated URL using the `x-token-auth` scheme:
+### Cloud Agent secrets (Bitbucket + `unify-enterprise`)
+
+In **Cursor Dashboard → Cloud Agents → Secrets**, define at least:
+
+| Secret | Injected as | Purpose |
+|--------|-------------|---------|
+| Bitbucket username | `BITBUCKET_USERNAME` | Account **slug** (e.g. `krishnabankar`), not an email address. |
+| Bitbucket token | `BITBUCKET_TOKEN` | **Bitbucket HTTP access token** with repo **Read** (and **Write** to push). |
+
+**Agent skill pack:** `.cursor/skill-library/bitbucket-unify-enterprise.md` (clone, authenticated remote URL, push, PR workflow vs MCP). **Subagent:** type **`/bitbucket-automation`** in Agent mode to load Git safety rules + that skill.
+
+To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>` after setting an authenticated remote URL (see skill file). If you prefer not to store a username secret, Bitbucket accepts the `x-token-auth` scheme with **only** `BITBUCKET_TOKEN` (below). When `BITBUCKET_USERNAME` is present, use:
+
+```
+https://${BITBUCKET_USERNAME}:${BITBUCKET_TOKEN}@bitbucket.org/webgility/unify-enterprise.git
+```
+
+(URL-encode the token if it contains characters that break URLs — see skill file.)
+
+**Alternative without username secret:** Bitbucket **HTTP Access Token** (repository-scoped). Store it as `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. Configure the remote using the `x-token-auth` scheme:
 ```
 https://x-token-auth:{BITBUCKET_TOKEN}@bitbucket.org/webgility/unify-enterprise.git
 ```
@@ -66,6 +85,7 @@ The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, 
 
 - Type **`/db-automation`** then your request (SQL Server workflows; restore lives in `db-restore.md`; more DB skills can be added under the same agent).
 - Type **`/git-automation`** then your request (commit, push, merge, sync `develop` with `master`; detail in `git-sync.md`).
+- Type **`/bitbucket-automation`** then your request (clone/fetch/push **`unify-enterprise`** on Bitbucket using `BITBUCKET_USERNAME` / `BITBUCKET_TOKEN`, PR workflow; detail in `bitbucket-unify-enterprise.md` + `git-sync.md`).
 - Type **`/jira-automation`** then your request (customer issue key, story points, etc.).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for CUST-123.*
@@ -80,6 +100,6 @@ Cursor does **not** support a built-in “this subagent may only load skills A, 
 2. Keep each **subagent** in `.cursor/agents/<name>.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
 3. Maintain the human map in **`.cursor/agent-skill-bindings.md`** when you add agents or change assignments.
 
-**Example:** `/jira-automation` loads `jira-story-workflow.md`, `jira-worklogs.md`, and `jira-sprint-lifecycle.md` only. **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed.
+**Example:** `/jira-automation` loads `jira-story-workflow.md`, `jira-worklogs.md`, and `jira-sprint-lifecycle.md` only. **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`.
 
 The model loads those files at runtime via its read tool, so context stays **scoped to what that agent declares**, not every skill in the repo.

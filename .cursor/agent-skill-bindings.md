@@ -7,6 +7,7 @@ Cursor subagents do not support a native `skills: [...]` field. Each agent in `.
 | `jira-automation` | `jira-workflow.md` |
 | `db-automation` | `db-restore.md` *(append more `db-*.md` skills to `db-automation.md`’s read list as you add them)* |
 | `git-automation` | `git-sync.md` *(append more `git-*.md` skills to `git-automation.md`’s read list as you add them)* |
+| `bitbucket-automation` | `git-sync.md`, then `bitbucket-unify-enterprise.md` |
 
 To add **agent2** with only `skill3.md`:
 
