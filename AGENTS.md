@@ -23,10 +23,21 @@ export PATH=$DOTNET_ROOT:$PATH
 | `origin` | `https://github.com/krishnabankar-webgility/AskAI` | Primary GitHub remote |
 | `bitbucket` | `https://bitbucket.org/webgility/unify-enterprise.git` | Bitbucket remote |
 
-To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>`. Bitbucket requires a Bitbucket **App Password** (or repository access token). Store it as a secret named `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. When it is present, commands that need authentication should use the authenticated URL:
+To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>`. Bitbucket requires a **Bitbucket HTTP Access Token** (repository-scoped). Store it as a secret named `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. When it is present, the remote must be configured with the authenticated URL:
 ```
-https://<your-bitbucket-username>:$BITBUCKET_TOKEN@bitbucket.org/webgility/unify-enterprise.git
+https://x-token-auth:{BITBUCKET_TOKEN}@bitbucket.org/webgility/unify-enterprise.git
 ```
+If the token contains special characters (e.g. `=`), URL-encode it first:
+```bash
+ENCODED=$(python3 -c "import os,urllib.parse; print(urllib.parse.quote(os.environ['BITBUCKET_TOKEN'], safe=''))")
+git remote set-url bitbucket "https://x-token-auth:${ENCODED}@bitbucket.org/webgility/unify-enterprise.git"
+```
+
+> **Important — token type:** `BITBUCKET_TOKEN` must be a **Bitbucket HTTP Access Token** created from the **repository settings → Access tokens** page (or Bitbucket profile → HTTP access tokens). It is **not** an Atlassian API token generated at `id.atlassian.com/manage-api-tokens` (those start with `ATATT` and only work for Jira/Confluence REST APIs). The correct token for Bitbucket git authentication is created directly in Bitbucket with at minimum the **Repositories: Read** scope (add **Write** for push).
+>
+> **As of September 9, 2025, Bitbucket has replaced App Passwords with API tokens** (scoped HTTP access tokens). The old App Passwords page now redirects to "Go to API tokens". Create the token from the Bitbucket repository or workspace settings under **Access tokens** / **HTTP access tokens**.
+>
+> The existing **MyToken** app password (created 2025-03-18) will be disabled June 9, 2026 — regenerate it as an HTTP access token before then.
 
 ### Common Commands
 | Task | Command |
