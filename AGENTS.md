@@ -25,8 +25,10 @@ export PATH=$DOTNET_ROOT:$PATH
 
 To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>`. Bitbucket requires a Bitbucket **App Password** (or repository access token). Store it as a secret named `BITBUCKET_TOKEN` in **Cursor Dashboard → Cloud Agents → Secrets**. When it is present, commands that need authentication should use the authenticated URL:
 ```
-https://<your-bitbucket-username>:$BITBUCKET_TOKEN@bitbucket.org/webgility/unify-enterprise.git
+https://x-token-auth:$BITBUCKET_TOKEN@bitbucket.org/webgility/unify-enterprise.git
 ```
+
+> **Important — token type:** `BITBUCKET_TOKEN` must be a **Bitbucket App Password** (generated at [bitbucket.org/account/settings/app-passwords](https://bitbucket.org/account/settings/app-passwords); its value starts with `ATBB`). It is **not** an Atlassian API token (which starts with `ATATT` and only works for Jira/Confluence REST APIs, not for Bitbucket git operations). If you see `ATATT` as the prefix, re-generate the secret as a Bitbucket App Password with at minimum the **Repositories: Read** scope.
 
 ### Common Commands
 | Task | Command |
