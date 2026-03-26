@@ -34,6 +34,17 @@ In **Cursor Dashboard → Cloud Agents → Secrets**, define at least:
 
 **Agent skill pack:** `.cursor/skill-library/bitbucket-unify-enterprise.md` (clone, authenticated remote URL, push, PR workflow vs MCP). **Subagent:** type **`/bitbucket-automation`** in Agent mode to load Git safety rules + that skill.
 
+### Cloud Agent secrets (Slack)
+
+In **Cursor Dashboard → Cloud Agents → Secrets** (for cloud) or as system environment variables (for desktop), define:
+
+| Secret | Injected as | Purpose |
+|----------------------------------------|----------------------|--------------------------------------------------------------|
+| Slack bot token | `SLACK_BOT_TOKEN` | OAuth Bot Token (`xoxb-…`) from your Slack App → OAuth & Permissions |
+| Slack team ID | `SLACK_TEAM_ID` | Workspace (team) ID (e.g. `T01ABCDE123`) from workspace settings |
+
+**Agent skill pack:** `.cursor/skill-library/slack-integration.md`. **Subagent:** type **`/slack-automation`** in Agent mode.
+
 To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>` after setting an authenticated remote URL (see skill file). If you prefer not to store a username secret, Bitbucket accepts the `x-token-auth` scheme with **only** `BITBUCKET_TOKEN` (below). When `BITBUCKET_USERNAME` is present, use:
 
 ```
@@ -87,6 +98,7 @@ The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, 
 - Type **`/git-automation`** then your request (commit, push, merge, sync `develop` with `master`; detail in `git-sync.md`).
 - Type **`/bitbucket-automation`** then your request (clone/fetch/push **`unify-enterprise`** on Bitbucket using `BITBUCKET_USERNAME` / `BITBUCKET_TOKEN`, PR workflow; detail in `bitbucket-unify-enterprise.md` + `git-sync.md`).
 - Type **`/jira-automation`** then your request (customer issue key, story points, etc.).
+- Type **`/slack-automation`** then your request (send messages, read channels, list users; requires `SLACK_BOT_TOKEN` + `SLACK_TEAM_ID` secrets; detail in `slack-integration.md`).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for CUST-123.*
 
@@ -100,6 +112,6 @@ Cursor does **not** support a built-in “this subagent may only load skills A, 
 2. Keep each **subagent** in `.cursor/agents/<name>.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
 3. Maintain the human map in **`.cursor/agent-skill-bindings.md`** when you add agents or change assignments.
 
-**Example:** `/jira-automation` loads `jira-story-workflow.md`, `jira-worklogs.md`, and `jira-sprint-lifecycle.md` only. **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`.
+**Example:** `/jira-automation` loads `jira-story-workflow.md`, `jira-worklogs.md`, and `jira-sprint-lifecycle.md` only. **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed.
 
 The model loads those files at runtime via its read tool, so context stays **scoped to what that agent declares**, not every skill in the repo.
