@@ -40,6 +40,7 @@ MCP support in Visual Studio is emerging. Check the following:
 | Server | Purpose | Package |
 |--------|---------|---------|
 | **jira** | Jira workflow automation, issue management, sprint lifecycle | `@nexus2520/jira-mcp-server` |
+| **slack** | Slack messaging, channel history, user lookup, notifications | `@modelcontextprotocol/server-slack` |
 
 ## Environment Variables
 
@@ -50,6 +51,8 @@ MCP support in Visual Studio is emerging. Check the following:
 | `JIRA_EMAIL` | Jira account email | `user@example.com` |
 | `JIRA_API_TOKEN` | Jira API token (get from [Atlassian Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens)) | `(keep secret)` |
 | `JIRA_BASE_URL` | Jira instance base URL | `https://mycompany.atlassian.net` |
+| `SLACK_BOT_TOKEN` | Slack Bot OAuth Token (prefix `xoxb-`) from your Slack App's OAuth & Permissions page | `xoxb-xxxxxxxxxxxx-…` (example format; keep secret) |
+| `SLACK_TEAM_ID` | Slack workspace (team) ID found in workspace settings or URL | `T01ABCDE123` (example format) |
 
 ### How to Set Environment Variables
 
@@ -101,25 +104,68 @@ Or add to `~/.bashrc` or `~/.zshrc` for persistence.
 
 For comparison, Cursor uses `.cursor/mcp.json` with the same structure. This project maintains both for consistency.
 
+## Slack MCP Server Setup
+
+### Prerequisites
+
+- Node.js 16+ installed
+- A Slack workspace with admin access to create an app
+- GitHub Copilot extension installed
+
+### Installation Steps
+
+1. **Create a Slack App:**
+   - Go to [https://api.slack.com/apps](https://api.slack.com/apps)
+   - Click **Create New App → From scratch**
+   - Name your app and select your workspace
+
+2. **Add Bot Token Scopes** (OAuth & Permissions → Bot Token Scopes):
+   - `channels:read`, `channels:history`, `chat:write`, `users:read`
+   - Add more scopes as needed (see `slack-integration.md` for full list)
+
+3. **Install App to Workspace** and copy the **Bot User OAuth Token** (`xoxb-…`)
+
+4. **Set Environment Variables:**
+   ```bash
+   export SLACK_BOT_TOKEN="xoxb-your-token"
+   export SLACK_TEAM_ID="T01ABCDE123"   # from Slack workspace settings or URL
+   ```
+
+5. **In VS Code:**
+   - Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+   - Search for "Copilot: Configure MCP" or similar
+   - Reference the `vscode-mcp.json` configuration (already includes the Slack server)
+   - Restart VS Code
+
+6. **Verify Connection:**
+   - Open GitHub Copilot Chat
+   - Try: `@slack-automation list my Slack channels`
+   - Copilot should connect to Slack via the MCP server
+
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
 | MCP server not connecting | Verify environment variables are set; restart editor |
 | "npx not found" | Install Node.js and npm globally |
-| "API token invalid" | Generate a new token from Atlassian Account Settings |
+| "API token invalid" (Jira) | Generate a new token from Atlassian Account Settings |
+| `not_authed` (Slack) | Check `SLACK_BOT_TOKEN` starts with `xoxb-`; re-install app if expired |
+| `not_in_channel` (Slack) | Invite the bot to the channel: `/invite @YourBotName` in Slack |
+| `missing_scope` (Slack) | Add required scopes in Slack app settings and reinstall the app |
 | Copilot not recognizing MCP | Check VS Code version; update to latest; verify extension enabled |
 | Permission denied on Jira | Ensure API token has correct scope; check email matches account |
 
 ## Next Steps
 
-- Integrate with `.github/copilot/agents/jira-automation.agent.md` for enhanced automation
-- Add more MCP servers (e.g., GitHub API, Slack) as needed
-- Test Jira access via `@git-automation` agent in Copilot Chat
+- Integrate with `.github/copilot/agents/jira-automation.agent.md` for Jira automation
+- Use `.github/copilot/agents/slack-automation.agent.md` for Slack automation
+- Test Slack access via `@slack-automation` agent in Copilot Chat
 
 ## References
 
 - [MCP Documentation](https://modelcontextprotocol.io)
 - [Jira MCP Server GitHub](https://github.com/nexus2520/jira-mcp-server)
+- [Slack MCP Server (official)](https://github.com/modelcontextprotocol/servers/tree/main/src/slack)
+- [Slack API Apps](https://api.slack.com/apps)
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
 - [Visual Studio Code Documentation](https://code.visualstudio.com/docs)
