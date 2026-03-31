@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using AskAI.App.Configuration;
 using AskAI.Service.Services;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,53 +11,55 @@ namespace AskAI.Tests;
 
 // ---------------------------------------------------------------------------
 // Service.Services – JwtTokenService
+//
+// Reference token (from Visual Studio JWT Text Visualizer screenshot):
+//   eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
+//   .eyJzdWJzY3JpYmVyX2lkIjo3OTY2NSwic3Vic2NyaWJlcl9lbWFpbCI6ImtyaXNobmEuYmFua2FyQHdlYmdpbGl0eS5jb20iLCJleHAiOjE3NzQ5NTk0NDh9
+//   .GeVlRHni-TJkY7KJg_g6jXt3LXpmh_vCHQwL_tpNHcs
+//
+// Exact format requirements:
+//   - Header:  {"typ":"JWT","alg":"HS256"}  (typ BEFORE alg)
+//   - Payload: subscriber_id as JSON integer, subscriber_email as string, exp as unix int
+//   - No nbf, iss, aud claims
 // ---------------------------------------------------------------------------
 
 public class JwtTokenServiceTests
 {
     private const string ValidSecret = "super-secret-key-that-is-at-least-32-chars!";
-    private const string DefaultIssuer = "TestIssuer";
-    private const string DefaultAudience = "TestAudience";
 
     private static JwtTokenService Build(
         string? secret = null,
-        string? issuer = null,
-        string? audience = null,
         int expirationMinutes = 60)
     {
         var opts = Options.Create(new JwtOptions
         {
-            SecretKey = secret ?? ValidSecret,
-            Issuer = issuer ?? DefaultIssuer,
-            Audience = audience ?? DefaultAudience,
-            ExpirationMinutes = expirationMinutes,
+            SecretKey          = secret ?? ValidSecret,
+            Issuer             = "AskAI",
+            Audience           = "AskAI",
+            ExpirationMinutes  = expirationMinutes,
         });
 
         return new JwtTokenService(opts, NullLogger<JwtTokenService>.Instance);
     }
 
-    // ---- Constructor guards ----
+    // ── Constructor guards ──────────────────────────────────────────────────
 
     [Fact]
-    public void Constructor_NullOptions_Throws()
-    {
+    public void Constructor_NullOptions_Throws() =>
         Assert.Throws<ArgumentNullException>(() =>
             new JwtTokenService(null!, NullLogger<JwtTokenService>.Instance));
-    }
 
     [Fact]
     public void Constructor_NullLogger_Throws()
     {
         var opts = Options.Create(new JwtOptions
         {
-            SecretKey = ValidSecret,
-            Issuer = DefaultIssuer,
-            Audience = DefaultAudience,
+            SecretKey = ValidSecret, Issuer = "X", Audience = "X",
         });
         Assert.Throws<ArgumentNullException>(() => new JwtTokenService(opts, null!));
     }
 
-    // ---- GenerateToken argument guards ----
+    // ── Argument guards ─────────────────────────────────────────────────────
 
     [Theory]
     [InlineData(null)]
@@ -69,132 +71,95 @@ public class JwtTokenServiceTests
         Assert.ThrowsAny<ArgumentException>(() => svc.GenerateToken(1, email!));
     }
 
-    // ---- Token structure ----
+    // ── Token structure ─────────────────────────────────────────────────────
 
     [Fact]
     public void GenerateToken_ReturnsNonEmptyString()
     {
-        var svc = Build();
-        var token = svc.GenerateToken(79665, "test@example.com");
+        var token = Build().GenerateToken(79665, "test@example.com");
         Assert.False(string.IsNullOrWhiteSpace(token));
     }
 
     [Fact]
-    public void GenerateToken_IsValidJwt_WithThreeParts()
+    public void GenerateToken_HasThreeParts()
     {
-        var svc = Build();
-        var token = svc.GenerateToken(79665, "test@example.com");
-        var parts = token.Split('.');
-        Assert.Equal(3, parts.Length);
+        var token = Build().GenerateToken(79665, "test@example.com");
+        Assert.Equal(3, token.Split('.').Length);
+    }
+
+    // ── Header ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GenerateToken_Header_IsTypFirstThenAlg()
+    {
+        var token = Build().GenerateToken(79665, "test@example.com");
+        string headerJson = DecodeB64(token.Split('.')[0]);
+
+        // Must be exactly {"typ":"JWT","alg":"HS256"} — typ first
+        Assert.Equal("""{"typ":"JWT","alg":"HS256"}""", headerJson);
     }
 
     [Fact]
-    public void GenerateToken_Header_HasAlgHS256AndTypJWT()
+    public void GenerateToken_Header_AlgIsHS256()
     {
-        var svc = Build();
-        var token = svc.GenerateToken(79665, "test@example.com");
-
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
-
-        Assert.Equal("HS256", jwt.Header.Alg);
-        Assert.Equal("JWT", jwt.Header.Typ);
-    }
-
-    // ---- Claims ----
-
-    [Fact]
-    public void GenerateToken_ContainsSubscriberIdClaim()
-    {
-        var svc = Build();
-        var token = svc.GenerateToken(79665, "krishna.bankar@webgility.com");
-
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
-
-        var claim = jwt.Claims.FirstOrDefault(c => c.Type == "subscriber_id");
-        Assert.NotNull(claim);
-        Assert.Equal("79665", claim.Value);
+        var token = Build().GenerateToken(79665, "test@example.com");
+        var doc   = JsonDocument.Parse(DecodeB64(token.Split('.')[0]));
+        Assert.Equal("HS256", doc.RootElement.GetProperty("alg").GetString());
     }
 
     [Fact]
-    public void GenerateToken_ContainsSubscriberEmailClaim()
+    public void GenerateToken_Header_TypIsJWT()
     {
-        var svc = Build();
-        var token = svc.GenerateToken(79665, "krishna.bankar@webgility.com");
+        var token = Build().GenerateToken(79665, "test@example.com");
+        var doc   = JsonDocument.Parse(DecodeB64(token.Split('.')[0]));
+        Assert.Equal("JWT", doc.RootElement.GetProperty("typ").GetString());
+    }
 
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
+    // ── Payload ─────────────────────────────────────────────────────────────
 
-        var claim = jwt.Claims.FirstOrDefault(c => c.Type == "subscriber_email");
-        Assert.NotNull(claim);
-        Assert.Equal("krishna.bankar@webgility.com", claim.Value);
+    [Fact]
+    public void GenerateToken_SubscriberId_IsJsonInteger()
+    {
+        var token = Build().GenerateToken(79665, "test@example.com");
+        var doc   = JsonDocument.Parse(DecodeB64(token.Split('.')[1]));
+        var prop  = doc.RootElement.GetProperty("subscriber_id");
+
+        // Must be a JSON number, not a string
+        Assert.Equal(JsonValueKind.Number, prop.ValueKind);
+        Assert.Equal(79665L, prop.GetInt64());
     }
 
     [Fact]
-    public void GenerateToken_ContainsExpClaim_InFuture()
+    public void GenerateToken_SubscriberEmail_IsCorrect()
     {
-        var svc = Build(expirationMinutes: 60);
-        var before = DateTime.UtcNow;
-        var token = svc.GenerateToken(79665, "test@example.com");
-        var after = DateTime.UtcNow;
-
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
-
-        Assert.True(jwt.ValidTo > before.AddMinutes(59));
-        Assert.True(jwt.ValidTo < after.AddMinutes(61));
-    }
-
-    // ---- Signature verification ----
-
-    [Fact]
-    public void GenerateToken_PassesSignatureVerification()
-    {
-        var svc = Build();
-        var token = svc.GenerateToken(79665, "test@example.com");
-
-        var handler = new JwtSecurityTokenHandler();
-        var validationParams = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = DefaultIssuer,
-            ValidateAudience = true,
-            ValidAudience = DefaultAudience,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ValidSecret)),
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
-        };
-
-        var principal = handler.ValidateToken(token, validationParams, out var validatedToken);
-
-        Assert.NotNull(principal);
-        Assert.NotNull(validatedToken);
+        var token = Build().GenerateToken(79665, "krishna.bankar@webgility.com");
+        var doc   = JsonDocument.Parse(DecodeB64(token.Split('.')[1]));
+        Assert.Equal("krishna.bankar@webgility.com",
+            doc.RootElement.GetProperty("subscriber_email").GetString());
     }
 
     [Fact]
-    public void GenerateToken_DifferentSecret_FailsVerification()
+    public void GenerateToken_Payload_HasNoExtraStandardClaims()
     {
-        var svc = Build();
-        var token = svc.GenerateToken(79665, "test@example.com");
+        var token = Build().GenerateToken(79665, "test@example.com");
+        var doc   = JsonDocument.Parse(DecodeB64(token.Split('.')[1]));
 
-        var handler = new JwtSecurityTokenHandler();
-        var validationParams = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes("wrong-secret-key-that-is-at-least-32-chars!!")),
-            ValidateLifetime = false,
-        };
-
-        Assert.ThrowsAny<SecurityTokenException>(
-            () => handler.ValidateToken(token, validationParams, out _));
+        var keys = doc.RootElement.EnumerateObject().Select(p => p.Name).ToHashSet();
+        // Only these three — no nbf, iss, aud, jti, sub, etc.
+        Assert.Equal(new HashSet<string> { "subscriber_id", "subscriber_email", "exp" }, keys);
     }
 
-    // ---- Expiration configuration ----
+    [Fact]
+    public void GenerateToken_Exp_IsInFuture()
+    {
+        var before = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var token  = Build(expirationMinutes: 60).GenerateToken(1, "a@b.com");
+        var doc    = JsonDocument.Parse(DecodeB64(token.Split('.')[1]));
+        long exp   = doc.RootElement.GetProperty("exp").GetInt64();
+
+        Assert.True(exp > before + 59 * 60, $"exp={exp} should be > {before + 59 * 60}");
+        Assert.True(exp < before + 61 * 60, $"exp={exp} should be < {before + 61 * 60}");
+    }
 
     [Theory]
     [InlineData(30)]
@@ -202,15 +167,84 @@ public class JwtTokenServiceTests
     [InlineData(1440)]
     public void GenerateToken_ExpirationReflectsConfiguration(int minutes)
     {
-        var svc = Build(expirationMinutes: minutes);
-        var before = DateTime.UtcNow;
-        var token = svc.GenerateToken(1, "a@b.com");
+        var before = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var token  = Build(expirationMinutes: minutes).GenerateToken(1, "a@b.com");
+        var doc    = JsonDocument.Parse(DecodeB64(token.Split('.')[1]));
+        long exp   = doc.RootElement.GetProperty("exp").GetInt64();
+
+        long expectedExp = before + minutes * 60;
+        Assert.True(Math.Abs(exp - expectedExp) < 5,
+            $"exp={exp} expected ≈ {expectedExp}");
+    }
+
+    // ── Signature ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GenerateToken_PassesSignatureVerification()
+    {
+        // We use the Microsoft library's validator against our hand-crafted token.
+        var svc   = Build();
+        var token = svc.GenerateToken(79665, "test@example.com");
 
         var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
+        var vp = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ValidSecret)),
+            ValidateIssuer           = false,
+            ValidateAudience         = false,
+            ValidateLifetime         = true,
+            ClockSkew                = TimeSpan.Zero,
+        };
 
-        var expectedExp = before.AddMinutes(minutes);
-        Assert.True(Math.Abs((jwt.ValidTo - expectedExp).TotalSeconds) < 5,
-            $"ValidTo={jwt.ValidTo:u} expected ≈ {expectedExp:u}");
+        var principal = handler.ValidateToken(token, vp, out var validatedToken);
+        Assert.NotNull(principal);
+        Assert.NotNull(validatedToken);
+    }
+
+    [Fact]
+    public void GenerateToken_WrongSecret_FailsVerification()
+    {
+        var token = Build().GenerateToken(79665, "test@example.com");
+
+        var handler = new JwtSecurityTokenHandler();
+        var vp = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey         = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes("wrong-secret-key-that-is-at-least-32-chars!!")),
+            ValidateIssuer   = false,
+            ValidateAudience = false,
+            ValidateLifetime = false,
+        };
+
+        Assert.ThrowsAny<SecurityTokenException>(
+            () => handler.ValidateToken(token, vp, out _));
+    }
+
+    // ── Deterministic output (given fixed exp) ───────────────────────────────
+
+    [Fact]
+    public void GenerateToken_KnownInputs_ProducesExactHeaderAndPayload()
+    {
+        // Fix the expiry to the value from the screenshot so we can assert
+        // the exact header+payload base64 segments (signature depends on secret).
+        var svc   = Build();
+        var expiry = DateTimeOffset.FromUnixTimeSeconds(1774959448).UtcDateTime;
+        // Use internal overload for deterministic exp
+        var token = svc.GenerateToken(79665, "krishna.bankar@webgility.com", expiry);
+
+        var parts = token.Split('.');
+        Assert.Equal("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9", parts[0]);
+        Assert.Equal("eyJzdWJzY3JpYmVyX2lkIjo3OTY2NSwic3Vic2NyaWJlcl9lbWFpbCI6ImtyaXNobmEuYmFua2FyQHdlYmdpbGl0eS5jb20iLCJleHAiOjE3NzQ5NTk0NDh9", parts[1]);
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private static string DecodeB64(string b64url)
+    {
+        b64url += new string('=', (4 - b64url.Length % 4) % 4);
+        byte[] bytes = Convert.FromBase64String(b64url.Replace('-', '+').Replace('_', '/'));
+        return Encoding.UTF8.GetString(bytes);
     }
 }
