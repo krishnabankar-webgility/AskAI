@@ -3,9 +3,11 @@ using AskAI.App.Factory;
 using AskAI.Console.Commands;
 using AskAI.Core.Providers;
 using AskAI.Core.Repositories;
+using AskAI.Core.Services;
 using AskAI.Resources;
 using AskAI.Service.Providers;
 using AskAI.Service.Repositories;
+using AskAI.Service.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,12 +26,20 @@ var host = Host.CreateDefaultBuilder(args)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<JwtOptions>()
+            .Bind(context.Configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         // Providers (Provider Pattern)
         services.AddSingleton<IAiProvider, SemanticKernelAiProvider>();
         services.AddSingleton<IDatabaseProvider, SqliteDatabaseProvider>();
 
         // Repository (Repository Pattern)
         services.AddSingleton<IConversationRepository, ConversationRepository>();
+
+        // Services
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
         // Command Handlers (Command Pattern)
         services.AddTransient<AskCommandHandler>();
