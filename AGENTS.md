@@ -34,6 +34,16 @@ In **Cursor Dashboard → Cloud Agents → Secrets**, define at least:
 
 **Agent skill pack:** `.cursor/skill-library/bitbucket-unify-enterprise.md` (clone, authenticated remote URL, push, PR workflow vs MCP). **Subagent:** type **`/bitbucket-automation`** in Agent mode to load Git safety rules + that skill.
 
+### Cloud Agent secrets (JWT)
+
+In **Cursor Dashboard → Cloud Agents → Secrets**, define:
+
+| Secret | Injected as | Purpose |
+|--------|-------------|---------|
+| JWT signing secret | `JWT_SECRET_KEY` | HMAC-SHA256 key used to sign tokens (must be ≥ 32 characters). Copy it from your unify-enterprise `appsettings.json` → `Jwt:SecretKey`. **Never paste this in chat.** |
+
+**Agent skill pack:** `.cursor/skill-library/jwt-token.md`. **Subagent:** type **`/jwt-automation`** in Agent mode.
+
 ### Cloud Agent secrets (Slack)
 
 In **Cursor Dashboard → Cloud Agents → Secrets** (for cloud) or as system environment variables (for desktop), define:
@@ -99,6 +109,7 @@ The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, 
 - Type **`/bitbucket-automation`** then your request (clone/fetch/push **`unify-enterprise`** on Bitbucket using `BITBUCKET_USERNAME` / `BITBUCKET_TOKEN`, PR workflow; detail in `bitbucket-unify-enterprise.md` + `git-sync.md`).
 - Type **`/jira-automation`** then your request (customer issue key, story points, etc.).
 - Type **`/slack-automation`** then your request (send messages, read channels, list users; requires `SLACK_BOT_TOKEN` + `SLACK_TEAM_ID` secrets; detail in `slack-integration.md`).
+- Type **`/jwt-automation`** then your request (generate or decode HS256 JWT bearer tokens; requires `JWT_SECRET_KEY` secret; detail in `jwt-token.md`).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for CUST-123.*
 

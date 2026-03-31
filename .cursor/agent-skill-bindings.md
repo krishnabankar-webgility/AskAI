@@ -9,6 +9,7 @@ Cursor subagents do not support a native `skills: [...]` field. Each agent in `.
 | `git-automation` | `git-sync.md` *(append more `git-*.md` skills to `git-automation.md`’s read list as you add them)* |
 | `bitbucket-automation` | `git-sync.md`, then `bitbucket-unify-enterprise.md` |
 | `slack-automation` | `slack-integration.md` *(append more `slack-*.md` skills to `slack-automation.md`’s read list as you add them)* |
+| `jwt-automation` | `jwt-token.md` |
 
 To add **agent2** with only `skill3.md`:
 
