@@ -359,5 +359,8 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+# Ephemeral agent session scratch (optional path if not under ignored logs/)
+.cursor/agent-session-notes.log
+
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
