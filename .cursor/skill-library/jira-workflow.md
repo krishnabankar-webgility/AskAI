@@ -251,6 +251,7 @@ When a session surfaces a **repeatable rule**, **API quirk**, or **better JQL** 
 
 Ephemeral analysis, one-off session summaries, or notes that **must not** become skill text may be written to:
 
+- **`local/ephemeral/`** (gitignored root folder for arbitrary one-off files — see `askai-ephemeral-output.md`),
 - `logs/agent-session-notes.log` (entire `logs/` folder is typically gitignored by the Visual Studio template), **or**
 - `.cursor/agent-session-notes.log` (also gitignored in this repo).
 

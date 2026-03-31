@@ -88,21 +88,50 @@ git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket
 - `dotnet restore` is implicitly run by `dotnet build` and `dotnet run`, but can be run explicitly after adding new NuGet packages.
 - The `.gitignore` is the standard Visual Studio/.NET template — build outputs (`bin/`, `obj/`) are already excluded.
 
+### Master agent: AskAI (`askai`)
+
+- **Full context:** The **`askai`** agent loads the skill registry plus **all** canonical skills under `.cursor/skill-library/` (see `.cursor/agents/askai.md`). Use when work spans multiple domains or you want one agent to see Jira + Git + DB + Bitbucket + Slack rules together.
+- **VS Code / GitHub Copilot:** Same role in `.github/copilot/agents/askai.agent.md` and `.github/agents/AskAI.agent.md`.
+
+### Specialist-only (`/<agent-name>`)
+
+To **scope** the model to a single workflow (smaller context), invoke by name:
+
+- **`/askai`** — master (same as choosing full orchestration).
+- **`/agent-learning`** — update skills/agents from corrections or feedback (meta; edits repo docs).
+- **`/db-automation`** — SQL Server (`db-restore.md`; extend with more `db-*.md` in the agent file).
+- **`/git-automation`** — commit, push, merge, sync `develop` with `master` (`git-sync.md`).
+- **`/bitbucket-automation`** — `unify-enterprise` on Bitbucket (`bitbucket-unify-enterprise.md` + `git-sync.md`).
+- **`/jira-automation`** — Jira UD workflows (`jira-workflow.md`).
+- **`/slack-automation`** — Slack MCP (`slack-integration.md`).
+
+You can also ask in plain language, for example: *Delegate to the jira-automation subagent for UD-31982.*
+
+### Ephemeral output (not committed)
+
+One-time reports, formatted dumps, or scratch files that must **not** be pushed: write under **`local/ephemeral/`** (gitignored) or `logs/`. See `.cursor/skill-library/askai-ephemeral-output.md`. Session scratch can also use `.cursor/agent-session-notes.log`.
+
+### Skill evolution (corrections → repo learning)
+
+When a session fixes wrong or incomplete instructions, follow **`.cursor/skill-library/askai-skill-evolution.md`**. Use **`/agent-learning`** when the task is specifically to persist that fix into skills and keep **Cursor + Copilot + VS Code** agent files in sync.
+
 ### Cursor subagents (`.cursor/agents/`)
 
 The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, model picker, ∞) is **not** populated from `.cursor/agents/*.md`. That control is for **chat mode and model**, not a catalog of custom subagents. Cursor documents custom subagents as tools the main Agent delegates to; the canonical way to see what exists is the `.cursor/agents/` folder on disk.
 
-**How to run project subagents** (in **Agent** mode, `Ctrl+I`):
-
-- Type **`/db-automation`** then your request (SQL Server workflows; restore lives in `db-restore.md`; more DB skills can be added under the same agent).
-- Type **`/git-automation`** then your request (commit, push, merge, sync `develop` with `master`; detail in `git-sync.md`).
-- Type **`/bitbucket-automation`** then your request (clone/fetch/push **`unify-enterprise`** on Bitbucket using `BITBUCKET_USERNAME` / `BITBUCKET_TOKEN`, PR workflow; detail in `bitbucket-unify-enterprise.md` + `git-sync.md`).
-- Type **`/jira-automation`** then your request (customer issue key, story points, etc.).
-- Type **`/slack-automation`** then your request (send messages, read channels, list users; requires `SLACK_BOT_TOKEN` + `SLACK_TEAM_ID` secrets; detail in `slack-integration.md`).
-
-You can also ask in plain language, for example: *Delegate to the jira-automation subagent for CUST-123.*
-
 See [Subagents](https://cursor.com/docs/subagents) in the Cursor docs.
+
+### Parity: Cursor, GitHub Copilot, VS Code
+
+| Location | Role |
+|----------|------|
+| `.cursor/agents/*.md` | Cursor subagent definitions |
+| `.cursor/skill-library/*.md` | **Canonical** skills (single source of truth) |
+| `.github/copilot/agents/*.agent.md` | Copilot agents (reference `.cursor/skill-library/` paths) |
+| `.github/agents/*.agent.md` | VS Code / GitHub agent picker (e.g. `AskAI.agent.md`) |
+| `.github/copilot/AGENT-SKILL-BINDINGS.md` | Copilot registry (keep aligned with `.cursor/agent-skill-bindings.md`) |
+
+Adding or changing an agent: update **both** bindings files and **both** agent file locations unless the tool is Cursor-only.
 
 ### Agent-specific skill packs (`.cursor/skill-library/`)
 
@@ -112,6 +141,6 @@ Cursor does **not** support a built-in “this subagent may only load skills A, 
 2. Keep each **subagent** in `.cursor/agents/<name>.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
 3. Maintain the human map in **`.cursor/agent-skill-bindings.md`** when you add agents or change assignments.
 
-**Example:** `/jira-automation` loads `jira-story-workflow.md`, `jira-worklogs.md`, and `jira-sprint-lifecycle.md` only. **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed.
+**Example:** `/jira-automation` loads **`jira-workflow.md`** only (consolidated Jira rules). **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed. **`/askai`** loads the registry plus all skills when full cross-domain context is needed (see `.cursor/agents/askai.md`).
 
 The model loads those files at runtime via its read tool, so context stays **scoped to what that agent declares**, not every skill in the repo.
