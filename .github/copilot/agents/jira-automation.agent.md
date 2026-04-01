@@ -2,8 +2,9 @@
 name: jira-automation
 description: >
   Jira workflow automation for UD: CIM/CIF stories, customer issues, subtasks,
-  optional Story Points, OE = (SP×8)/N, fuzzy sprint names, worklogs, sprint
-  lifecycle. Canonical skill is jira-workflow.md (same as Cursor).
+  optional Story Points, OE = (SP×8)/N split across all subtasks; after
+  add/remove/delete/move subtasks, recalculate and update OE on every affected
+  subtask (canonical skill jira-workflow.md).
 model: inherit
 ---
 

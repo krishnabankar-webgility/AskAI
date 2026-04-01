@@ -142,13 +142,32 @@ Immediately after subtasks are created or when subtask count changes:
 1. Re-read Story SP from `customfield_10053`.
 2. Count total subtasks under the Story.
 3. Compute `hours_per_subtask` from §2.2.
-4. Set `fields.timetracking.originalEstimate` on each subtask via the Jira API.
+4. Set `fields.timetracking.originalEstimate` on **each** subtask via the Jira API (same value on all).
 
 If the API rejects the `timetracking` field, note the error on the Story and document the intended OE in the reply.
 
-### 2.4 Recalculation on subtask changes
+### 2.4 Recalculation on subtask changes (mandatory)
 
-If subtasks are added or removed later, recalculate OE for **all** subtasks using the updated count and the same Story Points.
+Whenever the user asks to **add**, **remove**, **delete**, or **move** a sub-task under an existing Story (or you perform any of these as part of the request), you **must** recalculate and **push updated Original Estimate** to **every** sub-task that still belongs to the affected Story(ies), using the current Story Points and **§2.2**.
+
+| Action | What to do after the operation succeeds |
+|--------|----------------------------------------|
+| **Add** sub-task(s) | Re-fetch all subtasks under the Story; **N** = new count; set **identical** new OE on **all N** subtasks (including existing ones). |
+| **Remove / delete** sub-task(s) | Re-fetch remaining subtasks; **N** = count; if **N ≥ 1**, set new OE on **all N**; if **N = 0**, skip OE (no subtasks left). |
+| **Move** sub-task (reparent to another Story/issue) | Run full recalculation separately for **source** Story (remaining subtasks) **and** **target** Story (all subtasks including the moved one). If the new parent is not a UD Story or has no SP, still recalc where SP exists; report gaps. |
+
+**Procedure (repeat for each affected Story with numeric SP):**
+
+1. `getJiraIssue` on the Story; read `customfield_10053` and `subtasks` (or JQL `parent = STORYKEY` / equivalent) so the child list is **current**.
+2. **N** = number of Sub-task children. If **N = 0**, stop OE updates for that Story.
+3. Compute `hours_per_subtask = (SP × 8) / N`, round to **0.25h**, convert to Jira duration string (§2.2).
+4. **editJiraIssue** (or API) **`timetracking.originalEstimate`** on **each** of the **N** subtasks — **overwrite** previous OE so all match the new split.
+
+**If Story Points are missing** on an affected Story: do **not** invent SP; skip OE redistribution for that Story and state clearly in the reply. If the user supplies SP in the same session, run the procedure immediately after setting SP.
+
+**Worklogs:** Updating OE does **not** rewrite existing worklogs. If a sub-task already has time logged, mention in the reply that totals may need manual review.
+
+**Delete via API/UI:** If delete is not available to the automation, instruct the user to delete in Jira, then ask them to request “recalculate subtask estimates for STORY-KEY” or run the same §2.4 steps once deletion is done.
 
 ---
 
@@ -235,9 +254,11 @@ When the user describes an issue by **title fragment** (e.g. “adhock story”,
 
 1. Build JQL: `project = UD`, `assignee` = user’s account id when they say “assigned to me”, `sprint in openSprints()` when they say current sprint, and `summary ~ "fragment"` (try alternate spellings: `adhock`, `ad hoc`, `adhoc`, `Adhock-Story`).
 2. If multiple hits, list keys and summaries and ask; if one clear match, proceed.
-3. **Rename sub-task:** `editJiraIssue` on the sub-task issue key; update `summary` only (preserve parent link).
-4. **Add subtasks:** `createJiraIssue` with `issueTypeName` Sub-task and `parent` = Story key; then apply §2 if SP exists on the Story.
-5. Summarize keys and sprint (§1.9 fuzzy rules apply when assigning or confirming sprint).
+3. **Rename sub-task:** `editJiraIssue` on the sub-task issue key; update `summary` only (preserve parent link). Renaming **does not** change **N** — no OE recalculation unless another structural change happened in the same request.
+4. **Add subtasks:** `createJiraIssue` with `issueTypeName` Sub-task and `parent` = Story key; then **mandatory §2.4** (recompute OE on **all** subtasks under that Story when SP exists).
+5. **Remove / delete subtask:** After the sub-task is removed or deleted (API or user-confirmed), **mandatory §2.4** on the parent Story for all remaining subtasks.
+6. **Move subtask** (change parent to another Story): After parent update, **mandatory §2.4** on **both** source and destination Stories (each Story’s SP × 8 split across **its** current subtasks).
+7. Summarize keys, **new OE per subtask** after any §2.4 run, and sprint (§1.9 fuzzy rules apply when assigning or confirming sprint).
 
 ---
 
@@ -267,7 +288,7 @@ After each operation, reply with:
 2. **Status** of each issue after the operation.
 3. **Sprint** (name + id + dates if available). If fuzzy match was used, state **user phrase → resolved sprint name (id)**.
 4. **Story Points** (whether set, unchanged, or skipped per user).
-5. **Original Estimate** per subtask (if set or changed; if skipped due to missing SP, say so).
+5. **Original Estimate** per subtask (if set or changed; if skipped due to missing SP, say so). After **add/remove/delete/move** subtasks, list **every** subtask key with its **new** OE after §2.4.
 6. **Worklogs** per subtask (hours logged, date).
-7. **Actions performed** (creates, OE updates, transitions, worklogs, comments, links).
+7. **Actions performed** (creates, deletes/moves, **OE redistribution** on all affected subtasks, transitions, worklogs, comments, links).
 8. **Anything blocked** (permissions, workflow issues, missing fields).
