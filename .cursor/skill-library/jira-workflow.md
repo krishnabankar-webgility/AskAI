@@ -104,6 +104,12 @@ For **exact** names, still verify the id via `getJiraIssue` or sprint metadata b
 - **Do not** overwrite existing SP with a guess. **Do not** require SP to complete create/rename/subtask operations.
 - When SP exists on the Story **and** subtasks exist, apply §2 for Original Estimate and later worklogs as written.
 
+### 1.11 Sub-tasks and parent Story — parent only (no issue links)
+
+- Sub-tasks are tied to the Story **only** via the standard **parent** relationship (Sub-task issue type + `parent` = Story key on create; see §1.5 and §6). Jira lists them under the Story’s **Subtasks** panel — no extra linking is needed.
+- **Do not** create Jira **issue links** (e.g. Relates to, Blocks, implements) **between a Sub-task and its parent Story**. That duplicates hierarchy and clutters the **Links** section.
+- **Do** create issue links when this skill **explicitly** requires them for **other** relationships (e.g. Story ↔ Customer Issue in §1.4).
+
 ---
 
 ## 2. Original Estimate (OE)
@@ -193,7 +199,7 @@ When the user asks to mark a **Story** Done:
 1. **Only transition subtasks that are "In Progress" to Done.** Leave untouched subtasks (e.g. To Do) as-is.
 2. For each subtask moved to Done: log work equal to its Original Estimate per §3.1.
 3. Transition the **Story** to Done.
-4. Add a traceability **comment** on the Story listing all actions performed.
+4. Add a brief traceability **comment** on the Story (transitions, worklogs, sprint/SP, Customer Issue link if any). **Do not** add issue links between the Story and its Sub-tasks (§1.11). **Do not** paste a full sub-task key list **only** to associate children with the Story — they are already visible under **Subtasks**; mention sub-task keys only when documenting **this session’s** concrete actions (e.g. which keys transitioned or received worklogs).
 
 > **Key difference from previous behavior:** Do NOT sweep all non-Done subtasks to Done. Only In Progress subtasks are moved to Done when the Story is completed.
 

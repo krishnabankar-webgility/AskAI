@@ -29,5 +29,6 @@ Before any analysis or Jira actions, **read the following file** using your file
 5. If required inputs are missing (work type, summary when creating from scratch, etc.), **ask** before proceeding.
 6. Execute using **Jira REST API** or **Jira/Atlassian MCP tools** when available.
 7. Follow the **output format** (skill **§9**). For ephemeral scratch notes not meant as skill, use `logs/agent-session-notes.log` or `.cursor/agent-session-notes.log` per skill **§8**.
+8. **Sub-tasks ↔ parent Story:** Use **parent** only — **never** create Jira issue links between a Sub-task and its parent Story (skill **§1.11**). Children already appear under **Subtasks** on the Story.
 
 Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.
