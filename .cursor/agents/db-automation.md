@@ -28,4 +28,5 @@ When you add new database skills (e.g. backup export, schema compare, migration 
 4. Follow **Constraints** and workflows in that skill; use the shell and `sqlcmd` as described there.  
 5. Return summaries using the **Output format** section of the skill you applied.
 
-Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.
+Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot mirror (same read list; keep in sync): `.github/copilot/agents/db-automation.agent.md`.

@@ -1,10 +1,14 @@
 # Git Automation Prompt (GitHub Copilot)
 
-Use this prompt for Git workflows such as:
+**Canonical skill (read first when automating):** `.cursor/skill-library/git-sync.md` — remotes (`origin` vs `bitbucket`), full safety rules, and the official sync sequence. This prompt is a short checklist; the skill wins if anything disagrees.
+
+Use for Git workflows such as:
 - Commit / push changes
 - Merge branches
 - Sync `develop` with `master`
 - Resolve merge flow and finalize push
+
+Prefer the **local workspace terminal** for `git` so credentials match VS Code / Git Credential Manager.
 
 ## Required behavior
 
