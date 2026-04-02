@@ -4,7 +4,7 @@ description: >
   Master agent for AskAI: full project agent+skill context, orchestration, and
   routing. Use for multi-domain work or when unsure which specialist applies.
   For scoped work, prefer /jira-automation, /git-automation, /db-automation,
-  /bitbucket-automation, or /slack-automation.
+  /bitbucket-automation, /slack-automation, or /dev-customization.
 model: inherit
 ---
 
@@ -24,6 +24,8 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 6. `.cursor/skill-library/db-restore.md`  
 7. `.cursor/skill-library/bitbucket-unify-enterprise.md`  
 8. `.cursor/skill-library/slack-integration.md`  
+9. `.cursor/skill-library/dev-customization-expertise.md`  
+10. `.cursor/skill-library/dev-customization-workflow.md`  
 
 ## Routing
 
@@ -47,5 +49,6 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 | `/bitbucket-automation` | Bitbucket `unify-enterprise` |
 | `/slack-automation` | Slack MCP |
 | `/agent-learning` | Update skills/agents from feedback |
+| `/dev-customization` | Customer customizations: minimal change, profile gating, sync reuse |
 
 Human-readable registry: `.cursor/agent-skill-bindings.md`.

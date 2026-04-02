@@ -22,13 +22,14 @@
 
 | Agent (`.agent.md`) | Canonical skills (`.cursor/skill-library/`) |
 |---------------------|-----------------------------------------------|
-| `askai` | `askai-ephemeral-output.md`, `askai-skill-evolution.md`, `jira-workflow.md`, `git-sync.md`, `db-restore.md`, `bitbucket-unify-enterprise.md`, `slack-integration.md` |
+| `askai` | `askai-ephemeral-output.md`, `askai-skill-evolution.md`, `jira-workflow.md`, `git-sync.md`, `db-restore.md`, `bitbucket-unify-enterprise.md`, `slack-integration.md`, `dev-customization-expertise.md`, `dev-customization-workflow.md` |
 | `agent-learning` | `askai-skill-evolution.md` + files being edited |
 | `jira-automation` | `jira-workflow.md` |
 | `git-automation` | `git-sync.md` |
 | `db-automation` | `db-restore.md` |
 | `bitbucket-automation` | `git-sync.md`, `bitbucket-unify-enterprise.md` |
 | `slack-automation` | `slack-integration.md` |
+| `dev-customization` | `dev-customization-expertise.md`, `dev-customization-workflow.md` |
 
 ## Deprecated
 

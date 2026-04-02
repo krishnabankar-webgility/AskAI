@@ -23,6 +23,8 @@ Read **all** of the following **in order**. If a path is missing, report it and 
 6. `.cursor/skill-library/db-restore.md`
 7. `.cursor/skill-library/bitbucket-unify-enterprise.md`
 8. `.cursor/skill-library/slack-integration.md`
+9. `.cursor/skill-library/dev-customization-expertise.md`
+10. `.cursor/skill-library/dev-customization-workflow.md`
 
 ## Routing
 

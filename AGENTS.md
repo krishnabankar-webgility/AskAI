@@ -104,6 +104,7 @@ To **scope** the model to a single workflow (smaller context), invoke by name:
 - **`/bitbucket-automation`** — `unify-enterprise` on Bitbucket (`bitbucket-unify-enterprise.md` + `git-sync.md`).
 - **`/jira-automation`** — Jira UD workflows (`jira-workflow.md`).
 - **`/slack-automation`** — Slack MCP (`slack-integration.md`).
+- **`/dev-customization`** — Customer-driven customizations: reuse architecture, profile + customization node gating, logging (`dev-customization-expertise.md`, `dev-customization-workflow.md`).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for UD-31982.*
 
@@ -141,6 +142,6 @@ Cursor does **not** support a built-in “this subagent may only load skills A, 
 2. Keep each **subagent** in `.cursor/agents/<name>.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
 3. Maintain the human map in **`.cursor/agent-skill-bindings.md`** when you add agents or change assignments.
 
-**Example:** `/jira-automation` loads **`jira-workflow.md`** only (consolidated Jira rules). **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed. **`/askai`** loads the registry plus all skills when full cross-domain context is needed (see `.cursor/agents/askai.md`).
+**Example:** `/jira-automation` loads **`jira-workflow.md`** only (consolidated Jira rules). **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed. **`/dev-customization`** loads `dev-customization-expertise.md` then `dev-customization-workflow.md`. **`/askai`** loads the registry plus all skills when full cross-domain context is needed (see `.cursor/agents/askai.md`).
 
 The model loads those files at runtime via its read tool, so context stays **scoped to what that agent declares**, not every skill in the repo.

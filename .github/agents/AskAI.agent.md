@@ -30,6 +30,7 @@ Full ordered list for **maximum** context matches **`.cursor/agents/askai.md`** 
 | SQL Server / DB | `db-automation` |
 | Bitbucket unify-enterprise | `bitbucket-automation` |
 | Slack | `slack-automation` |
+| Customer customizations (unify-enterprise style) | `dev-customization` |
 | Fix docs from feedback | `agent-learning` |
 
 ## Ephemeral output
