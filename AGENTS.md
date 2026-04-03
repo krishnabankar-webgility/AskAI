@@ -105,6 +105,7 @@ To **scope** the model to a single workflow (smaller context), invoke by name:
 - **`/jira-automation`** — Jira UD workflows (`jira-workflow.md`).
 - **`/slack-automation`** — Slack MCP (`slack-integration.md`).
 - **`/dev-customization`** — Customer-driven customizations: reuse architecture, profile + customization node gating, logging (`dev-customization-expertise.md`, `dev-customization-workflow.md`).
+- **`/confluence-automation`** — Confluence page management, search, content creation, and evolving knowledge base of workspace documentation (`confluence-workflow.md`).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for UD-31982.*
 

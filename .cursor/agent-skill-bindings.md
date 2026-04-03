@@ -19,6 +19,7 @@ All specialist behavior is defined in **`.cursor/skill-library/*.md`**. GitHub C
 | `bitbucket-automation` | `git-sync.md`, then `bitbucket-unify-enterprise.md` |
 | `slack-automation` | `slack-integration.md` *(append `slack-*.md` as needed)* |
 | `dev-customization` | `dev-customization-expertise.md`, then `dev-customization-workflow.md` |
+| `confluence-automation` | `confluence-workflow.md` *(append `confluence-*.md` as needed)* |
 
 ## Adding an agent
 
