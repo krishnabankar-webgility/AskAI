@@ -207,6 +207,13 @@ When the user asks to mark a **Story** Done:
 
 The worklog `timeSpent` always equals the subtask's **Original Estimate** (the value set in §2.3). If OE was never set, compute it using §2.2 first, set OE, then log the same duration.
 
+### 3.4 Remaining estimate when worklog equals OE (Done transition)
+
+When adding a worklog on a Done transition where **`timeSpent` should equal Original Estimate**, always set **`remainingEstimateSeconds`: `0`** in the worklog API payload so **Remaining** is zeroed out. Jira may otherwise leave a positive remaining estimate (e.g. prior remaining time minus logged time).
+
+- **REST worklog (`POST` / `PUT` /issue/{key}/worklog):** include `"remainingEstimateSeconds": 0` in the JSON body when logging the full OE.
+- **Atlassian MCP `addWorklogToJiraIssue`:** the tool schema may not expose `remainingEstimateSeconds`. If after logging, **`getJiraIssue`** shows `timeSpent` = `originalEstimate` but remaining time is still non-zero, run **`editJiraIssue`** with `fields.timetracking.remainingEstimate` = **`"0h"`** (or `"0m"`) and re-verify `timetracking`.
+
 ---
 
 ## 4. Status and Permissions
@@ -268,13 +275,110 @@ When the user describes an issue by **title fragment** (e.g. “adhock story”,
 
 ---
 
-## 7. Skill maintenance
+## 7. Customization Ready For Testing (RFT) Comment
+
+When the user asks to add an **RFT (Ready For Testing)** comment, follow these rules strictly.
+Reference comment: [UD-31982 comment 236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780).
+
+### 7.1 Where to post
+
+Post the RFT comment on the **Customer Issue** (e.g. UD-31982, issue type "Customer Issue"), **not** on the dev Story (e.g. UD-32097). The Customer Issue is the one QA monitors. Identify it from `issuelinks` on the Story (type "Relates", linked Customer Issue).
+
+### 7.2 When to add the comment
+
+Add **only** when the Jira issue status is (or is being transitioned to) **Ready For Testing**. The user will explicitly ask to post this comment.
+
+### 7.3 Comment format (mandatory template)
+
+Use **exactly** this ADF structure. Always **draft first in chat**, show to the user, ask for explicit confirmation, then post using `addCommentToJiraIssue`.
+
+```
+Hi @<QA Lead — default: Alok Mendhe> ,
+**Customization Details:**
+• <what the customization does — pull from Customer Issue description>
+• Customization Node : <NODE_NAME> with profileID
+• Build No : #<number> from <branch>
+• Testing Env : <environment name — e.g. CISQA2>
+• **Accounting:** <from Customer Issue — e.g. QuickBooks Desktop Enterprise US>
+• **Store:** <from Customer Issue — e.g. WooCommerce>
+
+### Limitations:
+• <limitation 1 — from Customer Issue description>
+• <limitation 2>
+• ...
+
+**Impacted Area :**
+• <area 1>
+• <area 2 — may include inline screenshots if user shares them>
+• ...
+
+Test Cases :
+• <test case 1>
+• <test case 2 — may have sub-bullets for sub-scenarios>
+  - <sub-case>
+  - <sub-case>
+• ...
+
+CC : @Hitesh Devashrayee @<additional CC the user specifies>
+```
+
+### 7.4 How to gather the data
+
+| Field | Source | Rule |
+|-------|--------|------|
+| **To (@mention at top)** | Default: `@Alok Mendhe` (`712020:aa018f8d-2c6b-43a1-a859-ce6dd2544059`) | Greeting line: `Hi @Alok Mendhe ,`. User may change the person. Use ADF `mention` node. |
+| **Customization Details** | Customer Issue description → "Customization Details" section | Bullet: what the customization does. Pull the text from the Customer Issue description. |
+| **Customization Node** | Branch diff or user provides | `SYNC_REORDERPOINT` with profileID, etc. If known from implementation, pre-fill. If not, ask. |
+| **Build No** | User provides | e.g. `#6190 from my local branch : 101/UD-31982-krishna`. **Never invent.** If not shared, ask. |
+| **Testing Env** | User provides | e.g. `CISQA2`, `Local`, `Staging`. If not shared, ask. |
+| **Accounting** | Customer Issue description → "Accounting" field | e.g. "QuickBooks Desktop Enterprise US." |
+| **Store** | Customer Issue description → "Store" field | e.g. "WooCommerce". |
+| **Limitations** | Customer Issue description → "Limitations" section | Bullet list, copy from the Customer Issue. |
+| **Impacted Area** | Agent-drafted, then user-confirmed | Agent shares its understanding of impacted areas. User confirms, edits, or adds. Include screenshots inline if user shares them. **Do not finalize without user confirmation.** |
+| **Test Cases** | Agent-drafted, then user-confirmed | Agent drafts test cases based on the customization functionality flow. May include sub-bullets for value-specific scenarios (empty / 0 / > 0). User confirms, edits, or adds. **Do not finalize without user confirmation.** |
+| **Screenshots** | User provides | Embed inline within the relevant section (e.g. under Impacted Area). If user does not share screenshots, omit. |
+| **CC (@mention at bottom)** | Default: `@Hitesh Devashrayee` (`5a4d00c0fed274297effdf04`). Additional defaults on customization issues: `@Tanay Khandelwal` (`60194dca47a954006935667c`), `@Aditya Farkya` (`712020:330a4c36-5f24-465a-9a87-837a5f664b74`) | Always at the bottom. User may add/remove CC names. |
+
+### 7.5 Workflow — always draft first, then post
+
+1. **Identify Customer Issue**: From the Story's `issuelinks`, find the linked Customer Issue key. Read it for description fields.
+2. **Gather**: Pull Customization Details, Accounting, Store, and Limitations from the Customer Issue description.
+3. **Ask for missing fields**: If Build No, Testing Env, or Customization Node are not provided, present each missing field and let the user provide or skip.
+4. **Draft Impacted Area**: Share your understanding of impacted areas based on the customization implementation. Ask the user to confirm or update.
+5. **Draft Test Cases**: Share your understanding of test cases from the customization functionality flow. Ask the user to confirm or update.
+6. **Draft full comment**: Present the complete comment to the user **in chat first** for review.
+7. **Confirm CC**: Show the default CC list and ask if the user wants to add or remove anyone.
+8. **Post**: Only after the user **explicitly confirms**, post the comment to the **Customer Issue** using `addCommentToJiraIssue`. Use ADF format with proper `mention` nodes for all @mentions so Jira sends notifications.
+
+### 7.6 @mention account IDs (known)
+
+| Person | Email | Account ID |
+|--------|-------|------------|
+| Krishna Bankar | krishna.bankar@webgility.com | `712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799` |
+| Alok Mendhe | alok.mendhe@webgility.com | `712020:aa018f8d-2c6b-43a1-a859-ce6dd2544059` |
+| Hitesh Devashrayee | hiteshd@webgility.com | `5a4d00c0fed274297effdf04` |
+| Tanay Khandelwal | — | `60194dca47a954006935667c` |
+| Aditya Farkya | — | `712020:330a4c36-5f24-465a-9a87-837a5f664b74` |
+
+When the user provides other names for CC or To, resolve them using `lookupJiraAccountId` before posting.
+
+### 7.7 What NOT to do
+
+- **Do not** post on the dev Story — always post on the **Customer Issue**.
+- **Do not** add verbose implementation details, file-level diffs, RCA, or code-level analysis unless the user explicitly asks.
+- **Do not** post the comment without showing the user first and getting explicit confirmation.
+- **Do not** fabricate Build No, Testing Env, or any field the user has not provided.
+- **Do not** skip the "draft first" step — always show in chat before posting to Jira.
+
+---
+
+## 8. Skill maintenance
 
 When a session surfaces a **repeatable rule**, **API quirk**, or **better JQL** (e.g. fuzzy sprint matching, optional SP), **update this file** in the same PR or follow-up commit so the `jira-automation` agent stays accurate. Prefer small, concrete edits over one-off chat-only instructions.
 
 ---
 
-## 8. Session notes file (scratch, not agent training)
+## 9. Session notes file (scratch, not agent training)
 
 Ephemeral analysis, one-off session summaries, or notes that **must not** become skill text may be written to:
 
@@ -286,7 +390,7 @@ Agents should **not** treat those files as authoritative workflow; they are for 
 
 ---
 
-## 9. Output Format
+## 10. Output Format
 
 After each operation, reply with:
 

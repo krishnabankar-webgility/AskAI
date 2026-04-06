@@ -22,6 +22,6 @@ If missing, report and stop.
 
 ## After the skill is loaded
 
-Follow the same workflow as **Cursor** `.cursor/agents/jira-automation.md` (Story Points optional, fuzzy sprint §1.9, output §9, ephemeral notes §8, **§1.11** no issue links Sub-task ↔ parent Story).
+Follow the same workflow as **Cursor** `.cursor/agents/jira-automation.md` (Story Points optional, fuzzy sprint §1.9, output §10, ephemeral notes §9, **§1.11** no issue links Sub-task ↔ parent Story, **§7** ready-for-testing comment with draft-first workflow).
 
 Registry: `.github/copilot/AGENT-SKILL-BINDINGS.md`.

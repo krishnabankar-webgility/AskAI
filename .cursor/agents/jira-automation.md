@@ -22,13 +22,14 @@ Before any analysis or Jira actions, **read the following file** using your file
 
 ## After the skill is loaded
 
-1. Identify the request type: **create issue**, **add subtasks**, **remove/delete subtask**, **move subtask**, **find/rename issue**, **mark done**, **sprint action**, or **other update**.
+1. Identify the request type: **create issue**, **add subtasks**, **remove/delete subtask**, **move subtask**, **find/rename issue**, **mark done**, **sprint action**, **ready-for-testing comment**, or **other update**.
 2. **Subtask structure changes:** If the user adds, removes, deletes, or moves subtasks under a Story, **after** the change you **must** run skill **§2.4**: re-count subtasks, recompute `(SP×8)/N`, and **update `originalEstimate` on every** subtask under each affected Story (same hours each). If SP is missing, say OE was not updated until SP is set.
 3. **Story Points:** Never required to proceed for non-OE work; set only if the user gives a value. For OE redistribution, SP must exist on the Story (§2.3–§2.4).
 4. **Sprint names:** If the user’s phrase is inexact, apply **§1.9 fuzzy matching** — assign when clearly best match; otherwise list candidates or ask.
 5. If required inputs are missing (work type, summary when creating from scratch, etc.), **ask** before proceeding.
 6. Execute using **Jira REST API** or **Jira/Atlassian MCP tools** when available.
-7. Follow the **output format** (skill **§9**). For ephemeral scratch notes not meant as skill, use `logs/agent-session-notes.log` or `.cursor/agent-session-notes.log` per skill **§8**.
+7. Follow the **output format** (skill **§10**). For ephemeral scratch notes not meant as skill, use `logs/agent-session-notes.log` or `.cursor/agent-session-notes.log` per skill **§9**.
 8. **Sub-tasks ↔ parent Story:** Use **parent** only — **never** create Jira issue links between a Sub-task and its parent Story (skill **§1.11**). Children already appear under **Subtasks** on the Story.
+9. **Ready-for-testing comment:** When the user asks to add a customization testing comment, follow skill **§7** strictly — use the concise template, draft in chat first, post only after user confirms. **Never** add verbose implementation details unless explicitly asked.
 
 Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.
