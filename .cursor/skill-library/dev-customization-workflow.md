@@ -27,3 +27,12 @@ Use this skill for **customer-specific customization** tasks in this repository.
 - Log **start/end** with profile id and total records.
 - Log **skip reasons** (no mapped/matched items, missing data).
 - Log and **bubble exceptions** with context.
+
+## Null vs zero discipline
+
+When a customization syncs a **nullable field** from QBD to an online store:
+
+1. **Distinguish absent from zero** at the download level — assign `Nothing` / `null` when the SDK property is absent.
+2. **Persist null** through the DAL — use `DBNull.Value` or `NULL` in SQL, not `"0"`.
+3. **Exclude null items** from the sync payload — do not send a default value; skip them entirely.
+4. **Audit DTO type changes** across all consumers before committing — especially NetSuite, POS, Canada/Australia VB files, and DAL insert/update paths.

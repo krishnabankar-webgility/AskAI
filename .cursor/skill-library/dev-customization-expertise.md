@@ -64,3 +64,26 @@ Use with **`dev-customization-workflow.md`** for customer-specific customization
 - Reuse **`UpdateProductOnStore`** contract for extension syncs.
 - Prefer deriving request items from **existing mapped/matched** logic.
 - Keep changes **profile gated** and **backward compatible**.
+
+## Nullable-field discipline for QBD download DTOs
+
+When customization flows introduce **nullable semantics** (e.g. "no value" vs "value is 0"), follow these rules:
+
+- **DB schema is truth:** If the DB column is `nvarchar NULL` or `float NULL`, the DTO property should be nullable (`double?`, `string`). Do not silently convert absent values to `0`.
+- **Download path:** In QuickBooksCommon.vb / QuickBooksCanada.vb / QuickBooksAustralia.vb, when a QBD SDK property (e.g. `ItemInventoryRet.ReorderPoint`) is `Nothing`, assign `Nothing` to the DTO — not `0`.
+- **Assembly / BuildPoint:** `GetAssemblyBuildPoint` returns `Double?` — `Nothing` when BuildPoint is absent.
+- **DAL save:** In `AccountingSoftwareDAL`, check `.HasValue` before saving; store `DBNull.Value` when null.
+- **Consumers:** For NetSuite or other integrations that require non-nullable `double`, use `.GetValueOrDefault()`.
+- **Sync exclusion:** When building sync payloads (e.g. `BuildReorderPointSyncItems`), skip items where the source value is `NULL` / `DBNull.Value` rather than sending a default.
+- **Cross-file blast radius:** Changing a DTO field type (e.g. `double` → `double?`) requires auditing all consumers: VB factories, Canada/Australia helpers, NetSuite parsers, POS files, DAL insert+update paths.
+
+## Reorder Point / Build Point sync (SYNC_REORDERPOINT_)
+
+- **Customization node:** `SYNC_REORDERPOINT_{ProfileID}` — profile-gated, WooCommerce only.
+- **Flow:** Button click → full QB item download → `GetQuickBooksItemsForReorderPoint` → `GetStoreItemsForReorderPoint` → `BuildReorderPointSyncItems` → `SynchronizeItems` via CIS.
+- **CustomFields:** The `ServiceSynchronizeItemsDTO.CustomFields` property carries the ReorderPoint value to CIS, which maps it to WooCommerce's **Low stock threshold** field.
+- **Key files:** `ctrlStoreProducts.cs`, `QuickBooksCommon.vb`, `InventoryController.cs`, `InventoryDAL.cs`, `AccountingSoftwareDAL.cs`, `QBItemDTO.cs`.
+- **Three scenarios:**
+  1. QBD has ReorderPoint/BuildPoint > 0 → syncs the value.
+  2. QBD has no ReorderPoint/BuildPoint → DB stores `NULL` → item **excluded** from sync.
+  3. QBD has ReorderPoint/BuildPoint = 0 → syncs `"0"` (clears the threshold on WooCommerce).

@@ -1,5 +1,7 @@
 # Agent → skill pack map
 
+> **Scope reminder:** This registry and all agents/skills listed here belong to the **AskAI project** (`AskAI/`). Agents under `Agentic_Unify-Enterprise/.github/agents/` (e.g. `eng-master`) are **reference-only** — never modified by AskAI agents.
+
 Cursor subagents do not support a native `skills: [...]` field. Each agent in `.cursor/agents/*.md` lists the paths it must **read first**; this file is the human-readable map (keep it in sync when you add agents or skills).
 
 **Master agent:** **`askai`** — reads the registry below plus **all** canonical skills when full context is needed (see `.cursor/agents/askai.md`).  
