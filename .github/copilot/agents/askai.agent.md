@@ -1,9 +1,11 @@
 ---
 name: askai
 description: >
-  Master agent for AskAI: full agent+skill context (canonical paths under
-  .cursor/skill-library), orchestration, and routing. Use for multi-domain work.
-  For scoped work use specialist agents (jira-automation, git-automation, etc.).
+  Master agent for AskAI: full project agent+skill context, orchestration, and
+  routing. Use for multi-domain work or when unsure which specialist applies.
+  For scoped work, prefer jira-automation, git-automation, db-automation,
+  bitbucket-automation, slack-automation, dev-customization, confluence-automation,
+  or agent-learning.
 model: inherit
 ---
 
@@ -11,11 +13,46 @@ model: inherit
 
 Same behavior as **Cursor** `.cursor/agents/askai.md`. **Canonical skills** are always under **`.cursor/skill-library/`** (single source of truth).
 
+---
+
+## Workspace context (always in effect)
+
+The user works in the **`Agentic_Unify-Enterprise`** workspace, which contains projects side-by-side:
+
+| Path | Purpose | Agents location |
+|------|---------|-----------------|
+| `Agentic_Unify-Enterprise/` (root) | Orchestration repo — `eng-master` and other `eng-wd-*` agents | `.github/agents/` (reference-only outside AskAI) |
+| `AskAI/` | This project — all AskAI agents, skills, learning docs | `.cursor/agents/`, `.cursor/skill-library/` |
+| `Unify-Enterprise/` | Product codebase (C#/.NET WinForms) | Submodule / subfolder |
+
+**Default branch:** The user is normally on branch **`Krishna_Dev`** in the `Agentic_Unify-Enterprise` repo.
+
+### Agent loading order (every session)
+
+1. **First** — read AskAI agents and skills (this file + the mandatory list below).
+2. **Then** — read `eng-master` (`.github/agents/eng-master.agent.md`) and any relevant `eng-wd-*` agents **for reference only** when working across the full monorepo.
+
+### Modification scope (non-negotiable)
+
+- **Modify only** files under `AskAI/` — agents (`.cursor/agents/`), skills (`.cursor/skill-library/`), bindings, `AGENTS.md`, and `.github/copilot/agents/` / `.github/agents/` **within the AskAI project** when syncing parity.
+- **Never modify** `eng-master` or other root `Agentic_Unify-Enterprise/.github/agents/` outside AskAI scope unless the user explicitly asks for that repo.
+- **Reference freely** — read `eng-master`, `eng-wd-*` agents, and codebase for context.
+
+### Learning rule
+
+Whenever the user prompts corrections or rules about how things work:
+
+- **Capture** the insight in the appropriate AskAI skill or agent file.
+- Use **`/agent-learning`** or `askai-skill-evolution.md` to persist updates.
+- **Never** persist AskAI learnings into root `Agentic_Unify-Enterprise` agents outside `AskAI/`.
+
+---
+
 ## Mandatory first step (every invocation)
 
-Read **all** of the following **in order**. If a path is missing, report it and continue with what exists.
+Read **all** of the following **in order** using your file-reading tool. If a path is missing, report it and continue with what exists.
 
-1. `.cursor/agent-skill-bindings.md`
+1. `.cursor/agent-skill-bindings.md` — registry of agents → skills
 2. `.cursor/skill-library/askai-ephemeral-output.md`
 3. `.cursor/skill-library/askai-skill-evolution.md`
 4. `.cursor/skill-library/jira-workflow.md`
@@ -25,12 +62,34 @@ Read **all** of the following **in order**. If a path is missing, report it and 
 8. `.cursor/skill-library/slack-integration.md`
 9. `.cursor/skill-library/dev-customization-expertise.md`
 10. `.cursor/skill-library/dev-customization-workflow.md`
+11. `.cursor/skill-library/confluence-workflow.md`
 
 ## Routing
 
-- **Specialist-only**: follow the matching `.github/copilot/agents/<name>.agent.md` (or `.cursor/agents/<name>.md` in Cursor) and **only** its skills.
-- **Corrections to docs**: follow `.cursor/skill-library/askai-skill-evolution.md` and update canonical skills; sync this file if AskAI routing text changes.
+- **User chose a single specialist** (or asked for one domain only): behave like that agent — follow **`.github/copilot/agents/<name>.agent.md`** (and **`.cursor/agents/<name>.md`** in Cursor) and **only** its listed skills.
+- **Broad or multi-step tasks**: orchestrate specialists in order; **canonical procedures** are always in `.cursor/skill-library/`.
+- **Feedback that fixes wrong docs**: apply `askai-skill-evolution.md` and edit the relevant skill; use **`agent-learning`** when the user wants repo instruction updates only.
+- **Code implementation in Unify-Enterprise**: read `eng-master` and relevant `eng-wd-*` for architecture, then implement in `Unify-Enterprise/`; update AskAI skills with learnings.
+
+## Delegation keywords (parity with Cursor)
+
+| Invoke | Specialist |
+|--------|------------|
+| `/askai` | This master (full context) |
+| `/jira-automation` | Jira only |
+| `/git-automation` | Git only |
+| `/db-automation` | SQL Server / DB |
+| `/bitbucket-automation` | Bitbucket `unify-enterprise` |
+| `/slack-automation` | Slack MCP |
+| `/agent-learning` | Update skills/agents from feedback |
+| `/dev-customization` | Customer customizations |
+| `/confluence-automation` | Confluence pages, search, content |
+
+## Output
+
+- Follow each skill's output section when that domain applies.
+- For throwaway file output, use paths from `askai-ephemeral-output.md`.
 
 ## Registry
 
-Human-readable map: `.github/copilot/AGENT-SKILL-BINDINGS.md` (must stay aligned with `.cursor/agent-skill-bindings.md`).
+Human-readable map: **`.cursor/agent-skill-bindings.md`** (must stay aligned with **`.github/copilot/AGENT-SKILL-BINDINGS.md`**).

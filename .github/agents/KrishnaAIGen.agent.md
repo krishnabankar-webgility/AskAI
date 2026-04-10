@@ -64,13 +64,19 @@ Continue working until the user request is **completely resolved**. Never stall 
 
 ## Subagents
 
-| Subagent | Prompt File | Skills / canonical path | Trigger Keywords |
-|----------|-------------|-------------------------|-----------------|
-| **AskAI** (master) | `.github/prompts/askai.prompt.md` | `.cursor/skill-library/` (all domains) | orchestration, multi-domain, full context, `/askai` |
-| **db-automation** | `.github/prompts/db-automation.prompt.md` | `.cursor/skill-library/db-restore.md` | `restore`, `database`, `backup`, `sql`, `sqlcmd`, `db`, `table`, `schema`, `.bak`, `.sql`, `delete db`, `drop db` |
-| **jira-automation** | `.github/prompts/jira-automation.prompt.md` | `.cursor/skill-library/jira-workflow.md` | `jira`, `story`, `subtask`, `sprint`, `issue`, `ticket`, `worklog`, `UD-`, `CUST-`, `estimate`, `create issue`, `log work` |
-| **git-automation** | `.github/prompts/git-automation.prompt.md` | `.cursor/skill-library/git-sync.md` | `commit`, `push`, `merge`, `git`, `develop`, `master`, `branch`, `sync`, `pull`, `rebase` |
-| **slack-automation** | `.github/copilot/agents/slack-automation.agent.md` | `.cursor/skill-library/slack-integration.md` | `slack`, `channel`, `message`, `send message`, `dm`, `direct message`, `notify`, `post to slack`, `slack notification`, `slack user` |
+Prefer **`.cursor/agent-skill-bindings.md`** and **`.github/copilot/AGENT-SKILL-BINDINGS.md`** for the full map. Summary:
+
+| Subagent | Prompt / agent file | Skills / canonical path | Trigger Keywords |
+|----------|---------------------|-------------------------|-----------------|
+| **AskAI** (master) | `.github/prompts/askai.prompt.md` · `.github/agents/AskAI.agent.md` | `.cursor/skill-library/` (all domains per `askai.md`) | orchestration, multi-domain, full context, `/askai` |
+| **db-automation** | `.github/prompts/db-automation.prompt.md` · `.github/copilot/agents/db-automation.agent.md` | `.cursor/skill-library/db-restore.md` | `restore`, `database`, `backup`, `sql`, `sqlcmd`, `db`, `.bak`, `.sql` |
+| **jira-automation** | `.github/prompts/jira-automation.prompt.md` · `.github/copilot/agents/jira-automation.agent.md` | `.cursor/skill-library/jira-workflow.md` | `jira`, `story`, `subtask`, `sprint`, `issue`, `UD-`, RFT, QA testing comment |
+| **git-automation** | `.github/prompts/git-automation.prompt.md` · `.github/copilot/agents/git-automation.agent.md` | `.cursor/skill-library/git-sync.md` | `commit`, `push`, `merge`, `git`, `develop`, `master`, `branch`, `sync` |
+| **bitbucket-automation** | `.github/copilot/agents/bitbucket-automation.agent.md` | `git-sync.md` + `bitbucket-unify-enterprise.md` | `bitbucket`, `unify-enterprise`, PR, `webgility` |
+| **slack-automation** | `.github/copilot/agents/slack-automation.agent.md` | `.cursor/skill-library/slack-integration.md` | `slack`, `channel`, `message`, `notify` |
+| **dev-customization** | `.github/copilot/agents/dev-customization.agent.md` | `dev-customization-expertise.md` + `dev-customization-workflow.md` | customization, `SYNC_`, profile gate, WooCommerce CIS |
+| **confluence-automation** | `.github/copilot/agents/confluence-automation.agent.md` | `.cursor/skill-library/confluence-workflow.md` | `confluence`, page, template, HubSpot handoff |
+| **agent-learning** | `.github/copilot/agents/agent-learning.agent.md` | `askai-skill-evolution.md` | update skill, persist correction, `/agent-learning` |
 
 ---
 
@@ -102,7 +108,11 @@ Without being asked, automatically:
 - **DB request** → load `db-automation.prompt.md` + `.cursor/skill-library/db-restore.md`
 - **Jira request** → load `jira-automation.prompt.md` + `.cursor/skill-library/jira-workflow.md` + **activate Jira MCP if available**
 - **Git request** → load `git-automation.prompt.md` + `.cursor/skill-library/git-sync.md`
+- **Bitbucket / unify-enterprise** → `.github/copilot/agents/bitbucket-automation.agent.md` + `git-sync.md` + `bitbucket-unify-enterprise.md`
 - **Slack request** → load `.github/copilot/agents/slack-automation.agent.md` + `.cursor/skill-library/slack-integration.md` + **activate Slack MCP if available**
+- **Confluence** → `.github/copilot/agents/confluence-automation.agent.md` + `confluence-workflow.md` + Atlassian MCP if available
+- **Customization / Unify-Enterprise feature** → `.github/copilot/agents/dev-customization.agent.md` + `dev-customization-expertise.md` + `dev-customization-workflow.md`
+- **Skill/agent doc updates** → `.github/copilot/agents/agent-learning.agent.md` + `askai-skill-evolution.md`
 - **Code request** → use codebase tools to find relevant files, classes, methods automatically
 - **Multi-domain** → orchestrate subagents in logical sequence
 - **Ambiguous** → perform a codebase search, infer intent, proceed with best judgment

@@ -27,4 +27,5 @@ Before analysis or Git actions against Bitbucket, **read all of the following fi
 4. For **unify-enterprise**: clone or use existing worktree; analyze code with normal file tools; run `dotnet` commands as applicable.
 5. For **PRs**: prefer push via Git, then `createDraftPullRequest` / PR review tools via Bitbucket MCP when available; otherwise give exact Bitbucket UI steps.
 
-Human-readable map: `.cursor/agent-skill-bindings.md`.
+Human-readable map: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot mirror: `.github/copilot/agents/bitbucket-automation.agent.md`.

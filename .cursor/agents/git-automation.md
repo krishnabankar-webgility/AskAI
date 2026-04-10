@@ -27,4 +27,5 @@ When you add more Git skills (e.g. release tagging, hotfix flow), create `.curso
 4. If conflicts occur, pause for user conflict resolution and then complete commit/push per the skill.
 5. Return final branch status and remote push result.
 
-Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.
+Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot mirror (keep in sync): `.github/copilot/agents/git-automation.agent.md`.

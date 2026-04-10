@@ -95,6 +95,8 @@ Confluence "folders" are a newer content type (distinct from pages). These are t
 | `3014819843` | Personal | Krishna Bankar (personal) | 2026-04-03 |
 | `3014361116` | Public | Krishna Bankar (personal) | 2026-04-03 |
 
+**Template container (under Public):** Atlassian MCP has **no** `createConfluenceFolder` tool. A **page** titled **`template`** (`3021045763`) sits under the **Public** folder and holds CS-facing template pages (same navigation goal as a subfolder). **Canonical pages:** **Customization Delivery** — ID `3021275138` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021275138/Customization+Delivery) · [tiny `AgAVt`](https://webgility.atlassian.net/wiki/x/AgAVt). **Comment for QA Testing** (RFT Jira comment) — ID `3021209607` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing) · [tiny `BwAUt`](https://webgility.atlassian.net/wiki/x/BwAUt).
+
 **Important:** Confluence folders use `type=folder` in CQL, not `type=page`. The v2 page API (`getConfluencePage`) returns 404 for folders. To find folders, use `searchConfluenceUsingCql` with `type=folder`.
 
 To create pages **inside** a folder, use `createConfluencePage` with `parentId` set to the folder's content ID.
@@ -118,6 +120,9 @@ These pages are in the personal space (space ID `2590998546`). The agent should 
 | `2930704420` | PO Detailed Workflow: Purchase Orders => Item Receipt => Bill Creation | `2900918273` | 2026-01-12 |
 | `2993487893` | Amazon Inventory Report Help Doc | `2590998867` | 2026-03-13 |
 | `3014885382` | ToDo Items & Questions | `3014819843` (Personal folder) | 2026-04-03 |
+| `3021045763` | template (CS template container page) | `3014361116` (Public folder) | 2026-04-10 |
+| `3021275138` | Customization Delivery | `3021045763` | 2026-04-10 |
+| `3021209607` | Comment for QA Testing | `3021045763` | 2026-04-10 |
 
 ### Page & Folder Hierarchy
 
@@ -128,6 +133,9 @@ Krishna Bankar Personal Space (2590998546)
 │   └── ToDo Items & Questions (3014885382)
 │
 ├── [folder] Public (3014361116)
+│   └── [page] template (3021045763)
+│       ├── Customization Delivery (3021275138)
+│       └── Comment for QA Testing (3021209607)
 │
 └── [page] Overview (2590998867)
     ├── Opening 32-bit .NET Framework Forms in 64-bit VS 2022
@@ -197,6 +205,74 @@ Common CQL queries the agent should use:
 ### 6. Organize pages (folder structure)
 
 Confluence now supports native folders (content type `folder`). Pages can be created inside folders using the folder's ID as `parentId`. To discover folders, use CQL with `type=folder`.
+
+### 7. Customization Delivery template (HubSpot + Customer Success)
+
+Use when the user asks for a **HubSpot note**, **CS installation handoff**, or **Customization Delivery** wording after dev + QA.
+
+**Source of truth (preferred):** Read the live Confluence page with `getConfluencePage` (`pageId` **`3021275138`** or tiny link segment **`AgAVt`**). That page stays aligned with CS-facing language and can be updated without code changes.
+
+**If MCP is unavailable:** Use the canonical outline below (same structure as the Confluence page).
+
+| Fill-in | Source |
+|--------|--------|
+| Custom Installer link | Release owner / approved artifact — **never invent** (see `jira-workflow.md` §7.4 Build No / installer rules). |
+| Customization Node / `<CustomizationNode>` | Implementation or branch; confirm with dev. |
+| Customization Details, Store, Accounting | Jira **Customer Issue** description (not only the dev Story). |
+| Use Cases & Limitations | Customer Issue **and** the Customer Issue **comment** containing the **QA testing template** / RFT notes. |
+| Note | Same QA comment, or “Will share separately” / omit if missing. |
+| CC: @hitesh @qa | Resolve to real people in HubSpot; in Confluence use `@mentions` as appropriate. |
+
+**Canonical template (markdown outline):**
+
+```
+Hi @cs team,
+
+Customization Completed and Ready for Installation:
+
+The development and testing for the requested customization have been completed. Please proceed with the installation of the offline installer shared via the link.
+
+<Custom Installer>
+
+Installation Instructions:
+After installing, add the custom node "<Customization Node>" to the APIconfig located in the XML folder.
+
+If CustomizationNode is already present, add this node as a comma-separated entry.
+
+<CustomizationNode>[Node1],[Node2]</CustomizationNode>
+
+e.g. <CustomizationNode>[node_<profileid>]</CustomizationNode>
+
+Now, the customization is ready for use.
+
+Customization Details:
+<from Jira Customer Issue>
+
+Store: <from Jira Customer Issue>
+Accounting: <from Jira Customer Issue>
+
+Use Cases & Limitations:
+<from Jira Customer Issue> and <from Customer Issue comment — QA testing template / RFT>
+
+Let us know if any further assistance is needed!
+
+Note:
+<from Customer Issue comment — QA testing template> or omit / "will share if not available"
+
+CC: @hitesh @qa
+```
+
+**Jira coordination:** The Customer Issue is often linked from the dev Story via **Relates** — see `jira-workflow.md` §7 (**Comment for QA Testing** / RFT) and Confluence §8 below (mirror page `3021209607`).
+
+### 8. Comment for QA Testing (RFT Jira comment template)
+
+Use when the user asks for a **Comment for QA Testing**, **RFT**, or **Ready For Testing** Jira comment on a customization **Customer Issue**.
+
+**Source of truth (preferred):** `getConfluencePage` with `pageId` **`3021209607`** (tiny **`BwAUt`**). Canonical URL: [Comment for QA Testing](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing).
+
+**Repo skill (must stay aligned):** `jira-workflow.md` **§7** — draft in chat, ADF mentions, post only on Customer Issue after confirmation.
+
+**Exemplar in Jira:** [UD-31982?focusedCommentId=236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780).
 
 ---
 

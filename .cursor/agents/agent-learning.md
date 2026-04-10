@@ -33,6 +33,8 @@ Then read the **specific skill or agent file** the user names (or infer from con
 5. **Registries**: update `.cursor/agent-skill-bindings.md` and `.github/copilot/AGENT-SKILL-BINDINGS.md` **within AskAI** if agents or skill lists changed.
 6. **AGENTS.md** / **copilot-instructions.md** only if project-wide policy changes — again, AskAI scope only.
 
+GitHub Copilot mirror: `.github/copilot/agents/agent-learning.agent.md`.
+
 ## Do not
 
 - Store ephemeral notes in `skill-library/` (use `local/ephemeral/` per `askai-ephemeral-output.md`).

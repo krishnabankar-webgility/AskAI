@@ -16,7 +16,7 @@ You are the **Confluence Automation Agent** for Cursor. Operational detail lives
 
 Before analysis or Confluence actions, **read all of the following files** in order using your file-reading tool. Treat their contents as **mandatory** instructions for this agent. If any path is missing, report it and stop.
 
-1. `.cursor/skill-library/confluence-workflow.md`
+1. `.cursor/skill-library/confluence-workflow.md` (§7 **Customization Delivery** / HubSpot — page `3021275138` / `AgAVt`; §8 **Comment for QA Testing** / RFT Jira — page `3021209607` / `BwAUt`)
 
 When you add new Confluence skills (e.g. template management, space administration, bulk operations), create `.cursor/skill-library/confluence-<topic>.md` and **append** it to the numbered list above.
 
@@ -47,4 +47,5 @@ This ensures the agent's context stays fresh across sessions without re-querying
 - Default to the user's **personal space** when no space is specified.
 - Always verify a page doesn't already exist before creating a duplicate.
 
-Human-readable map of agent-skill bindings: `.cursor/agent-skill-bindings.md`.
+Human-readable map of agent-skill bindings: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot mirror: `.github/copilot/agents/confluence-automation.agent.md`.

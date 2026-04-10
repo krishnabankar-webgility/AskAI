@@ -275,10 +275,13 @@ When the user describes an issue by **title fragment** (e.g. “adhock story”,
 
 ---
 
-## 7. Customization Ready For Testing (RFT) Comment
+## 7. Comment for QA Testing (Ready For Testing / RFT)
 
-When the user asks to add an **RFT (Ready For Testing)** comment, follow these rules strictly.
-Reference comment: [UD-31982 comment 236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780).
+When the user asks to add a **Comment for QA Testing**, **RFT (Ready For Testing)** comment, or **customization testing comment** for QA, follow these rules strictly.
+
+**Confluence mirror (CS templates / Public → template):** [Comment for QA Testing](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing) · page ID `3021209607` · tiny `BwAUt` — use `getConfluencePage` when drafting so wording matches the published template.
+
+**Exemplar in Jira:** [UD-31982 — focusedCommentId=236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780) (same structure as below).
 
 ### 7.1 Where to post
 
@@ -290,37 +293,50 @@ Add **only** when the Jira issue status is (or is being transitioned to) **Ready
 
 ### 7.3 Comment format (mandatory template)
 
-Use **exactly** this ADF structure. Always **draft first in chat**, show to the user, ask for explicit confirmation, then post using `addCommentToJiraIssue`.
+Use this **structure** in ADF (headings, bullets, mentions). Always **draft first in chat**, show to the user, ask for explicit confirmation, then post using `addCommentToJiraIssue`. Match the live pattern from [UD-31982 RFT comment](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780): greeting line, `Customization Details:` with hyphen bullets, `### Limitations:` heading, `Impacted Area :` with bullets, optional evidence blocks, `Test Cases :`, `CC :`.
 
 ```
 Hi @<QA Lead — default: Alok Mendhe> ,
-**Customization Details:**
-• <what the customization does — pull from Customer Issue description>
-• Customization Node : <NODE_NAME> with profileID
-• Build No : #<number> from <branch>
-• Testing Env : <environment name — e.g. CISQA2>
-• **Accounting:** <from Customer Issue — e.g. QuickBooks Desktop Enterprise US>
-• **Store:** <from Customer Issue — e.g. WooCommerce>
+Customization Details:
 
+- <what the customization does — pull from Customer Issue description>
+- Customization Node : <NODE_NAME> with profileID
+- Build No : #<number> from <branch>
+- Testing Env : <environment name — e.g. CISQA2>
+- Accounting: <from Customer Issue — e.g. QuickBooks Desktop Enterprise US>
+- Store: <from Customer Issue — e.g. WooCommerce>
 ### Limitations:
-• <limitation 1 — from Customer Issue description>
-• <limitation 2>
-• ...
 
-**Impacted Area :**
-• <area 1>
-• <area 2 — may include inline screenshots if user shares them>
-• ...
+- <limitation 1 — from Customer Issue description>
+- <limitation 2>
+- ...
+Impacted Area : 
 
-Test Cases :
-• <test case 1>
-• <test case 2 — may have sub-bullets for sub-scenarios>
+- <area 1 — e.g. Product module / navigation path>
+- <area 2 — may include inline screenshots if user shares them>
+- ...
+QBD Items : 
+
+<optional screenshots or short evidence — omit section if empty>
+
+WD Sync ReorderPoint :
+<optional line or screenshot>
+
+WooCommerce item : 
+<optional line or screenshot>
+
+Test Cases : 
+
+- <test case 1>
+- <test case 2 — sub-scenarios for empty / 0 / > 0 where applicable>
   - <sub-case>
   - <sub-case>
-• ...
+- ...
 
-CC : @Hitesh Devashrayee @<additional CC the user specifies>
+CC : @Hitesh Devashrayee @<additional CC the user specifies e.g. Tanay Khandelwal, Aditya Farkya>
 ```
+
+**ADF note:** Render `### Limitations:` as a heading node; use list items for bullets under `Customization Details`, `Impacted Area`, and `Test Cases`. Omit optional blocks (`QBD Items` / `WD Sync` / `WooCommerce item`) if the user has no evidence to attach.
 
 ### 7.4 How to gather the data
 
@@ -335,8 +351,9 @@ CC : @Hitesh Devashrayee @<additional CC the user specifies>
 | **Store** | Customer Issue description → "Store" field | e.g. "WooCommerce". |
 | **Limitations** | Customer Issue description → "Limitations" section | Bullet list, copy from the Customer Issue. |
 | **Impacted Area** | Agent-drafted, then user-confirmed | Agent shares its understanding of impacted areas. User confirms, edits, or adds. Include screenshots inline if user shares them. **Do not finalize without user confirmation.** |
+| **QBD Items / WD Sync / WooCommerce item** | User provides optional evidence | Optional blocks after **Impacted Area** for screenshots or one-line notes (see §7.3). Omit entire blocks if nothing to show. |
 | **Test Cases** | Agent-drafted, then user-confirmed | Agent drafts test cases based on the customization functionality flow. May include sub-bullets for value-specific scenarios (empty / 0 / > 0). User confirms, edits, or adds. **Do not finalize without user confirmation.** |
-| **Screenshots** | User provides | Embed inline within the relevant section (e.g. under Impacted Area). If user does not share screenshots, omit. |
+| **Screenshots** | User provides | Embed inline within **Impacted Area** or under **QBD Items** / **WD Sync** / **WooCommerce item** as in §7.3. If user does not share screenshots, omit those blocks. |
 | **CC (@mention at bottom)** | Default: `@Hitesh Devashrayee` (`5a4d00c0fed274297effdf04`). Additional defaults on customization issues: `@Tanay Khandelwal` (`60194dca47a954006935667c`), `@Aditya Farkya` (`712020:330a4c36-5f24-465a-9a87-837a5f664b74`) | Always at the bottom. User may add/remove CC names. |
 
 ### 7.5 Workflow — always draft first, then post

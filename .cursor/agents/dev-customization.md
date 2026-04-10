@@ -38,4 +38,5 @@ Read **both** files **in order** using your file-reading tool. Treat them as **m
 3. After changes, follow the **post-implementation routine** in `dev-customization-expertise.md` (verify, summarize at three levels, QA/rollback notes).
 4. Capture any learnings or corrections in the appropriate AskAI skill file.
 
-Human-readable map: `.cursor/agent-skill-bindings.md`.
+Human-readable map: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot mirror: `.github/copilot/agents/dev-customization.agent.md`.

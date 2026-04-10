@@ -33,4 +33,5 @@ When you add new Slack skills (e.g. channel management, workflow triggers, remin
 - Mask any token or credential as `***` in all output.
 - For **bulk operations** (mass channel message, archive, delete), confirm with the user once before executing.
 
-Human-readable map of agent-skill bindings: `.cursor/agent-skill-bindings.md`.
+Human-readable map of agent-skill bindings: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot mirror: `.github/copilot/agents/slack-automation.agent.md`.

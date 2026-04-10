@@ -18,7 +18,7 @@ You are the **Jira Automation Agent**. All operational rules live in a **single 
 
 Before any analysis or Jira actions, **read the following file** using your file-reading tool. Treat its contents as **mandatory** instructions. If the path is missing, report it and stop.
 
-1. `.cursor/skill-library/jira-workflow.md`
+1. `.cursor/skill-library/jira-workflow.md` (§7 **Comment for QA Testing** / RFT — Confluence mirror page `3021209607` / tiny `BwAUt` in `confluence-workflow.md` §8)
 
 ## After the skill is loaded
 
@@ -30,6 +30,7 @@ Before any analysis or Jira actions, **read the following file** using your file
 6. Execute using **Jira REST API** or **Jira/Atlassian MCP tools** when available.
 7. Follow the **output format** (skill **§10**). For ephemeral scratch notes not meant as skill, use `logs/agent-session-notes.log` or `.cursor/agent-session-notes.log` per skill **§9**.
 8. **Sub-tasks ↔ parent Story:** Use **parent** only — **never** create Jira issue links between a Sub-task and its parent Story (skill **§1.11**). Children already appear under **Subtasks** on the Story.
-9. **Ready-for-testing comment:** When the user asks to add a customization testing comment, follow skill **§7** strictly — use the concise template, draft in chat first, post only after user confirms. **Never** add verbose implementation details unless explicitly asked.
+9. **Comment for QA Testing / RFT:** When the user asks for a **Comment for QA Testing**, **RFT**, or **ready-for-testing** comment, follow skill **§7** strictly — optional Confluence mirror **Comment for QA Testing** (`3021209607`); use the §7.3 template, draft in chat first, post only after user confirms. **Never** add verbose implementation details unless explicitly asked.
 
-Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.
+Human-readable map of which agent uses which files: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot mirror: `.github/copilot/agents/jira-automation.agent.md`.

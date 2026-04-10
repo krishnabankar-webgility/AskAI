@@ -1,12 +1,35 @@
-# Copilot Instructions
+# Copilot Instructions (AskAI project)
 
-## Project Guidelines
-- **Canonical skills** live in **`.cursor/skill-library/*.md`**. GitHub Copilot agents (`.github/copilot/agents/*.agent.md`) **must reference those paths** so Cursor, VS Code, and Copilot stay aligned.
-- Custom agents for the editor list: **`.github/agents/`** (e.g. `AskAI.agent.md`).
+## Canonical source
+
+- **Skills:** **`.cursor/skill-library/*.md`** — single source of truth for Jira, Git, DB, Bitbucket, Slack, dev customization, Confluence, and meta (`askai-*.md`).
+- **Cursor agents:** **`.cursor/agents/*.md`** — full behavioral specs; **mandatory read lists** drive what each specialist loads.
+- **GitHub Copilot agents:** **`.github/copilot/agents/*.agent.md`** — must mirror **`.cursor/agents/*.md`** (same names, same skill paths, same routing). When you change behavior, update **`.cursor/skill-library/`** first, then Copilot wrappers per **`.cursor/skill-library/askai-skill-evolution.md`**.
+- **VS Code agent picker:** **`.github/agents/AskAI.agent.md`** — master summary; specialists are listed in **`.cursor/agent-skill-bindings.md`** and **`.github/copilot/AGENT-SKILL-BINDINGS.md`** (keep both registries aligned).
+
+## Specialist agents (parity)
+
+| Agent | Canonical skills (`.cursor/skill-library/`) |
+|-------|--------------------------------|
+| `askai` | All core skills (see `.cursor/agents/askai.md` ordered list) |
+| `agent-learning` | `askai-skill-evolution.md` + targets being edited |
+| `jira-automation` | `jira-workflow.md` |
+| `git-automation` | `git-sync.md` |
+| `db-automation` | `db-restore.md` |
+| `bitbucket-automation` | `git-sync.md`, `bitbucket-unify-enterprise.md` |
+| `slack-automation` | `slack-integration.md` |
+| `dev-customization` | `dev-customization-expertise.md`, `dev-customization-workflow.md` |
+| `confluence-automation` | `confluence-workflow.md` |
+
+## Project rules
+
 - Always ask for missing required inputs before taking action.
 - Never store credentials, passwords, or connection strings in repo files.
-- Use Jira/Atlassian MCP tools when available for Jira operations.
+- Use Jira/Atlassian MCP tools when available for Jira operations; Atlassian MCP for Confluence.
 - Use `sqlcmd` for SQL Server operations; ask for server instance if not provided.
-- Mask secrets (`***`) in all output — never repeat full passwords.
+- Mask secrets (`***`) in all output.
 - **One-off / throwaway files** go under **`local/ephemeral/`** (gitignored) or `logs/` — not under `src/` or tracked docs unless the user wants them committed.
-- When behavior changes, update **`.cursor/skill-library/`** first, then sync agent wrappers per **`.cursor/skill-library/askai-skill-evolution.md`**.
+
+## Legacy
+
+The folder **`.github/copilot/skills/jira-automation/`** is **deprecated** in favor of **`.cursor/skill-library/jira-workflow.md`**.

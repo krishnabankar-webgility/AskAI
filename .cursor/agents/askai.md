@@ -88,4 +88,5 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 | `/dev-customization` | Customer customizations: minimal change, profile gating, sync reuse |
 | `/confluence-automation` | Confluence pages, search, content management |
 
-Human-readable registry: `.cursor/agent-skill-bindings.md`.
+Human-readable registry: `.cursor/agent-skill-bindings.md`.  
+GitHub Copilot / VS Code master mirror: `.github/copilot/agents/askai.agent.md` and `.github/agents/AskAI.agent.md`.
