@@ -2,196 +2,159 @@
 
 Use this skill when restoring `.bak` / `.sql` / `.sql.gz` backups to SQL Server for debugging, testing, or customer data investigation.
 
-## SQL Server instance (no default in repo)
+## Preferred sqlcmd client
 
-**There is no baked-in server name** in this skill or the db-automation agent. For every `sqlcmd` `-S`, connection string, and any CREATE / ALTER / UPDATE / DELETE / DROP, use the instance the **user provides** in the session (e.g. `localhost`, `localhost\SQLEXPRESS`, `MACHINE\INSTANCE`).
+Use the **Go-based sqlcmd** (`winget install sqlcmd`, v1.9+). The legacy ODBC-based `sqlcmd` fails with **`SQLCMD.rll`** missing on some machines. If `sqlcmd --version` shows `go-sqlcmd`, you are on the correct binary. Always pass **`-C`** (trust server certificate) for local/dev instances with self-signed certs.
 
-- If the user omits it, **ask** before running commands.  
-- **Shell:** always quote instance names that contain `\`: `-S "<sql_server>"`.  
-- **Connection strings (Windows auth):**  
-  `Server=<sql_server>;Database=<db>;Trusted_Connection=True;TrustServerCertificate=True;`  
-- Use the **same** `<sql_server>` for the whole workflow once supplied.  
-- In command snippets below, **substitute** the user’s real instance (e.g. `MYPC\SQLEXPRESS`) for the placeholder **`<sql_server>`**—do not paste the angle brackets literally.
+## SQL Server connection — environment variables first
+
+Connection parameters are stored in **user-level environment variables** so credentials never appear in repo files:
+
+| Env var | Purpose | Example |
+|---------|---------|---------|
+| `SQLCMD_SERVER` | SQL Server instance (`-S`) | `WGIN-NTB-276\SQLEXPRESS` |
+| `SQLCMD_USER` | SQL auth login (`-U`) | `sa` |
+| `SQLCMD_PASSWORD` | SQL auth password (`-P`) | *(set by user, never logged)* |
+
+**Setup (run once per machine — PowerShell):**
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("SQLCMD_SERVER", "<instance>", "User")
+[System.Environment]::SetEnvironmentVariable("SQLCMD_USER", "<login>", "User")
+[System.Environment]::SetEnvironmentVariable("SQLCMD_PASSWORD", "<password>", "User")
+```
+
+**Reload into current session:**
+
+```powershell
+$env:SQLCMD_SERVER   = [System.Environment]::GetEnvironmentVariable("SQLCMD_SERVER","User")
+$env:SQLCMD_USER     = [System.Environment]::GetEnvironmentVariable("SQLCMD_USER","User")
+$env:SQLCMD_PASSWORD = [System.Environment]::GetEnvironmentVariable("SQLCMD_PASSWORD","User")
+```
+
+**Usage in every sqlcmd call:**
+
+```powershell
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "<sql>"
+```
+
+- If env vars are **not set**, **ask** the user for server, auth method, and credentials before running commands.
+- **Windows integrated auth** (`-E`) is still supported — omit `-U`/`-P` and skip user/password env vars.
+- Use the **same** instance for the whole workflow once supplied.
 
 ## Database and table naming (user input)
 
-- The user will provide the **database (catalog) name** and **table name(s)** when they care about specific objects (verification queries, targeted checks).  
-- If they only give a **backup path** and want the restored database to match the file name, use the **file name without extension** as `<db_name>` (e.g. `D:\HubSpotDBs\997.bak` → database **`997`**).
+- The user will provide the **database (catalog) name** and **table name(s)** when they care about specific objects.
+- If they only give a **backup path**, use the **file name without extension** as `<db_name>` (e.g. `D:\HubSpotDBs\997.bak` → database **`997`**).
 
 ## Role
 
-Help restore backups to the developer’s SQL Server, verify success, run sanity queries, and troubleshoot common restore issues.
-
-## Why restore might fail from Cursor (not “missing saved passwords”)
-
-Restoring a `.bak` is done by running **T-SQL** (`RESTORE DATABASE`, etc.) through a tool that talks to SQL Server. The agent can only do that if **all** of the following are true on the machine where the terminal runs:
-
-1. **A working client** — `sqlcmd` must **start** without errors. If you see **`Failed to load resource file SQLCMD.rll`**, the **SQL command-line tools are broken or incomplete** on that PC. No username or password will fix that until you repair/reinstall **SSMS** or **SQL Server Command Line Utilities** so `SQLCMD.rll` sits beside `sqlcmd.exe`. Alternatively use **SSMS** and run the same SQL manually.
-2. **Network / instance** — The machine running the client must reach **the SQL Server instance the user named** (firewall, SQL Browser if needed, TCP enabled, etc.).
-3. **Backup readable by SQL Server** — The **SQL Server service account** must have **read** permission on the `.bak` path (e.g. `D:\HubSpotDBs\...`). “Access denied” is often this, not your Windows login.
-4. **Permission to restore** — The login you use (Windows or SQL) needs rights to restore (typically **sysadmin** or **dbcreator** per your org).
-
-So: a common blocker is **(1)** — `sqlcmd` fails **before** connecting (e.g. missing `SQLCMD.rll`), so credentials are not the issue yet. Fix the client or use **SSMS** against the user’s instance.
+Help restore backups to the developer's SQL Server, verify success, run sanity queries, and troubleshoot common restore issues.
 
 ## Authentication and secrets (mandatory policy)
 
-- **Never** write usernames, passwords, or connection strings with secrets into the **repo** (no committed `.md`, `.json`, scripts, or agent files).
-- **Ask when needed:** If auth isn’t clear, ask whether to use **Windows integrated** (`sqlcmd -E` — uses whoever is logged into Windows) or **SQL Server authentication** (`-U` / `-P`). For SQL auth, the user must supply the password **only in this chat session** or type it in **SSMS** / a secure prompt themselves—**do not** paste it into tracked files.
+- **Never** write usernames, passwords, or connection strings with secrets into the **repo**.
+- Credentials are read from **environment variables** (`$env:SQLCMD_SERVER`, `$env:SQLCMD_USER`, `$env:SQLCMD_PASSWORD`).
 - In replies, **mask** secrets (`***`) and do not repeat full passwords.
 
 ## Prerequisites check
 
 Before starting any restoration, verify:
 
-- `sqlcmd` CLI is installed (`sqlcmd -?` or `sqlcmd --version`)
-- SQL Server is running and reachable at **`<sql_server>`** (from the user)
-- User has Windows Auth (`-E`) or SQL Auth (`-U`/`-P`) as needed
-- The backup/dump file exists and is accessible
-- The **SQL Server service account** has read access to the backup file path (common failure on `D:\...` drives)
+- `sqlcmd --version` returns go-sqlcmd v1.9+; if legacy sqlcmd fails with `SQLCMD.rll`, install Go-based: `winget install sqlcmd`
+- Environment variables are set: `$env:SQLCMD_SERVER`, `$env:SQLCMD_USER`, `$env:SQLCMD_PASSWORD`
+- SQL Server is running and reachable
+- The backup file exists and is accessible
+- The SQL Server service account has read access to the backup file path
 
 ## Restoration workflow
 
-### Step 1: Information gathering
+### Step 1: Information gathering — ALWAYS ASK
 
-Ask the user for (skip items already provided in the prompt):
+**Always ask the user for these two items** (each restore is unique):
 
-1. **SQL Server instance** (`<sql_server>`) — **required** if not in the prompt (no default in repo)
+1. **Database name** (`<db_name>`) — the target database to create/restore
 2. **Backup file path** (full path to `.bak`, `.sql`, or `.sql.gz`)
-3. **Target database name** — if omitted, **default:** stem of the backup file (e.g. `997.bak` → `997`)
-4. **Optional:** **Table name(s)** or schema for post-restore checks
-5. **Authentication** — If not stated, **ask:** Windows integrated (`-E`) or SQL login (`-U` login name + password **in session only**, never saved to repo). Explain that `-E` does not take a Windows password on the command line—the user must be logged into Windows as the right account, or use SSMS with the right identity.
+
+**Read from environment** (do not ask if env vars are set):
+
+3. **SQL Server instance** — `$env:SQLCMD_SERVER` (if not set, ask)
+4. **Authentication** — `$env:SQLCMD_USER` / `$env:SQLCMD_PASSWORD` (if not set, ask)
 
 ### Step 2: Database preparation
 
-Drop the existing database if it exists (**confirm with the user first** when data loss is possible):
+Drop the existing database if it exists (**confirm with the user first**):
 
-```bash
-sqlcmd -S "<sql_server>" -E -Q "IF DB_ID('<db_name>') IS NOT NULL BEGIN ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [<db_name>]; END"
-```
-
-For SQL Authentication, replace `-E` with `-U sa -P ***`:
-
-```bash
-sqlcmd -S "<sql_server>" -U sa -P "***" -Q "IF DB_ID('<db_name>') IS NOT NULL BEGIN ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [<db_name>]; END"
+```powershell
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "IF DB_ID('<db_name>') IS NOT NULL BEGIN ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [<db_name>]; END"
 ```
 
 ### Step 3: Restore the backup
 
-**For native SQL Server backups (`.bak`):**
-
 First, inspect the backup for logical file names:
 
-```bash
-sqlcmd -S "<sql_server>" -E -Q "RESTORE FILELISTONLY FROM DISK = N'D:\path\to\backup.bak'"
+```powershell
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "RESTORE FILELISTONLY FROM DISK = N'<backup_path>'"
 ```
 
-Then restore with **MOVE** into this instance’s **DATA** folder. On Windows, paths usually look like  
-`C:\Program Files\Microsoft SQL Server\MSSQL<ver>.SQLEXPRESS\MSSQL\DATA\` — pick the folder that matches this instance (same folder other user databases use). If unsure, infer from `RESTORE FILELISTONLY` / `sys.master_files` on `master`.
+Determine the instance DATA folder:
 
-```cmd
-sqlcmd -S "<sql_server>" -E -Q "RESTORE DATABASE [<db_name>] FROM DISK = N'D:\path\to\backup.bak' WITH MOVE N'<logical_data>' TO N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\<db_name>.mdf', MOVE N'<logical_log>' TO N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\<db_name>_log.ldf', REPLACE, RECOVERY, STATS = 10"
+```powershell
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "SELECT physical_name FROM sys.master_files WHERE database_id = 1"
 ```
 
-Adjust **`MSSQL16`** to the installed version if different.
+Restore with MOVE:
 
-**Linux / Docker SQL Server** (if ever used on another machine): use `/var/opt/mssql/data/` in `MOVE` paths instead.
-
-**For plain SQL script files (`.sql`):**
-
-```bash
-sqlcmd -S "<sql_server>" -E -d <db_name> -i D:\path\to\dump.sql
-```
-
-**For compressed SQL scripts (`.sql.gz`)** (Linux/macOS-style pipe; on Windows use 7-Zip or WSL to decompress first, or expand then run `-i`):
-
-```bash
-sqlcmd -S "<sql_server>" -E -Q "CREATE DATABASE [<db_name>]"
-gunzip < /path/to/dump.sql.gz | sqlcmd -S "<sql_server>" -E -d <db_name>
+```powershell
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "RESTORE DATABASE [<db_name>] FROM DISK = N'<backup_path>' WITH MOVE N'<logical_data>' TO N'<data_folder>\<db_name>.mdf', MOVE N'<logical_log>' TO N'<data_folder>\<db_name>_log.ldf', REPLACE, RECOVERY, STATS = 10"
 ```
 
 ### Step 4: Verification
 
-Use the user-supplied **`<sql_server>`** and the restored **database name**. When the user supplied **table name(s)**, run targeted `SELECT` or row counts on those objects.
-
-```bash
-sqlcmd -S "<sql_server>" -E -d <db_name> -Q "SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME"
-
-sqlcmd -S "<sql_server>" -E -d <db_name> -Q "SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'"
-
-sqlcmd -S "<sql_server>" -E -d <db_name> -Q "SELECT s.name AS SchemaName, t.name AS TableName, p.rows AS RowCount FROM sys.tables t INNER JOIN sys.schemas s ON t.schema_id = s.schema_id INNER JOIN sys.partitions p ON t.object_id = p.object_id AND p.index_id IN (0, 1) ORDER BY p.rows DESC"
-
-sqlcmd -S "<sql_server>" -E -Q "EXEC sp_helpdb N'<db_name>'"
+```powershell
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -d <db_name> -Q "SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'"
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "EXEC sp_helpdb N'<db_name>'"
 ```
 
-### Step 5: Summary
+### Step 5: Summary and log
 
-Provide:
+Provide: Database, Restored from, Server, Table count, Connection string (passwords masked).
 
-- Database: `<db_name>`
-- Restored from: `<file_path>`
-- Server: `<sql_server>` (as provided by the user)
-- Tables / checks run (include user-specified tables if any)
-- Connection string: `Server=<sql_server>;Database=<db_name>;Trusted_Connection=True;TrustServerCertificate=True;`
-- SQL Auth variant if applicable: `Server=<sql_server>;Database=<db_name>;User Id=...;Password=***;TrustServerCertificate=True;`
+After every successful restore, **append** an entry to `logs/db-restore-log.md` with date, database, backup path, commands used (passwords masked), and lessons learned.
 
 ## Constraints
 
-- **DO NOT** delete or modify **production** databases unless the user clearly targets production and confirms.
-- **DO NOT** proceed without explicit confirmation for **DROP DATABASE** when it destroys existing data.
-- **DO NOT** expose passwords in output—use `***` or prompt separately.
+- **DO NOT** modify production databases without explicit confirmation.
+- **DO NOT** expose passwords—use `***`.
 - **DO NOT** restore over system databases (`master`, `msdb`, `model`, `tempdb`).
-- Use the **same** **`<sql_server>`** the user gave for all commands in the session—do not switch instances mid-restore without confirmation.
+- **DO NOT** hardcode server names, usernames, or passwords in repo files—always use `$env:SQLCMD_*`.
 
 ## Common issues and solutions
 
+### Issue: "Failed to load resource file SQLCMD.rll"
+
+**Solution:** Install Go-based sqlcmd: `winget install sqlcmd`. Verify with `sqlcmd --version`.
+
 ### Issue: "Login failed for user"
 
-**Solution:** Verify credentials. For Windows Auth ensure the current Windows user is allowed on that instance. For SQL Auth ensure `sa` (or user) is enabled. Mixed Mode required for SQL Auth.
+**Solution:** Check env vars. Ensure SQL Auth and Mixed Mode are enabled.
 
 ### Issue: "Database is in use"
 
-**Solution:** Set single-user mode first:
+**Solution:** `ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;`
 
-```sql
-ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-```
+### Issue: "Operating system error 5 (Access denied)"
 
-### Issue: "Command not found: sqlcmd"
-
-**Solution:** Install SQL Server command-line utilities and ensure `sqlcmd` is on PATH.
-
-### Issue: "Failed to load resource file SQLCMD.rll"
-
-**Solution:** The `sqlcmd` install is incomplete (common with a partial Client SDK). Repair via **SQL Server Installer** (add **Command Line Utilities**), install a recent **SQL Server Management Studio (SSMS)** build, or run the same commands from another machine that has a working `sqlcmd`. On this host, the instance data folder for **SQLEXPRESS** may be under `C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\` (version folder varies—confirm on disk).
-
-### Issue: "Backup file not found" or "Operating system error 5 (Access denied)"
-
-**Solution:** Confirm path. Ensure the **SQL Server service account** can read the file (e.g. `D:\HubSpotDBs\...`).
+**Solution:** Ensure the SQL Server service account can read the backup path.
 
 ### Issue: "Logical file name mismatch"
 
 **Solution:** Run `RESTORE FILELISTONLY` and use exact logical names in `MOVE`.
-
-### Issue: Backup version incompatible with server
-
-**Solution:** Restore only to same or newer SQL Server; check `SELECT @@VERSION`.
-
-### Issue: Exit code 1 during restore
-
-**Solution:** Check SQL Server error log and backup integrity.
 
 ## Output format
 
 Always end with:
 
 1. Status of each step (pass or fail)
-2. Connection details (Windows Auth string; SQL Auth if used)
-3. Next steps (e.g. ready to query, or name tables to validate next)
-
-## Best practices
-
-- Always `RESTORE FILELISTONLY` before `.bak` restores.
-- Use `WITH REPLACE` only after user confirmation when overwriting an existing database.
-- Use `WITH STATS = 10` on large restores.
-- Prefer `INFORMATION_SCHEMA` / `sys.*` for metadata.
-- If MCP SQL Server is configured for this host, you may query via MCP **to the same server** instead of CLI.
+2. Connection details (passwords masked)
+3. Next steps

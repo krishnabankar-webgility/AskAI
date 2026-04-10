@@ -210,23 +210,28 @@ Confluence now supports native folders (content type `folder`). Pages can be cre
 
 Use when the user asks for a **HubSpot note**, **CS installation handoff**, or **Customization Delivery** wording after dev + QA.
 
-**Source of truth:** `getConfluencePage` (`pageId` **`3021275138`**, tiny **`AgAVt`**) — [Customization Delivery](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021275138/Customization+Delivery). The page body is **only** the CS note template (no extra “Purpose” or agent instructions on that page).
+**Source of truth:** `getConfluencePage` (`pageId` **`3021275138`**, tiny **`AgAVt`**) — [Customization Delivery](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021275138/Customization+Delivery). The page is **template only**: bracketed `[FILL …]` / `[INSERT …]` placeholders and fixed boilerplate — **no** pre-filled example from a specific customer or Jira key. Each new customization **replaces every placeholder** from the **current** Customer Issue and release; **never** copy body text from a different ticket or prior note.
 
 **Agent output rules (mandatory):**
 
-1. Reply with **only** the filled template text — same sections and order as the Confluence page. **No** extra preamble, closing commentary, Jira URLs, or “References” blocks unless the user explicitly asks for them.
-2. **Custom installer** line: paste the real installer URL from release when known — **never invent** (see `jira-workflow.md` §7.4). If missing, output the word **`Custom installer`** on its own line (placeholder) and **ask only for the missing link** in one short sentence.
-3. Adjust **Customization Details**, **Use Cases & Limitations**, and **Note** only when the Jira Customer Issue (or QA/RFT comment) requires different bullets; keep the same headings and brevity.
-4. **CC:** leave as `CC:` or add @mentions only when the user or issue specifies names.
+1. Start from the Confluence template **structure** (same section titles and order). **Replace** all `[FILL …]` / `[INSERT …]` lines with content from the **active** Jira Customer Issue (and installer URL from release). Output **only** that filled note — no preamble, no “here is your note”, no Jira URLs unless the user asks.
+2. **Installer URL:** from release / build owner — **never invent** (`jira-workflow.md` §7.4). If unknown, keep the `[INSERT INSTALLER URL …]` line and ask **only** for that link.
+3. **Do not** paste a previous customization’s Details, Limitations, or Note into a new ticket — always pull fresh from the **current** issue.
+4. **CC:** add @mentions only when specified by the user or issue; otherwise leave `CC:` empty or as given.
 
 **If MCP is unavailable**, use the canonical template below (must match Confluence).
 
-| Fill-in | Source |
-|--------|--------|
-| Custom installer URL | Release / build owner — **never invent** |
-| Per-customization bullets | Jira **Customer Issue** + QA/RFT comment only when they differ from the template defaults |
+| Placeholder | Source (per ticket) |
+|-------------|---------------------|
+| `[INSERT INSTALLER URL …]` | Approved offline installer for **this** build only |
+| `[SHORT FEATURE LABEL …]` | Jira / implementation summary phrase |
+| `[NODE_PREFIX]`, ProfileID | Development (customization node name) |
+| Customization Details + direction lines | Jira **Customer Issue** description |
+| Store / Accounting | Jira Customer Issue fields |
+| Use Cases & Limitations | Jira Customer Issue — **rewrite each time** |
+| Note | Customer Issue or QA/RFT comment, or omit |
 
-**Canonical template (must match Confluence page):**
+**Canonical template (placeholder version — must match Confluence page):**
 
 ```
 Hi ,
@@ -237,41 +242,37 @@ Development and testing for this customization are complete. Please install the 
 
 Custom installer
 
+[INSERT INSTALLER URL — use the approved build for this release only; do not reuse another customer or ticket's link]
+
 Installation Instructions
 
 Install Webgility Desktop from the installer link above.
 
 Open APIconfig in the XML folder under the Webgility install path.
 
-Add the customization node for Reorder Point sync (profile-specific):
+Add the customization node for [SHORT FEATURE LABEL — from Jira / implementation] (profile-specific):
 
 If <CustomizationNode> already exists, add this entry as a comma-separated value.
 
-Use: SYNC_REORDERPOINT_<ProfileID> (e.g. profile 1 → SYNC_REORDERPOINT_1).
+Use: [NODE_PREFIX]_<ProfileID> — replace NODE_PREFIX with the node name from development, and <ProfileID> with the customer's profile number (example: YOURNODE_1 for profile 1).
 
 Customization Details
 
-Sync QuickBooks Reorder Point (inventory items) and Build Point (assembly items) to WooCommerce Low stock threshold (CIS / bulk sync path).
+[FILL from Jira Customer Issue description: what the customization does, scope, data flow. New ticket = new text.]
 
-One-way: QuickBooks Desktop → WooCommerce only.
+[FILL: one-way vs other direction; which systems — from Jira.]
 
-Store: WooCommerce
+Store: [FILL from Jira]
 
-Accounting: QuickBooks Desktop Enterprise US
+Accounting: [FILL from Jira]
 
 Use Cases & Limitations
 
-One-way sync only (no reverse sync).
-
-Manual bulk sync (Inventory → All Products style flow); not automated scheduling in the agreed scope.
-
-Bulk sync only — not per–single-item reorder point sync in isolation.
-
-Items must match or be mapped between QBD and the store.
+[FILL with bullets from Jira Customer Issue — limitations and operational rules. Rewrite per ticket; do not copy a prior customization's note.]
 
 Note
 
-QBD Reorder Point will only be synced in Store Item field If items managed stock? check box is checked.
+[FILL: optional QA / implementation caveat from Customer Issue or RFT comment. Omit this section if none.]
 
 Let us know if any further assistance is needed!
 

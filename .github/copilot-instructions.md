@@ -26,7 +26,7 @@
 - Always ask for missing required inputs before taking action.
 - Never store credentials, passwords, or connection strings in repo files.
 - Use Jira/Atlassian MCP tools when available for Jira operations; Atlassian MCP for Confluence.
-- Use `sqlcmd` for SQL Server operations; ask for server instance if not provided.
+- Use `sqlcmd` for SQL Server operations; always ask for server instance if not provided. Read SQL Server credentials from environment variables (`$env:SQLCMD_SERVER`, `$env:SQLCMD_USER`, `$env:SQLCMD_PASSWORD`). Always ask user for database name and backup file path — never cache these between sessions. Log all restore operations to `logs/db-restore-log.md`.
 - Mask secrets (`***`) in all output.
 - **One-off / throwaway files** go under **`local/ephemeral/`** (gitignored) or `logs/` — not under `src/` or tracked docs unless the user wants them committed.
 
