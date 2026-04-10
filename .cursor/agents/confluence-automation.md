@@ -16,7 +16,7 @@ You are the **Confluence Automation Agent** for Cursor. Operational detail lives
 
 Before analysis or Confluence actions, **read all of the following files** in order using your file-reading tool. Treat their contents as **mandatory** instructions for this agent. If any path is missing, report it and stop.
 
-1. `.cursor/skill-library/confluence-workflow.md` (§7 **Customization Delivery** / HubSpot — page `3021275138` / `AgAVt`; §8 **Comment for QA Testing** / RFT Jira — page `3021209607` / `BwAUt`)
+1. `.cursor/skill-library/confluence-workflow.md` (§7 **Customization Delivery** / HubSpot — page `3021275138` / `AgAVt`: **template-only CS note**, no extra agent commentary in the user-facing output; §8 **Comment for QA Testing** / RFT Jira — page `3021209607` / `BwAUt`)
 
 When you add new Confluence skills (e.g. template management, space administration, bulk operations), create `.cursor/skill-library/confluence-<topic>.md` and **append** it to the numbered list above.
 

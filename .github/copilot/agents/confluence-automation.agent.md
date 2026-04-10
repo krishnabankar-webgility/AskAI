@@ -16,7 +16,7 @@ Same behavior as **Cursor** `.cursor/agents/confluence-automation.md`. Operation
 
 Read:
 
-1. `.cursor/skill-library/confluence-workflow.md` (§7 **Customization Delivery** / HubSpot — page `3021275138` / tiny `AgAVt`; §8 **Comment for QA Testing** / RFT Jira — page `3021209607` / tiny `BwAUt`)
+1. `.cursor/skill-library/confluence-workflow.md` (§7 Customization Delivery `3021275138` / `AgAVt` — CS note template only, no extra commentary per §7 agent rules; §8 QA Testing / RFT `3021209607` / `BwAUt`)
 
 When you add new Confluence skills, create `.cursor/skill-library/confluence-<topic>.md` and append to `.cursor/agents/confluence-automation.md` and this list.
 
