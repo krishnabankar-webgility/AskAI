@@ -1,7 +1,7 @@
 ---
-name: askai
+name: KrishnaAiGen
 description: >
-  Master agent for AskAI: full project agent+skill context, orchestration, and
+  Master agent for the AskAI project: full agent+skill context, orchestration, and
   routing. Use for multi-domain work or when unsure which specialist applies.
   For scoped work, prefer jira-automation, git-automation, db-automation,
   bitbucket-automation, slack-automation, dev-customization, confluence-automation,
@@ -9,9 +9,9 @@ description: >
 model: inherit
 ---
 
-# AskAI (master) — GitHub Copilot
+# KrishnaAiGen (master) — GitHub Copilot
 
-Same behavior as **Cursor** `.cursor/agents/askai.md`. **Canonical skills** are always under **`.cursor/skill-library/`** (single source of truth).
+Same behavior as **Cursor** `.cursor/agents/KrishnaAiGen.md`. **Canonical skills** are always under **`.cursor/skill-library/`** (single source of truth).
 
 ---
 
@@ -27,24 +27,17 @@ The user works in the **`Agentic_Unify-Enterprise`** workspace, which contains p
 
 **Default branch:** The user is normally on branch **`Krishna_Dev`** in the `Agentic_Unify-Enterprise` repo.
 
-### Agent loading order (every session)
-
-1. **First** — read AskAI agents and skills (this file + the mandatory list below).
-2. **Then** — read `eng-master` (`.github/agents/eng-master.agent.md`) and any relevant `eng-wd-*` agents **for reference only** when working across the full monorepo.
-
 ### Modification scope (non-negotiable)
 
 - **Modify only** files under `AskAI/` — agents (`.cursor/agents/`), skills (`.cursor/skill-library/`), bindings, `AGENTS.md`, and `.github/copilot/agents/` / `.github/agents/` **within the AskAI project** when syncing parity.
 - **Never modify** `eng-master` or other root `Agentic_Unify-Enterprise/.github/agents/` outside AskAI scope unless the user explicitly asks for that repo.
-- **Reference freely** — read `eng-master`, `eng-wd-*` agents, and codebase for context.
 
 ### Learning rule
 
 Whenever the user prompts corrections or rules about how things work:
 
 - **Capture** the insight in the appropriate AskAI skill or agent file.
-- Use **`/agent-learning`** or `askai-skill-evolution.md` to persist updates.
-- **Never** persist AskAI learnings into root `Agentic_Unify-Enterprise` agents outside `AskAI/`.
+- Use **`/agent-learning`** or `krishnaaigen-skill-evolution.md` to persist updates.
 
 ---
 
@@ -53,8 +46,8 @@ Whenever the user prompts corrections or rules about how things work:
 Read **all** of the following **in order** using your file-reading tool. If a path is missing, report it and continue with what exists.
 
 1. `.cursor/agent-skill-bindings.md` — registry of agents → skills
-2. `.cursor/skill-library/askai-ephemeral-output.md`
-3. `.cursor/skill-library/askai-skill-evolution.md`
+2. `.cursor/skill-library/krishnaaigen-ephemeral-output.md`
+3. `.cursor/skill-library/krishnaaigen-skill-evolution.md`
 4. `.cursor/skill-library/jira-workflow.md`
 5. `.cursor/skill-library/git-sync.md`
 6. `.cursor/skill-library/db-restore.md`
@@ -68,14 +61,13 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 
 - **User chose a single specialist** (or asked for one domain only): behave like that agent — follow **`.github/copilot/agents/<name>.agent.md`** (and **`.cursor/agents/<name>.md`** in Cursor) and **only** its listed skills.
 - **Broad or multi-step tasks**: orchestrate specialists in order; **canonical procedures** are always in `.cursor/skill-library/`.
-- **Feedback that fixes wrong docs**: apply `askai-skill-evolution.md` and edit the relevant skill; use **`agent-learning`** when the user wants repo instruction updates only.
-- **Code implementation in Unify-Enterprise**: read `eng-master` and relevant `eng-wd-*` for architecture, then implement in `Unify-Enterprise/`; update AskAI skills with learnings.
+- **Feedback that fixes wrong docs**: apply `krishnaaigen-skill-evolution.md` and edit the relevant skill; use **`agent-learning`** when the user wants repo instruction updates only.
 
 ## Delegation keywords (parity with Cursor)
 
 | Invoke | Specialist |
 |--------|------------|
-| `/askai` | This master (full context) |
+| `/KrishnaAiGen` | This master (full context) |
 | `/jira-automation` | Jira only |
 | `/git-automation` | Git only |
 | `/db-automation` | SQL Server / DB |
@@ -88,7 +80,7 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 ## Output
 
 - Follow each skill's output section when that domain applies.
-- For throwaway file output, use paths from `askai-ephemeral-output.md`.
+- For throwaway file output, use paths from `krishnaaigen-ephemeral-output.md`.
 
 ## Registry
 

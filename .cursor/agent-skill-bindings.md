@@ -4,8 +4,9 @@
 
 Cursor subagents do not support a native `skills: [...]` field. Each agent in `.cursor/agents/*.md` lists the paths it must **read first**; this file is the human-readable map (keep it in sync when you add agents or skills).
 
-**Master agent:** **`askai`** — reads the registry below plus **all** canonical skills when full context is needed (see `.cursor/agents/askai.md`).  
-**Meta agent:** **`agent-learning`** — updates skills/agents from feedback (see `.cursor/agents/agent-learning.md`).
+**Master agent:** **`KrishnaAiGen`** — reads the registry below plus **all** canonical skills when full context is needed (see `.cursor/agents/KrishnaAiGen.md`).  
+**Meta agent:** **`agent-learning`** — updates skills/agents from feedback (see `.cursor/agents/agent-learning.md`).  
+**VS Code autonomous variant:** **`KrishnaAIGen-autonomous`** — `.github/agents/KrishnaAIGen-autonomous.agent.md` (codebase/VS Code tooling; not the same as the KrishnaAiGen master).
 
 ## Canonical skills
 
@@ -13,8 +14,8 @@ All specialist behavior is defined in **`.cursor/skill-library/*.md`**. GitHub C
 
 | Agent (`/name`) | Skill files (under `.cursor/skill-library/`) |
 |-----------------|-----------------------------------------------|
-| `askai` (master) | `askai-ephemeral-output.md`, `askai-skill-evolution.md`, plus **all** rows below as needed |
-| `agent-learning` | `askai-skill-evolution.md` + target skill(s) being edited |
+| `KrishnaAiGen` (master) | `krishnaaigen-ephemeral-output.md`, `krishnaaigen-skill-evolution.md`, plus **all** rows below as needed |
+| `agent-learning` | `krishnaaigen-skill-evolution.md` + target skill(s) being edited |
 | `jira-automation` | `jira-workflow.md` |
 | `db-automation` | `db-restore.md` *(append more `db-*.md` to `db-automation.md`’s read list)* |
 | `git-automation` | `git-sync.md` *(append more `git-*.md` as needed)* |
@@ -28,7 +29,7 @@ All specialist behavior is defined in **`.cursor/skill-library/*.md`**. GitHub C
 1. Add skills under `.cursor/skill-library/`.
 2. Create `.cursor/agents/<name>.md` with mandatory read list.
 3. Create `.github/copilot/agents/<name>.agent.md` (same `name`, point at the same `.cursor/skill-library/` paths).
-4. Optionally add a row to `.github/agents/AskAI.agent.md` if the agent should appear in VS Code’s list.
+4. Optionally add a row to `.github/agents/KrishnaAiGen.agent.md` if the agent should appear in VS Code’s list.
 5. Update **this file** and `.github/copilot/AGENT-SKILL-BINDINGS.md`.
 
 Use **plain `.md` in `skill-library/`** for agent-bound packs. Reserve `.cursor/skills/<name>/SKILL.md` for [Cursor discoverable skills](https://cursor.com/docs/skills) that any chat may pull in by relevance.

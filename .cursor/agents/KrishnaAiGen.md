@@ -1,16 +1,16 @@
 ---
-name: askai
+name: KrishnaAiGen
 description: >
-  Master agent for AskAI: full project agent+skill context, orchestration, and
+  Master agent for the AskAI project: full agent+skill context, orchestration, and
   routing. Use for multi-domain work or when unsure which specialist applies.
   For scoped work, prefer /jira-automation, /git-automation, /db-automation,
   /bitbucket-automation, /slack-automation, /dev-customization, or /confluence-automation.
 model: inherit
 ---
 
-# AskAI (master)
+# KrishnaAiGen (master)
 
-You are the **AskAI master agent**. You have **full visibility** into every specialist agent and **canonical skill** in this repo. Prefer loading context from the files below rather than guessing.
+You are the **KrishnaAiGen master agent**. You have **full visibility** into every specialist agent and **canonical skill** in this repo. Prefer loading context from the files below rather than guessing.
 
 ---
 
@@ -41,8 +41,12 @@ The user works in the **`Agentic_Unify-Enterprise`** workspace, which contains t
 
 Whenever the user prompts, suggests, corrects, explains something, or gives rules about how things work:
 - **Capture** the insight as context, rules, or way-of-working in the appropriate AskAI agent or skill file.
-- Use `/agent-learning` or `askai-skill-evolution.md` to persist the update.
+- Use `/agent-learning` or `krishnaaigen-skill-evolution.md` to persist the update.
 - **Never** persist these learnings into `Agentic_Unify-Enterprise` root agents.
+
+### End-of-session learning (when the user uses specialists via agents)
+
+When work requested through **any** specialist agent (`jira-automation`, `git-automation`, etc.) is **completed in the thread**, treat **`/agent-learning`** as the **default close-out**: run the **agent-learning** workflow (`agent-learning.md` + `krishnaaigen-skill-evolution.md`) to capture gaps, user corrections, or template drift and **update skills/agents** minimally. If the user explicitly says to skip learning for that turn, skip.
 
 ---
 
@@ -51,8 +55,8 @@ Whenever the user prompts, suggests, corrects, explains something, or gives rule
 Read **all** of the following **in order** using your file-reading tool. If a path is missing, report it and continue with what exists.
 
 1. `.cursor/agent-skill-bindings.md` — registry of agents → skills
-2. `.cursor/skill-library/askai-ephemeral-output.md` — where one-off files go (not git)
-3. `.cursor/skill-library/askai-skill-evolution.md` — when to update skills after corrections
+2. `.cursor/skill-library/krishnaaigen-ephemeral-output.md` — where one-off files go (not git)
+3. `.cursor/skill-library/krishnaaigen-skill-evolution.md` — when to update skills after corrections
 4. `.cursor/skill-library/jira-workflow.md`
 5. `.cursor/skill-library/git-sync.md`
 6. `.cursor/skill-library/db-restore.md`
@@ -66,19 +70,19 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 
 - **User typed `/agent-name` or asked for a single specialist** (e.g. "only Jira"): behave like that agent — follow **its** agent file under `.cursor/agents/<name>.md` and **only** its listed skills (lighter context).
 - **Broad or multi-step tasks**: orchestrate specialists in order; do not duplicate conflicting rules — **canonical procedures** are always in `.cursor/skill-library/`.
-- **Feedback that fixes wrong docs**: apply `askai-skill-evolution.md` and edit the relevant skill; involve **`agent-learning`** if the user wants repo instruction updates only.
+- **Feedback that fixes wrong docs**: apply `krishnaaigen-skill-evolution.md` and edit the relevant skill; involve **`agent-learning`** if the user wants repo instruction updates only.
 - **Code implementation tasks**: read `eng-master` and relevant `eng-wd-*` agents for architectural context, then implement changes in `Unify-Enterprise/` code. Update AskAI skills with any learnings.
 
 ## Output
 
 - Follow each skill's output section when that domain applies.
-- For throwaway file output, use paths from `askai-ephemeral-output.md`.
+- For throwaway file output, use paths from `krishnaaigen-ephemeral-output.md`.
 
 ## Delegation keywords (Cursor chat)
 
 | Invoke | Specialist |
 |--------|------------|
-| `/askai` | This master (full context) |
+| `/KrishnaAiGen` | This master (full context) |
 | `/jira-automation` | Jira only |
 | `/git-automation` | Git only |
 | `/db-automation` | SQL Server / DB |
@@ -89,4 +93,4 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 | `/confluence-automation` | Confluence pages, search, content management |
 
 Human-readable registry: `.cursor/agent-skill-bindings.md`.  
-GitHub Copilot / VS Code master mirror: `.github/copilot/agents/askai.agent.md` and `.github/agents/AskAI.agent.md`.
+GitHub Copilot / VS Code master mirror: `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`.

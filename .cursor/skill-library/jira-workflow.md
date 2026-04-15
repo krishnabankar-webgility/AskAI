@@ -107,8 +107,15 @@ Before creating, search for an existing Story linked to the same Customer Issue.
 | Story Points | `customfield_10053` |
 | Sprint | `customfield_10010` (numeric sprint id) |
 | Team | `customfield_10075` |
+| **Priority Rank** (1–10) | `customfield_10150` — **not** the same as **Priority** (P0–P4); see §1.8a |
 
 Re-verify with `getJiraIssueTypeMetaWithFields` if the project changes.
+
+### 1.8a Priority vs Priority Rank (UD)
+
+- **Priority** (system field `priority`): **P0**, **P1**, **P2**, **P3**, **P4**, or **None** — urgency / triage. Example: user says “make it **P1**” → set `priority` to `{ "name": "P1" }` (id `2`).
+- **Priority Rank** (`customfield_10150`, label **Priority Rank**): dropdown values **`"1"`** through **`"10"`** (option ids **`10339`**–**`10348`** in the current UD metadata). Used for **ordering / sequencing** in the backlog. **Do not** treat “priority rank 1” as “set Priority to P1” — they are different fields.
+- When the user says **“Priority Rank = 1”** / **“priority rank 1”**, set `customfield_10150` to `{ "id": "10339" }`. For rank **N** (1–10), option id is **`10338 + N`** (re-verify if options change).
 
 ### 1.9 Resolving sprint id (exact and fuzzy names)
 
@@ -367,11 +374,16 @@ When the user asks to add a **Comment for QA Testing**, **RFT (Ready For Testing
 
 **Confluence mirror (CS templates / Public → template):** [Comment for QA Testing](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing) · page ID `3021209607` · tiny `BwAUt` — use `getConfluencePage` when drafting so wording matches the published template.
 
-**Exemplar in Jira:** [UD-31982 — focusedCommentId=236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780) (same structure as below).
+**Exemplars in Jira (match structure and tone):**
+
+- [UD-31982 — focusedCommentId=236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780) — single-customer-issue style.
+- [UD-32268 — focusedCommentId=238017](https://webgility.atlassian.net/browse/UD-32268?focusedCommentId=238017) — **umbrella / multi-enhancement**: first bullet is **bold** theme line + **nested sub-bullets** for each enhancement; separate top-level bullets for **Build No**, **Local Branch**, **Customization Nodes** (comma-separated `NODE_<ProfileID>`), **Testing Env**, **Accounting**, **Store**; **Limitations** may include nested bullets with **Confluence links**; **Test Cases** may say one case per enhancement line; **CC** often **@Hitesh Devashrayee** and **@Arvind Chavan** (plus others per user).
 
 ### 7.1 Where to post
 
-Post the RFT comment on the **Customer Issue** (e.g. UD-31982, issue type "Customer Issue"), **not** on the dev Story (e.g. UD-32097). The Customer Issue is the one QA monitors. Identify it from `issuelinks` on the Story (type "Relates", linked Customer Issue).
+**Default:** Post the RFT comment on the **Customer Issue** (e.g. UD-31982, issue type "Customer Issue"), **not** on the dev Story — the Customer Issue is what QA usually monitors. Identify it from `issuelinks` on the Story (type "Relates", linked Customer Issue).
+
+**Exception:** If the user **explicitly** names a target issue key (e.g. Story **UD-32268**) or says to post on the Story/umbrella issue, post there. Do not override an explicit target.
 
 ### 7.2 When to add the comment
 
@@ -379,60 +391,43 @@ Add **only** when the Jira issue status is (or is being transitioned to) **Ready
 
 ### 7.3 Comment format (mandatory template)
 
-Use this **structure** in ADF (headings, bullets, mentions). Always **draft first in chat**, show to the user, ask for explicit confirmation, then post using `addCommentToJiraIssue`. Match the live pattern from [UD-31982 RFT comment](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780): greeting line, `Customization Details:` with hyphen bullets, `### Limitations:` heading, `Impacted Area :` with bullets, optional evidence blocks, `Test Cases :`, `CC :`.
+Use this **structure** in ADF (headings, bullets, nested lists, mentions). Always **draft first in chat**, show to the user, ask for explicit confirmation, then post using `addCommentToJiraIssue` (prefer **markdown** with `[~accountid:…]` mentions, or **ADF** with `mention` nodes). Match live **UD-31982** or **UD-32268** exemplars above.
 
-```
-Hi @<QA Lead — default: Alok Mendhe> ,
-Customization Details:
+**Greeting:** `Hi @Alok Mendhe ,` (mention node; default QA lead — user may override).
 
-- <what the customization does — pull from Customer Issue description>
-- Customization Node : <NODE_NAME> with profileID
-- Build No : #<number> from <branch>
-- Testing Env : <environment name — e.g. CISQA2>
-- Accounting: <from Customer Issue — e.g. QuickBooks Desktop Enterprise US>
-- Store: <from Customer Issue — e.g. WooCommerce>
-### Limitations:
+**Customization Details:** (paragraph or bold label `Customization Details:` then bullet list)
 
-- <limitation 1 — from Customer Issue description>
-- <limitation 2>
-- ...
-Impacted Area : 
+- **Single enhancement:** one bullet per line — what it does; **Customization Node** with `<ProfileID>`; **Build No**; **Local Branch** (if user provides); **Testing Env**; **Accounting**; **Store**.
+- **Multiple enhancements (umbrella / RN-style):** First bullet: **bold** one-line theme (e.g. `Sales Order to partial invoice customization enhancements :`), then **nested sub-bullets** — one line per enhancement (marketplace tax, group-item posting, Create Invoice button, invoice number UI, refund posting, late payment + open invoices, Shopify payout / extra node with sub-bullet for node name, etc.). Follow with **separate** top-level bullets: **Build No:** `#xxxx`, **Local Branch:** `101/...`, **Customization Nodes:** `NODE1_<ProfileID>, NODE2_<ProfileID>, ...`, **Testing Env:** (e.g. `CIS-QA.`), **Accounting:**, **Store:**.
 
-- <area 1 — e.g. Product module / navigation path>
-- <area 2 — may include inline screenshots if user shares them>
-- ...
-QBD Items : 
+**### Limitations:** (heading level 3)
 
-<optional screenshots or short evidence — omit section if empty>
+- Bullets from Customer Issue or user; nested bullets allowed (e.g. limitation + **Note:** with Confluence link `https://webgility.atlassian.net/wiki/...`).
 
-WD Sync ReorderPoint :
-<optional line or screenshot>
+**Impacted Area:** (bold label + bullets)
 
-WooCommerce item : 
-<optional line or screenshot>
+- Product-level bullets (e.g. existing SO→partial invoice customization, Post to QBD, customization UI settings).
 
-Test Cases : 
+**Test Cases:**
 
-- <test case 1>
-- <test case 2 — sub-scenarios for empty / 0 / > 0 where applicable>
-  - <sub-case>
-  - <sub-case>
-- ...
+- e.g. “In Customization Details each enhancement take as a case.” or user-provided matrix.
 
-CC : @Hitesh Devashrayee @<additional CC the user specifies e.g. Tanay Khandelwal, Aditya Farkya>
-```
+**CC:** Mentions — default often **@Hitesh Devashrayee**; add **@Arvind Chavan** and others when the user or exemplar includes them.
 
-**ADF note:** Render `### Limitations:` as a heading node; use list items for bullets under `Customization Details`, `Impacted Area`, and `Test Cases`. Omit optional blocks (`QBD Items` / `WD Sync` / `WooCommerce item`) if the user has no evidence to attach.
+Optional blocks when user provides evidence: **QBD Items**, **WD Sync ReorderPoint**, **WooCommerce item** (see legacy template in git history if needed).
+
+**ADF note:** Render `### Limitations:` as a heading node; use **nested `bulletList`** under the first `listItem` when listing many enhancements (see UD-32268). Omit optional evidence blocks if empty. **Never** paste placeholder Unicode arrows; use ASCII `->` or words like “to”.
 
 ### 7.4 How to gather the data
 
 | Field | Source | Rule |
 |-------|--------|------|
 | **To (@mention at top)** | Default: `@Alok Mendhe` (`712020:aa018f8d-2c6b-43a1-a859-ce6dd2544059`) | Greeting line: `Hi @Alok Mendhe ,`. User may change the person. Use ADF `mention` node. |
-| **Customization Details** | Customer Issue description → "Customization Details" section | Bullet: what the customization does. Pull the text from the Customer Issue description. |
-| **Customization Node** | Branch diff or user provides | `SYNC_REORDERPOINT` with profileID, etc. If known from implementation, pre-fill. If not, ask. |
-| **Build No** | User provides | e.g. `#6190 from my local branch : 101/UD-31982-krishna`. **Never invent.** If not shared, ask. |
-| **Testing Env** | User provides | e.g. `CISQA2`, `Local`, `Staging`. If not shared, ask. |
+| **Customization Details** | Customer Issue description → "Customization Details" section | Bullet(s): what the customization does. For **umbrella** issues, use **nested sub-bullets** under one bold theme line (see §7.3 / UD-32268). |
+| **Customization Node(s)** | Branch diff or user provides | One or more `NODE_<ProfileID>` — list under **Customization Nodes** comma-separated when multiple. |
+| **Build No** | User provides | e.g. `#6198`. **Never invent.** If not shared, ask. |
+| **Local Branch** | User provides | e.g. `101/UD-29932-user/krishna_2`. Optional line in comment when user shares it. |
+| **Testing Env** | User provides | e.g. `CIS-QA.`, `CISQA2`, `Local`. If not shared, ask. |
 | **Accounting** | Customer Issue description → "Accounting" field | e.g. "QuickBooks Desktop Enterprise US." |
 | **Store** | Customer Issue description → "Store" field | e.g. "WooCommerce". |
 | **Limitations** | Customer Issue description → "Limitations" section | Bullet list, copy from the Customer Issue. |
@@ -440,18 +435,18 @@ CC : @Hitesh Devashrayee @<additional CC the user specifies e.g. Tanay Khandelwa
 | **QBD Items / WD Sync / WooCommerce item** | User provides optional evidence | Optional blocks after **Impacted Area** for screenshots or one-line notes (see §7.3). Omit entire blocks if nothing to show. |
 | **Test Cases** | Agent-drafted, then user-confirmed | Agent drafts test cases based on the customization functionality flow. May include sub-bullets for value-specific scenarios (empty / 0 / > 0). User confirms, edits, or adds. **Do not finalize without user confirmation.** |
 | **Screenshots** | User provides | Embed inline within **Impacted Area** or under **QBD Items** / **WD Sync** / **WooCommerce item** as in §7.3. If user does not share screenshots, omit those blocks. |
-| **CC (@mention at bottom)** | Default: `@Hitesh Devashrayee` (`5a4d00c0fed274297effdf04`). Additional defaults on customization issues: `@Tanay Khandelwal` (`60194dca47a954006935667c`), `@Aditya Farkya` (`712020:330a4c36-5f24-465a-9a87-837a5f664b74`) | Always at the bottom. User may add/remove CC names. |
+| **CC (@mention at bottom)** | Often `@Hitesh Devashrayee` (`5a4d00c0fed274297effdf04`) and `@Arvind Chavan` (`625e632060d67c0068d8080b`) on customization umbrella RFTs. Also: `@Tanay Khandelwal` (`60194dca47a954006935667c`), `@Aditya Farkya` (`712020:330a4c36-5f24-465a-9a87-837a5f664b74`) when user asks. | Always at the bottom. User may add/remove CC names. |
 
 ### 7.5 Workflow — always draft first, then post
 
-1. **Identify Customer Issue**: From the Story's `issuelinks`, find the linked Customer Issue key. Read it for description fields.
-2. **Gather**: Pull Customization Details, Accounting, Store, and Limitations from the Customer Issue description.
-3. **Ask for missing fields**: If Build No, Testing Env, or Customization Node are not provided, present each missing field and let the user provide or skip.
+1. **Identify target issue**: If the user named a key (Story or Customer Issue), use that. Otherwise, from the Story's `issuelinks`, find the linked **Customer Issue** and use that key.
+2. **Gather**: Pull Customization Details, Accounting, Store, and Limitations from the Customer Issue (or Story) description; for umbrella work, list enhancements as **nested** bullets per §7.3.
+3. **Ask for missing fields**: If Build No, Testing Env, Local Branch, or Customization Node(s) are not provided, present each missing field and let the user provide or skip.
 4. **Draft Impacted Area**: Share your understanding of impacted areas based on the customization implementation. Ask the user to confirm or update.
 5. **Draft Test Cases**: Share your understanding of test cases from the customization functionality flow. Ask the user to confirm or update.
 6. **Draft full comment**: Present the complete comment to the user **in chat first** for review.
-7. **Confirm CC**: Show the default CC list and ask if the user wants to add or remove anyone.
-8. **Post**: Only after the user **explicitly confirms**, post the comment to the **Customer Issue** using `addCommentToJiraIssue`. Use ADF format with proper `mention` nodes for all @mentions so Jira sends notifications.
+7. **Confirm CC**: Show the CC list and ask if the user wants to add or remove anyone.
+8. **Post**: Only after the user **explicitly confirms**, post the comment to the **target issue** using `addCommentToJiraIssue`. Use markdown or ADF with proper mentions so Jira sends notifications.
 
 ### 7.6 @mention account IDs (known)
 
@@ -462,12 +457,13 @@ CC : @Hitesh Devashrayee @<additional CC the user specifies e.g. Tanay Khandelwa
 | Hitesh Devashrayee | hiteshd@webgility.com | `5a4d00c0fed274297effdf04` |
 | Tanay Khandelwal | — | `60194dca47a954006935667c` |
 | Aditya Farkya | — | `712020:330a4c36-5f24-465a-9a87-837a5f664b74` |
+| Arvind Chavan | — | `625e632060d67c0068d8080b` |
 
 When the user provides other names for CC or To, resolve them using `lookupJiraAccountId` before posting.
 
 ### 7.7 What NOT to do
 
-- **Do not** post on the dev Story — always post on the **Customer Issue**.
+- **Do not** post on the dev Story **when the team expects RFT on the Customer Issue** — unless the user **explicitly** chose a Story/umbrella key (§7.1).
 - **Do not** add verbose implementation details, file-level diffs, RCA, or code-level analysis unless the user explicitly asks.
 - **Do not** post the comment without showing the user first and getting explicit confirmation.
 - **Do not** fabricate Build No, Testing Env, or any field the user has not provided.
@@ -485,7 +481,7 @@ When a session surfaces a **repeatable rule**, **API quirk**, or **better JQL** 
 
 Ephemeral analysis, one-off session summaries, or notes that **must not** become skill text may be written to:
 
-- **`local/ephemeral/`** (gitignored root folder for arbitrary one-off files — see `askai-ephemeral-output.md`),
+- **`local/ephemeral/`** (gitignored root folder for arbitrary one-off files — see `krishnaaigen-ephemeral-output.md`),
 - `logs/agent-session-notes.log` (entire `logs/` folder is typically gitignored by the Visual Studio template), **or**
 - `.cursor/agent-session-notes.log` (also gitignored in this repo).
 

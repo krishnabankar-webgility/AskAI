@@ -1,4 +1,4 @@
-# AskAI — Skill and agent evolution
+# KrishnaAiGen — Skill and agent evolution
 
 When a session reveals **wrong behavior**, **missing steps**, **API quirks**, or **user correction** ("actually do X", "the formula should be…"), treat that as a signal to **update repository instructions** so the same mistake is not repeated.
 
@@ -32,7 +32,7 @@ When you add or rename an agent:
 
 1. Add `.cursor/agents/<name>.md`.
 2. Add `.github/copilot/agents/<name>.agent.md` (same `name`, aligned instructions).
-3. Add `.github/agents/AskAI.agent.md` cross-links if the agent is user-facing in VS Code (optional row in the AskAI master section).
+3. Add `.github/agents/KrishnaAiGen.agent.md` cross-links if the agent is user-facing in VS Code (optional row in the KrishnaAiGen master section).
 4. Update both **AGENT-SKILL-BINDINGS** files and **AGENTS.md** (AskAI section).
 
 All of the above within AskAI project only.

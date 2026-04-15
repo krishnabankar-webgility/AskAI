@@ -2,17 +2,17 @@
 
 ## Canonical source
 
-- **Skills:** **`.cursor/skill-library/*.md`** — single source of truth for Jira, Git, DB, Bitbucket, Slack, dev customization, Confluence, and meta (`askai-*.md`).
+- **Skills:** **`.cursor/skill-library/*.md`** — single source of truth for Jira, Git, DB, Bitbucket, Slack, dev customization, Confluence, and meta (`krishnaaigen-*.md`).
 - **Cursor agents:** **`.cursor/agents/*.md`** — full behavioral specs; **mandatory read lists** drive what each specialist loads.
-- **GitHub Copilot agents:** **`.github/copilot/agents/*.agent.md`** — must mirror **`.cursor/agents/*.md`** (same names, same skill paths, same routing). When you change behavior, update **`.cursor/skill-library/`** first, then Copilot wrappers per **`.cursor/skill-library/askai-skill-evolution.md`**.
-- **VS Code agent picker:** **`.github/agents/AskAI.agent.md`** — master summary; specialists are listed in **`.cursor/agent-skill-bindings.md`** and **`.github/copilot/AGENT-SKILL-BINDINGS.md`** (keep both registries aligned).
+- **GitHub Copilot agents:** **`.github/copilot/agents/*.agent.md`** — must mirror **`.cursor/agents/*.md`** (same names, same skill paths, same routing). When you change behavior, update **`.cursor/skill-library/`** first, then Copilot wrappers per **`.cursor/skill-library/krishnaaigen-skill-evolution.md`**.
+- **VS Code agent picker:** **`.github/agents/KrishnaAiGen.agent.md`** — master summary; specialists are listed in **`.cursor/agent-skill-bindings.md`** and **`.github/copilot/AGENT-SKILL-BINDINGS.md`** (keep both registries aligned).
 
 ## Specialist agents (parity)
 
 | Agent | Canonical skills (`.cursor/skill-library/`) |
 |-------|--------------------------------|
-| `askai` | All core skills (see `.cursor/agents/askai.md` ordered list) |
-| `agent-learning` | `askai-skill-evolution.md` + targets being edited |
+| `KrishnaAiGen` | All core skills (see `.cursor/agents/KrishnaAiGen.md` ordered list) |
+| `agent-learning` | `krishnaaigen-skill-evolution.md` + targets being edited |
 | `jira-automation` | `jira-workflow.md` |
 | `git-automation` | `git-sync.md` |
 | `db-automation` | `db-restore.md` |

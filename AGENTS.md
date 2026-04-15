@@ -88,16 +88,17 @@ git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket
 - `dotnet restore` is implicitly run by `dotnet build` and `dotnet run`, but can be run explicitly after adding new NuGet packages.
 - The `.gitignore` is the standard Visual Studio/.NET template — build outputs (`bin/`, `obj/`) are already excluded.
 
-### Master agent: AskAI (`askai`)
+### Master agent: KrishnaAiGen (`KrishnaAiGen`)
 
-- **Full context:** The **`askai`** agent loads the skill registry plus **all** canonical skills under `.cursor/skill-library/` (see `.cursor/agents/askai.md`). Use when work spans multiple domains or you want one agent to see Jira + Git + DB + Bitbucket + Slack rules together.
-- **VS Code / GitHub Copilot:** Same role in `.github/copilot/agents/askai.agent.md` and `.github/agents/AskAI.agent.md`.
+- **Full context:** The **`KrishnaAiGen`** agent loads the skill registry plus **all** canonical skills under `.cursor/skill-library/` (see `.cursor/agents/KrishnaAiGen.md`). Use when work spans multiple domains or you want one agent to see Jira + Git + DB + Bitbucket + Slack rules together.
+- **VS Code / GitHub Copilot:** Same role in `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`.
+- **Autonomous VS Code variant:** `.github/agents/KrishnaAIGen-autonomous.agent.md` (heavy tooling — not the same as the KrishnaAiGen master).
 
 ### Specialist-only (`/<agent-name>`)
 
 To **scope** the model to a single workflow (smaller context), invoke by name:
 
-- **`/askai`** — master (same as choosing full orchestration).
+- **`/KrishnaAiGen`** — master (same as choosing full orchestration).
 - **`/agent-learning`** — update skills/agents from corrections or feedback (meta; edits repo docs).
 - **`/db-automation`** — SQL Server (`db-restore.md`; extend with more `db-*.md` in the agent file).
 - **`/git-automation`** — commit, push, merge, sync `develop` with `master` (`git-sync.md`).
@@ -111,11 +112,11 @@ You can also ask in plain language, for example: *Delegate to the jira-automatio
 
 ### Ephemeral output (not committed)
 
-One-time reports, formatted dumps, or scratch files that must **not** be pushed: write under **`local/ephemeral/`** (gitignored) or `logs/`. See `.cursor/skill-library/askai-ephemeral-output.md`. Session scratch can also use `.cursor/agent-session-notes.log`.
+One-time reports, formatted dumps, or scratch files that must **not** be pushed: write under **`local/ephemeral/`** (gitignored) or `logs/`. See `.cursor/skill-library/krishnaaigen-ephemeral-output.md`. Session scratch can also use `.cursor/agent-session-notes.log`.
 
 ### Skill evolution (corrections → repo learning)
 
-When a session fixes wrong or incomplete instructions, follow **`.cursor/skill-library/askai-skill-evolution.md`**. Use **`/agent-learning`** when the task is specifically to persist that fix into skills and keep **Cursor + Copilot + VS Code** agent files in sync.
+When a session fixes wrong or incomplete instructions, follow **`.cursor/skill-library/krishnaaigen-skill-evolution.md`**. Use **`/agent-learning`** when the task is specifically to persist that fix into skills and keep **Cursor + Copilot + VS Code** agent files in sync. After specialist agent work completes in a thread, **`agent-learning`** is the **default close-out** (see `.cursor/agents/agent-learning.md`) unless you opt out.
 
 ### Cursor subagents (`.cursor/agents/`)
 
@@ -130,7 +131,7 @@ See [Subagents](https://cursor.com/docs/subagents) in the Cursor docs.
 | `.cursor/agents/*.md` | Cursor subagent definitions |
 | `.cursor/skill-library/*.md` | **Canonical** skills (single source of truth) |
 | `.github/copilot/agents/*.agent.md` | Copilot agents (reference `.cursor/skill-library/` paths) |
-| `.github/agents/*.agent.md` | VS Code / GitHub agent picker (e.g. `AskAI.agent.md`) |
+| `.github/agents/*.agent.md` | VS Code / GitHub agent picker (e.g. `KrishnaAiGen.agent.md`) |
 | `.github/copilot/AGENT-SKILL-BINDINGS.md` | Copilot registry (keep aligned with `.cursor/agent-skill-bindings.md`) |
 
 Adding or changing an agent: update **both** bindings files and **both** agent file locations unless the tool is Cursor-only.
@@ -143,6 +144,6 @@ Cursor does **not** support a built-in “this subagent may only load skills A, 
 2. Keep each **subagent** in `.cursor/agents/<name>.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
 3. Maintain the human map in **`.cursor/agent-skill-bindings.md`** when you add agents or change assignments.
 
-**Example:** `/jira-automation` loads **`jira-workflow.md`** only (consolidated Jira rules). **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed. **`/dev-customization`** loads `dev-customization-expertise.md` then `dev-customization-workflow.md`. **`/confluence-automation`** loads **`confluence-workflow.md`**. **`/askai`** loads the registry plus **all** canonical skills when full cross-domain context is needed (see `.cursor/agents/askai.md` — same ordered list in `.github/copilot/agents/askai.agent.md` and `.github/agents/AskAI.agent.md`).
+**Example:** `/jira-automation` loads **`jira-workflow.md`** only (consolidated Jira rules). **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed. **`/dev-customization`** loads `dev-customization-expertise.md` then `dev-customization-workflow.md`. **`/confluence-automation`** loads **`confluence-workflow.md`**. **`/KrishnaAiGen`** loads the registry plus **all** canonical skills when full cross-domain context is needed (see `.cursor/agents/KrishnaAiGen.md` — same ordered list in `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`).
 
 The model loads those files at runtime via its read tool, so context stays **scoped to what that agent declares**, not every skill in the repo.

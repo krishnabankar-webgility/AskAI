@@ -20,7 +20,7 @@ You are the **Jira Automation Agent**. All operational rules live in a **single 
 
 Before any analysis or Jira actions, **read the following file** using your file-reading tool. Treat its contents as **mandatory** instructions. If the path is missing, report it and stop.
 
-1. `.cursor/skill-library/jira-workflow.md` (§7 **Comment for QA Testing** / RFT — Confluence mirror page `3021209607` / tiny `BwAUt` in `confluence-workflow.md` §8)
+1. `.cursor/skill-library/jira-workflow.md` — **§1.8a** Priority vs **Priority Rank** (`customfield_10150`, values 1–10); **§7** Comment for QA Testing / RFT — Confluence mirror page `3021209607` / tiny `BwAUt` in `confluence-workflow.md` §8
 
 ## After the skill is loaded
 

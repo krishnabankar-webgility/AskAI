@@ -1,4 +1,4 @@
-# AskAI — Ephemeral output (not for git)
+# KrishnaAiGen — Ephemeral output (not for git)
 
 Use this when the user wants **one-time** results: scratch reports, formatted dumps, throwaway charts, or session notes that must **not** be committed or pushed.
 

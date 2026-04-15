@@ -6,24 +6,25 @@
 
 ```
 .cursor/
-├── agents/              # Cursor subagents (e.g. askai.md, jira-automation.md)
+├── agents/              # Cursor subagents (e.g. KrishnaAiGen.md, jira-automation.md)
 ├── skill-library/       # CANONICAL skills (single source of truth)
 .github/
 ├── agents/
-│   └── AskAI.agent.md   # VS Code / GitHub agent picker — master summary
+│   ├── KrishnaAiGen.agent.md          # VS Code / GitHub — master
+│   └── KrishnaAIGen-autonomous.agent.md  # VS Code — autonomous tooling variant
 ├── copilot/
 │   ├── agents/*.agent.md  # GitHub Copilot agents (mirror Cursor names)
 │   └── skills/            # Legacy / deprecated copies — prefer .cursor/skill-library
 ├── prompts/
-│   └── askai.prompt.md
+│   └── krishnaaigen.prompt.md
 ```
 
 ## Agent → Skills
 
 | Agent (`.agent.md`) | Canonical skills (`.cursor/skill-library/`) |
 |---------------------|-----------------------------------------------|
-| `askai` | `askai-ephemeral-output.md`, `askai-skill-evolution.md`, `jira-workflow.md`, `git-sync.md`, `db-restore.md`, `bitbucket-unify-enterprise.md`, `slack-integration.md`, `dev-customization-expertise.md`, `dev-customization-workflow.md`, `confluence-workflow.md` |
-| `agent-learning` | `askai-skill-evolution.md` + files being edited |
+| `KrishnaAiGen` | `krishnaaigen-ephemeral-output.md`, `krishnaaigen-skill-evolution.md`, `jira-workflow.md`, `git-sync.md`, `db-restore.md`, `bitbucket-unify-enterprise.md`, `slack-integration.md`, `dev-customization-expertise.md`, `dev-customization-workflow.md`, `confluence-workflow.md` |
+| `agent-learning` | `krishnaaigen-skill-evolution.md` + files being edited |
 | `jira-automation` | `jira-workflow.md` |
 | `git-automation` | `git-sync.md` |
 | `db-automation` | `db-restore.md` |
