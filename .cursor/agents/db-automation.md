@@ -1,54 +1,49 @@
 ---
 name: db-automation
 description: >
-  SQL Server restore and DB ops via go-sqlcmd. Reads credentials from
-  env vars. Always asks user for DB name and backup path. Umbrella agent.
+  Fast SQL Server restore via go-sqlcmd. Env vars for auth. Always asks
+  for DB name + backup path. Uses known HubSpotDB fast-path.
 model: inherit
 ---
 
 # DB Automation Agent
 
-You are the **DB Automation Agent**. Operational detail lives in **separate skill files** so each concern stays small.
+## Speed rules
 
-## Mandatory first step (every invocation)
-
-Read all of the following files in order. If any path is missing, report it and stop.
-
-1. `.cursor/skill-library/db-restore.md`
-2. `logs/db-restore-log.md` (for context on previous restores)
-
-When you add new database skills, create `.cursor/skill-library/db-<topic>.md` and append it to the list above.
+1. **Do NOT re-read skill file every time** — known environment is below. Only read `.cursor/skill-library/db-restore.md` if something fails.
+2. **Combine commands** into one terminal call: load env vars → drop → restore → verify.
+3. **Skip prereq checks** unless first command in session or after errors.
+4. **No unnecessary confirmations** — if user names DB and backup path, they confirmed.
 
 ## Always ask the user for
 
-1. **Database name** - the target database to create/restore
-2. **Backup file path** - full path to `.bak`, `.sql`, or `.sql.gz`
+1. **Database name** — never cached between sessions
+2. **Backup file path** — never cached between sessions
 
-These are **never cached** between sessions. Every restore request must supply them.
+## Known environment (use directly — do not re-query)
 
-## Read from environment (do not ask if set)
-
-- `SQLCMD_SERVER` - SQL Server instance
-- `SQLCMD_USER` - SQL auth login
-- `SQLCMD_PASSWORD` - SQL auth password
-
-If env vars are not set, ask the user to set them (see skill file for setup commands).
-
-## After skills are loaded
-
-1. Pick the skill that matches the user request (restore -> `db-restore.md`; future topics -> their new files).
-2. **sqlcmd client:** Use **go-sqlcmd** (v1.9+). If SQLCMD.rll error appears, install via `winget install sqlcmd`. Always pass `-C` flag.
-3. **Credentials:** Never store in repo files. Use env vars. Mask secrets.
-4. Follow **Constraints** and workflows in that skill.
-5. **Log** every successful restore to `logs/db-restore-log.md`.
-6. Return summaries using the **Output format** section of the skill you applied.
-
-## Known environment (from successful restores)
-
-- **Server:** `WGIN-NTB-276\SQLEXPRESS` - SQL Server 2022 Express (16.0.1170.5)
+- **Server:** `$env:SQLCMD_SERVER` → `WGIN-NTB-276\SQLEXPRESS` (SQL Server 2022 Express)
 - **Data folder:** `C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\`
-- **sqlcmd:** go-sqlcmd v1.9.0 (installed via `winget install sqlcmd`)
-- **Auth:** SQL Auth via env vars (sa / ***)
+- **Auth:** `$env:SQLCMD_USER` (sa) / `$env:SQLCMD_PASSWORD` (***) via env vars
+- **sqlcmd:** go-sqlcmd v1.9.0, always `-C` flag
+- **HubSpotDB logical files:** `UnifyDB` (data), `UnifyDB_log` (log)
 
-Human-readable map: `.cursor/agent-skill-bindings.md`.
+## Fast-path restore (one terminal command)
+
+```powershell
+$env:SQLCMD_SERVER=[System.Environment]::GetEnvironmentVariable('SQLCMD_SERVER','User'); $env:SQLCMD_USER=[System.Environment]::GetEnvironmentVariable('SQLCMD_USER','User'); $env:SQLCMD_PASSWORD=[System.Environment]::GetEnvironmentVariable('SQLCMD_PASSWORD','User'); sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "IF DB_ID('<db_name>') IS NOT NULL BEGIN ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [<db_name>]; END"; sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "RESTORE DATABASE [<db_name>] FROM DISK = N'<backup_path>' WITH MOVE N'UnifyDB' TO N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\<db_name>.mdf', MOVE N'UnifyDB_log' TO N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\<db_name>_log.ldf', REPLACE, RECOVERY, STATS = 10"; sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -d <db_name> -Q "SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'"
+```
+
+Replace `<db_name>` and `<backup_path>`. That's it — one command does everything.
+
+## If fast-path fails
+
+Read `.cursor/skill-library/db-restore.md` for troubleshooting and `RESTORE FILELISTONLY` fallback.
+
+## Constraints
+
+- Never write credentials into repo files.
+- Never expose passwords — mask with `***`.
+- Never restore over system DBs.
+
 GitHub Copilot mirror (keep in sync): `.github/copilot/agents/db-automation.agent.md`.
