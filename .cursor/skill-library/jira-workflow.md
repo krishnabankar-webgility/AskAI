@@ -51,21 +51,50 @@ Only when the user **explicitly** requests subtasks:
 3. Each subtask is a child of the Story (standard Sub-task issue type).
 4. Set **Original Estimate** on each subtask **only if** the Story has a numeric Story Points value (see §2 and §1.10). If SP is missing, create subtasks without OE unless the user later adds SP and asks to recalculate.
 
+### 1.5b Sub-task sourced from a Jira comment (latest or linked comment)
+
+When the user asks to **create** or **add** a Sub-task under a given Story/issue **based on the latest comment** on some issue, **or** pastes a Jira **comment URL** (e.g. `.../browse/UD-xxxxx?focusedCommentId=yyyyyy`):
+
+1. **Resolve the comment**
+   - If the user gives a **comment link**, parse **issue key** and **`focusedCommentId`** (comment id). Fetch that issue with `getJiraIssue` and locate the comment whose `id` matches (or use the comment API if available).
+   - If the user says **“latest comment”** on issue **UD-xxxx**, fetch `getJiraIssue` for **UD-xxxx**, read `fields.comment.comments`, and take the comment with the **most recent** `created` (or `updated` if that is the team convention — default **created**).
+
+2. **Extract text** from the comment body (ADF or markdown). Strip boilerplate like “(please, do not edit or duplicate)” from the **summary** if it would pollute the title, but **keep the full raw text** in the description.
+
+3. **Sub-task `summary` (title):** Write a **short, actionable** one-line title (under Jira’s summary length limit). Rephrase from the comment — do **not** paste the entire comment as the title. Prefer a clear scope phrase (e.g. product area + outcome).
+
+4. **Sub-task `description`:** Include:
+   - **Source:** linked issue key, comment id, author, created timestamp, and a **permalink** to the comment (same site URL pattern the user uses).
+   - **“Original comment”** section with the **full** comment content (verbatim or faithfully converted from ADF to markdown), preserving meaning, lists, and names.
+   - Optional **“Rephrased scope”** bullet list if it helps readers scan what the Sub-task covers.
+
+5. **Parent:** Create the Sub-task with `parent` = the user’s target Story/issue key (`createJiraIssue`, issue type **Sub-task**).
+
+6. **After create:** Run **§2.4** if the parent Story has Story Points (redistribute OE across **all** Sub-tasks).
+
+7. **Do not** create issue links between the new Sub-task and the source issue unless the user explicitly asks (parent hierarchy is enough). Optionally mention the source issue key in the description only.
+
 ### 1.6 Default field values
 
 Apply unless the user overrides:
 
 | Field | Default |
 |-------|---------|
-| **Priority** | P2 (`{ "id": "3" }`) |
+| **Priority** | P2 default (`{ "id": "3" }`); **P1** = `{ "id": "2" }` when the user requests |
 | **Team** | Desktop-Customization (`customfield_10075` → `{ "id": "11209" }`) |
 | **Assignee** | Krishna Bankar (`712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799`) |
 | **Story Points** | Set **only** when the user explicitly gives a number; otherwise leave unchanged (§1.10) |
 | **Due Date** | Copied from Customer Issue if available |
 | **QA Date** | Copied from Customer Issue if available |
-| **Sprint** | User-provided sprint name → resolve to numeric id (`customfield_10010`); if omitted, auto-detect active/next ~14–15 day customization sprint |
+| **Sprint** | **Optional.** Set only when the user explicitly asks for a sprint, gives a sprint name, or legacy workflow requires it. **Kanban default (WD Product):** omit `customfield_10010` — work is visible on the **[WD Product Kanban board (894)](https://webgility.atlassian.net/jira/software/c/projects/UD/boards/894)** without sprint membership. If the user says sprint is **N/A** or they track on Kanban only, **never** auto-assign a sprint. If a sprint name **is** provided, resolve to numeric id (`customfield_10010`) per §1.9. |
 
 Set optional fields **only** when the user provides them. Do not force defaults the user did not mention (except Priority, Team, Assignee which are standard defaults).
+
+### 1.6a WD Product Kanban (board 894)
+
+- **Primary board for Desktop / Webgility Desktop customization visibility:** [UD board 894](https://webgility.atlassian.net/jira/software/c/projects/UD/boards/894).
+- Issues in project **UD** with **Team = Desktop-Customization** typically appear here per board filter; **no sprint** is required for them to show on the Kanban backlog/columns (verify filter if an issue is missing).
+- When documenting in descriptions, you may note: *Sprint: N/A — WD Product Kanban board 894* if the user wants explicit traceability.
 
 ### 1.7 Idempotency
 
@@ -82,6 +111,8 @@ Before creating, search for an existing Story linked to the same Customer Issue.
 Re-verify with `getJiraIssueTypeMetaWithFields` if the project changes.
 
 ### 1.9 Resolving sprint id (exact and fuzzy names)
+
+**Precondition:** The user (or workflow) actually wants a **Sprint** field set. If the user is on **Kanban-only** workflow (§1.6), **skip** this section unless they later ask to add or move issues into a sprint.
 
 When the user gives a **sprint name** (or partial phrase such as “customization 8 april”):
 
@@ -106,9 +137,33 @@ For **exact** names, still verify the id via `getJiraIssue` or sprint metadata b
 
 ### 1.11 Sub-tasks and parent Story — parent only (no issue links)
 
-- Sub-tasks are tied to the Story **only** via the standard **parent** relationship (Sub-task issue type + `parent` = Story key on create; see §1.5 and §6). Jira lists them under the Story’s **Subtasks** panel — no extra linking is needed.
-- **Do not** create Jira **issue links** (e.g. Relates to, Blocks, implements) **between a Sub-task and its parent Story**. That duplicates hierarchy and clutters the **Links** section.
-- **Do** create issue links when this skill **explicitly** requires them for **other** relationships (e.g. Story ↔ Customer Issue in §1.4).
+- Sub-tasks are tied to the parent **only** via the standard **parent** field (Sub-task issue type + `parent` = parent issue key). Jira lists them under the parent’s **Subtasks** panel — no extra linking is needed.
+- **Never** create Jira **issue links** of **any** type (e.g. **Relates to**, Blocks, Clones, Duplicate) **between a Sub-task and its own parent** (Story, Bug, Task, or any issue type that is the Sub-task’s `parent`). This applies **in every project and every Jira site** the agent touches — not only UD. Duplicate links show the same keys again under **Linked work items**, which is redundant.
+- **Never** use `createIssueLink` (or REST link creation) to connect an issue to one of its **own** Sub-tasks (or the reverse). If automation is tempted to “associate” work, use **parent** only when creating Sub-tasks, or link the **parent** to **unrelated** issues (e.g. Customer Issue) per §1.4.
+- **Do** create issue links when this skill **explicitly** requires them for **other** relationships (e.g. Story ↔ Customer Issue in §1.4). Those linked peers must **not** be Sub-tasks of the issue you are linking from.
+
+#### 1.11.1 Removing redundant Story ↔ Sub-task issue links (cleanup)
+
+When working on a Story that has Sub-tasks, or when the user asks to **clean links**, **remove duplicate hierarchy links**, or **stop showing sub-tasks under Linked work items**:
+
+1. **Build the child set:** From `getJiraIssue` on the Story, collect every Sub-task **key** from `fields.subtasks` (or use JQL `parent = STORYKEY` if needed). Call this set **S**.
+
+2. **Scan the Story’s `fields.issuelinks`:** For each link object, read `id`, `type.name`, and the **other** issue:
+   - If the link has `outwardIssue`, the peer key is `outwardIssue.key`; if `inwardIssue`, use `inwardIssue.key` (the Story itself is the current issue).
+   - If that peer key is in **S** (or `getJiraIssue` on the peer shows `fields.parent.key` equals the Story key and `issuetype.subtask` is true), the link is **redundant** — it only duplicates the parent/child relationship already shown under **Subtasks**.
+
+3. **Scan each Sub-task in S** (optional but thorough): On each sub-task’s `fields.issuelinks`, if the **other** issue is the **parent Story** key, treat that link as **redundant** as well.
+
+4. **Delete each redundant link** by **issue link id** (not issue key):
+   - Prefer an MCP/tool that deletes issue links if available (e.g. `deleteIssueLink`).
+   - Otherwise use Jira REST Cloud: **`DELETE`**  
+     `https://{site}.atlassian.net/rest/api/3/issueLink/{linkId}`  
+     (or `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3/issueLink/{linkId}`) with credentials that have **Link Issues** / delete link permission on that project. The `linkId` is the string `id` on each link in `issuelinks`.
+   - If the API returns permission errors, remove the links in the Jira UI (**Linked work items** → remove) or ask an admin to grant link permissions to the API user; do not leave redundant links in place silently.
+
+5. **Do not remove** links where the peer is **not** a Sub-task of this Story (e.g. Story ↔ Customer Issue, Story ↔ another Story, or cross-project references).
+
+6. After cleanup, **re-fetch** the Story and confirm redundant links are gone; mention removed **link id(s)** and peer key(s) in the session output (§10).
 
 ---
 
@@ -214,6 +269,35 @@ When adding a worklog on a Done transition where **`timeSpent` should equal Orig
 - **REST worklog (`POST` / `PUT` /issue/{key}/worklog):** include `"remainingEstimateSeconds": 0` in the JSON body when logging the full OE.
 - **Atlassian MCP `addWorklogToJiraIssue`:** the tool schema may not expose `remainingEstimateSeconds`. If after logging, **`getJiraIssue`** shows `timeSpent` = `originalEstimate` but remaining time is still non-zero, run **`editJiraIssue`** with `fields.timetracking.remainingEstimate` = **`"0h"`** (or `"0m"`) and re-verify `timetracking`.
 
+### 3.5 Closing a parent issue as **Closed** — sub-task sweep
+
+When the user says an issue is **closed**, asks to **close** it, or uses phrases like **“set status to Closed”** (the workflow status **Closed**, distinct from **Done** where both exist):
+
+**Trigger phrases (non-exhaustive):** *close*, *closed*, *set to Closed*, *status is closed*, *close the story*.
+
+1. **Target issue:** Resolve the issue key (Story, Bug, Task, or other). Fetch `getJiraIssue` for the parent and read **`subtasks`** (or `parent = KEY` JQL) so the child list is current.
+
+2. **Parent transition to Closed:**
+   - Use **`getTransitionsForJiraIssue`** on the parent; choose the transition whose **`to.name`** is **Closed** (in UD this is often the global transition **Closed** — verify `id` per issue).
+   - **Idempotency:** If the parent’s **`status.name`** is already **Closed**, **skip** the parent transition and continue with sub-task steps only.
+
+3. **Sub-tasks — by current status** (apply to **each** Sub-task under that parent):
+
+   | Sub-task `status.name` | Action |
+   |------------------------|--------|
+   | **To Do** | Transition to **Closed** (use `getTransitionsForJiraIssue` on that sub-task; pick transition to **Closed**). **Do not** add a worklog on To Do → Closed unless the user explicitly asks. |
+   | **In Progress** | Transition to **Done** (not Closed), then apply **§3.1**: if the **parent Story** has Story Points and the sub-task has an **Original Estimate**, log work equal to OE with the standard comment; idempotency per §3.1. |
+   | **Done** | **No change** (already complete). |
+   | **Closed** | **No change** (idempotent). |
+
+4. **Other statuses (e.g. Ready For Testing, Blocked):** Do **not** auto-transition unless the user names them. Report remaining keys and statuses.
+
+5. **Comment (recommended):** Add a short traceability **comment on the parent** listing: parent skipped or transitioned to Closed; which sub-task keys were Closed vs Done+worklog; **§1.11** — no issue links to sub-tasks.
+
+6. If **Closed** is not available from a sub-task’s current status, report the error and list **`getTransitionsForJiraIssue`** candidates for that key.
+
+**Relationship to §3.2:** §3.2 applies when the user asks to mark a **Story Done** (typically status **Done**). §3.5 applies when the user explicitly wants **Closed** and the sub-task cleanup rules above.
+
 ---
 
 ## 4. Status and Permissions
@@ -227,6 +311,8 @@ When adding a worklog on a Done transition where **`timeSpent` should equal Orig
 ---
 
 ## 5. Sprint Lifecycle
+
+Use this section when the team is actively using **Jira Sprints** (Scrum boards, sprint assignment, closure). If work is tracked only on **Kanban** (§1.6a) with **no sprint**, skip bulk sprint moves unless the user explicitly requests them.
 
 ### 5.1 Sprint start
 
@@ -413,9 +499,10 @@ After each operation, reply with:
 
 1. **Issue key(s)** created or updated (Story, subtasks).
 2. **Status** of each issue after the operation.
-3. **Sprint** (name + id + dates if available). If fuzzy match was used, state **user phrase → resolved sprint name (id)**.
+3. **Sprint** (name + id + dates if set). If **omitted** for Kanban (board 894), state **Sprint: none / N/A** explicitly. If fuzzy match was used, state **user phrase → resolved sprint name (id)**.
 4. **Story Points** (whether set, unchanged, or skipped per user).
 5. **Original Estimate** per subtask (if set or changed; if skipped due to missing SP, say so). After **add/remove/delete/move** subtasks, list **every** subtask key with its **new** OE after §2.4.
 6. **Worklogs** per subtask (hours logged, date).
 7. **Actions performed** (creates, deletes/moves, **OE redistribution** on all affected subtasks, transitions, worklogs, comments, links).
-8. **Anything blocked** (permissions, workflow issues, missing fields).
+8. **Redundant Story↔Sub-task issue links removed** (§1.11.1): link id(s) and peer key(s), or *none / not applicable*.
+9. **Anything blocked** (permissions, workflow issues, missing fields).
