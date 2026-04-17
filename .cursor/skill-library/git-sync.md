@@ -1,7 +1,13 @@
 # Skill: Git Branch Sync Automation
 
+## User preference: `master`-first (Krishna)
+
+For the **AskAI** repo, default **all** day-to-day work to **`master`** unless the user explicitly requests another branch. Before commits: `git checkout master` and `git pull origin master`. Default push: `git push origin master`. Do not create feature branches or merge to `develop` unless asked.
+
+The **`develop` sync** workflow below is **opt-in** — run it only when the user asks to bring `develop` up to date with `master`.
+
 ## Purpose
-Safely perform day-to-day Git automation for shared branches, especially synchronizing `develop` after `master` receives merges.
+Safely perform day-to-day Git automation for shared branches, especially synchronizing `develop` after `master` receives merges (when explicitly requested).
 
 ## Configured remotes
 

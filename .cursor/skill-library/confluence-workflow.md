@@ -94,8 +94,18 @@ Confluence "folders" are a newer content type (distinct from pages). These are t
 |---|---|---|---|
 | `3014819843` | Personal | Krishna Bankar (personal) | 2026-04-03 |
 | `3014361116` | Public | Krishna Bankar (personal) | 2026-04-03 |
+| `3027337225` | My Notes | Krishna Bankar (personal) | 2026-04-16 |
+| `3027468311` | Images | Krishna Bankar (personal) | 2026-04-16 |
+| `3027697689` | IMP SQL Scripts | Krishna Bankar (personal) | 2026-04-16 |
+| `3027959816` | Customizations | Krishna Bankar (personal) | 2026-04-16 |
 
-**Template container (under Public):** Atlassian MCP has **no** `createConfluenceFolder` tool. A **page** titled **`template`** (`3021045763`) sits under the **Public** folder and holds CS-facing template pages (same navigation goal as a subfolder). **Canonical pages:** **Customization Delivery** — ID `3021275138` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021275138/Customization+Delivery) · [tiny `AgAVt`](https://webgility.atlassian.net/wiki/x/AgAVt). **Comment for QA Testing** (RFT Jira comment) — ID `3021209607` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing) · [tiny `BwAUt`](https://webgility.atlassian.net/wiki/x/BwAUt).
+**Template container (under Public):** Atlassian MCP has **no** `createConfluenceFolder` tool. A **page** titled **`template`** (`3021045763`) sits under the **Public** folder and holds CS-facing template pages (same navigation goal as a subfolder). **Canonical pages:**
+
+- **Customization Delivery** — ID `3021275138` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021275138/Customization+Delivery) · [tiny `AgAVt`](https://webgility.atlassian.net/wiki/x/AgAVt) — HubSpot / CS handoff note (§7).
+- **Comment for QA Testing** — ID `3021209607` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing) · [tiny `BwAUt`](https://webgility.atlassian.net/wiki/x/BwAUt) — RFT Jira comment (§8).
+- **Customization Notes Template** — ID `3029205012` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3029205012/Customization+Notes+Template) · [tiny `FACOt`](https://webgility.atlassian.net/wiki/x/FACOt) — personal per-customer notes template used for pages inside the **Customizations** folder (§9).
+
+**Customizations folder (`3027959816`):** Krishna's personal knowledge base, one page per **Customer Issue**. Each page is titled `UD-<CUSTOMER_ISSUE_ID> <SUFFIX>` (e.g. `UD-31982 CIM`, `UD-28484 R-Bug`, `UD-29162 CFC`) and follows the **Customization Notes Template** structure. See §9 for the full workflow.
 
 **Important:** Confluence folders use `type=folder` in CQL, not `type=page`. The v2 page API (`getConfluencePage`) returns 404 for folders. To find folders, use `searchConfluenceUsingCql` with `type=folder`.
 
@@ -123,6 +133,10 @@ These pages are in the personal space (space ID `2590998546`). The agent should 
 | `3021045763` | template (CS template container page) | `3014361116` (Public folder) | 2026-04-10 |
 | `3021275138` | Customization Delivery | `3021045763` | 2026-04-10 |
 | `3021209607` | Comment for QA Testing | `3021045763` | 2026-04-10 |
+| `3029205012` | Customization Notes Template | `3021045763` | 2026-04-17 |
+| `3027632135` | Customization Dev Notes | `3027337225` (My Notes folder) | 2026-04-16 |
+| `3027468302` | QBD Custom Field Code | `3027337225` (My Notes folder) | 2026-04-16 |
+| `3024093188` | KPI Report — Customizations & Revenue (Oct 2025 – Mar 2026) | `2590998867` | 2026-04-13 |
 
 ### Page & Folder Hierarchy
 
@@ -134,8 +148,55 @@ Krishna Bankar Personal Space (2590998546)
 │
 ├── [folder] Public (3014361116)
 │   └── [page] template (3021045763)
-│       ├── Customization Delivery (3021275138)
-│       └── Comment for QA Testing (3021209607)
+│       ├── Customization Delivery (3021275138)         — §7 HubSpot / CS handoff
+│       ├── Comment for QA Testing (3021209607)         — §8 RFT Jira comment
+│       └── Customization Notes Template (3029205012)   — §9 per-customer notes
+│
+├── [folder] My Notes (3027337225)
+│   ├── Customization Dev Notes (3027632135)
+│   └── QBD Custom Field Code (3027468302)
+│
+├── [folder] Images (3027468311)
+├── [folder] IMP SQL Scripts (3027697689)
+│
+├── [folder] Customizations (3027959816)                — §9 one page per Customer Issue
+│   ├── UD-28484 R-Bug (3027402782)
+│   ├── UD-28263 RN-CIM (3027632155)
+│   ├── UD-28605 CIM (3027697697)
+│   ├── UD-28592 CIM (3027828786)
+│   ├── UD-28444 CIM-FR (3027959817)
+│   ├── UD-28429 CIM (3027566636)
+│   ├── UD-28049 CIM-FR (3027697711)
+│   ├── CSREQ-117 (3027337259)
+│   ├── UD-28940 RN-CIM (3027566643)
+│   ├── UD-28927 CIM (3027861582)
+│   ├── UD-28947 CIM (3027370041)
+│   ├── UD-29096 CIM (3027599394)
+│   ├── UD-29162 CFC (3027501122)
+│   ├── UD-29516 CFC+CIM (3027861589)
+│   ├── UD-29102 CFC (3028123649)
+│   ├── UD-29643 CFC (3027697734)
+│   ├── UD-29646 CFC (3027599401)
+│   ├── UD-29678 CFC (3028189185)
+│   ├── UD-29679 CFC (3028189192)
+│   ├── UD-29772 RN-CFC (3028320257)
+│   ├── UD-29795 RN-CFC (3028353025)
+│   ├── UD-29798 RN-CFC (3028484097)
+│   ├── UD-29818 RN-CFC+CIM (3028221958)
+│   ├── UD-28185 CIM (3028582401)
+│   ├── UD-29819 CFC (3028189208)
+│   ├── UD-29811 CIM (3028713473)
+│   ├── UD-29773 CIM (3028418564)
+│   ├── UD-30105 Bug (3028680706)
+│   ├── UD-29365 CIM (3028549638)
+│   ├── UD-29970 CIM (3028582422)
+│   ├── UD-30422 FR-CIM (3028353033)
+│   ├── UD-29830 CIM (3028451330)
+│   ├── UD-29932 RN-CIM (3028353040)
+│   ├── UD-29517 FR-CIM (3028516908)
+│   ├── UD-30989 CIM (3028680714)
+│   ├── UD-31982 CIM (3028713505)
+│   └── UD-32242 R-Bug (3029008405)                     — created 2026-04-17 from Customization Notes Template
 │
 └── [page] Overview (2590998867)
     ├── Opening 32-bit .NET Framework Forms in 64-bit VS 2022
@@ -146,7 +207,8 @@ Krishna Bankar Personal Space (2590998546)
     │   ├── ExpirationDateForSerialLotNumber
     │   └── PO Detailed Workflow: Purchase Orders => Item Receipt => Bill Creation
     ├── Handling Refunds and Returns: Shopify to QBD Workflow
-    └── Amazon Inventory Report Help Doc
+    ├── Amazon Inventory Report Help Doc
+    └── KPI Report — Customizations & Revenue (Oct 2025 – Mar 2026) (3024093188)
 ```
 
 ---
@@ -290,6 +352,38 @@ Use when the user asks for a **Comment for QA Testing**, **RFT**, or **Ready For
 **Repo skill (must stay aligned):** `jira-workflow.md` **§7** — draft in chat, ADF mentions, post only on Customer Issue after confirmation.
 
 **Exemplar in Jira:** [UD-31982?focusedCommentId=236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780).
+
+### 9. Customization Notes Page (Personal Customizations folder)
+
+Use when the user asks to **prepare a customizations page** or **new notes page for UD-XXXXX**. These are **personal short-form notes**, not documents to share or publish. Keep them minimal.
+
+**Template:** page `3029205012` (tiny `FACOt`) — **Customization Notes Template**. Mirror its content exactly, fill only what's asked; do **not** add sections that aren't in the template.
+
+**Page title:** `UD-<CUSTOMER_ISSUE_ID> <SUFFIX>` where `<SUFFIX>` is one of:
+
+`CIM` (Customization Implementation) · `CFC` (Feasibility Check) · `FR` (Feature Request) · `R` (Retention) · `RN` (Right Network) · `RN-CIM` (RN customization) · `Bug` · `R-Bug` (Retention + Bug-Fix Story, e.g. `UD-28484 R-Bug`) · `CFC+CIM` · `FR-CIM` / `CIM-FR` · `RN-CFC` / `RN-CFC+CIM`.
+
+**Suffix picked from Jira:** component `Retention` → `R`; Story summary `Bug-Fix :` → `Bug` (or `R-Bug` if component also Retention); `CIM :` / `CIF :` → `CIM`; `CFC :` → `CFC`; RN customer → prepend `RN-`. When ambiguous, ask.
+
+**Jira links in notes (mandatory for §9 work).** Base URL: `https://webgility.atlassian.net/browse/<KEY>`. For **every** Jira key on the page (Customer Issue, Story, Bug, sub-tasks, etc.), write the **full browse URL** and the **current status** from `getJiraIssue` (e.g. `https://webgility.atlassian.net/browse/UD-32242 — To Do`). One issue per line unless the user asks to compress sub-tasks onto one line.
+
+**Backup link.** If a customer **database backup** URL exists (e.g. Dropbox / shared file from Jira description or user message), add **`Backup:`** with that **https** URL as an active link. If none is known, leave `Backup:` blank — do not invent.
+
+**Create:**
+
+1. `getJiraIssue` for the Customer Issue, linked Story, and any linked bugs/sub-tasks you list — pull **status** and (if present in the description) HubSpot URL and backup URL. **Do not** scrape or summarize the full description; these notes are for Krishna's own reference, not a write-up.
+2. CQL-dedupe `title="UD-XXXXX <SUFFIX>" AND space.key="~712020cb0bd6e5b43649f9a0f56211a8cc8799"`; if it exists, offer to update instead.
+3. `createConfluencePage` with `spaceId=2590998546`, `parentId=3027959816` (Customizations folder), `title=UD-<ID> <SUFFIX>`, `contentFormat=markdown`.
+4. Body = the template's short line list, filled with full Jira URLs + status for each listed issue, HubSpot URL, Backup line when available, and other placeholders. **No** paragraphs, **no** reproduction steps, **no** status ticker, **no** triage narrative.
+
+**Update:** resolve page by title → `getConfluencePage` → refresh Jira URL lines with `getJiraIssue` when statuses may have changed → `updateConfluencePage`.
+
+**Rules:**
+
+- Parent is **always** the Customizations folder (`3027959816`).
+- Never invent PR URLs, builds, nodes, or credentials — leave the placeholder.
+- Never copy credentials / Dropbox / PR URLs from one customer's page into another (except when the user explicitly pastes a new URL for *this* customer).
+- Do **not** expand beyond the template's short-form lines. This is a personal notes page, not a handoff document.
 
 ---
 

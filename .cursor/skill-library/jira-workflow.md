@@ -15,10 +15,10 @@ If the user does **not** specify a work type (Story, Bug, Task, etc.), **ask fir
 | Rule | Value |
 |------|-------|
 | **Project** | `UD` (all issues are `UD-xxxxx`) |
-| **Summary prefix** | `CIM :` or `CIF :` — user will indicate which; if unclear, ask |
-| **Summary source** | User-provided title, or fetched from a referenced Customer Issue |
+| **Summary prefix (Story)** | Depends on **source issue type** when the Story is created **for** an existing UD issue: **`CIM :`** or **`CIF :`** — **only** when that source is a **Customer Issue** (see §1.4). **`Bug-Fix :`** — when the source is a **Bug** (see §1.4a). Do **not** use `CIM`/`CIF` for Bug-sourced Stories or `Bug-Fix :` for Customer-Issue-sourced Stories unless the user explicitly overrides. |
+| **Summary source** | User-provided title, or fetched from a referenced Customer Issue or Bug |
 
-If the user provides no title and no Customer Issue reference, ask for a one-line summary before creating.
+If the user provides no title and no Customer Issue / Bug reference, ask for a one-line summary (and confirm prefix if needed) before creating.
 
 ### 1.3 Creating a Story (no subtasks by default)
 
@@ -40,16 +40,30 @@ When the user says **"create jira story for customer issue UD-xxxx"**:
    - **Link** the Story to the Customer Issue (e.g. "relates to" / project-standard link type).
 3. Status: **To Do**.
 4. No subtasks unless explicitly requested.
-5. Story Points: set **only** when the user supplies a value; otherwise leave as-is (see §1.10).
+5. Story Points: set **only** when the user supplies a value **or** §1.6b applies (Story + Sub-tasks bundle with estimated SP); otherwise leave as-is (see §1.10).
+
+### 1.4a Creating a Story linked to a Bug
+
+When the user asks to **create a jira story for** / **from** a **Bug** `UD-xxxx` (issue type **Bug**):
+
+1. Fetch the Bug `UD-xxxx`: summary, description, labels, and any fields needed for context.
+2. Create a Story `UD-yyyy` with:
+   - Summary: **`Bug-Fix : <title from Bug or user>`** — do **not** use `CIM :` / `CIF :` (those are **Customer Issue** only — §1.2).
+   - Description referencing the Bug key (import or link Bug detail; avoid invalid ADF pastes that trigger attachment validation errors).
+   - **Link** the Story to the Bug (e.g. **Relates to** / project-standard link type).
+3. Status: **To Do** (unless the user asks otherwise).
+4. Subtasks, Story Points, and other defaults: follow §1.5 and §1.6b as applicable; use **`Bug-Fix :`** in the Story summary whenever the work is anchored to that Bug.
 
 ### 1.5 Creating a Story with subtasks
 
 Only when the user **explicitly** requests subtasks:
 
-1. Create the Story per §1.3 or §1.4.
+1. Create the Story per §1.3, §1.4, or §1.4a (correct **summary prefix**: Customer Issue → `CIM`/`CIF`; Bug → `Bug-Fix :`).
 2. Create **only** the subtasks the user specifies (names and count come from the user — there is **no fixed set**).
 3. Each subtask is a child of the Story (standard Sub-task issue type).
 4. Set **Original Estimate** on each subtask **only if** the Story has a numeric Story Points value (see §2 and §1.10). If SP is missing, create subtasks without OE unless the user later adds SP and asks to recalculate.
+
+5. **Duplicate guard:** Before creating each Sub-task, list existing children (`fields.subtasks` or JQL `parent = STORYKEY`). **Do not** create a second Sub-task with the **same summary** (e.g. two **Analysis** rows on the same Story). If the user asks for a name that already exists, report the existing key and update or rename instead.
 
 ### 1.5b Sub-task sourced from a Jira comment (latest or linked comment)
 
@@ -96,6 +110,25 @@ Set optional fields **only** when the user provides them. Do not force defaults 
 - Issues in project **UD** with **Team = Desktop-Customization** typically appear here per board filter; **no sprint** is required for them to show on the Kanban backlog/columns (verify filter if an issue is missing).
 - When documenting in descriptions, you may note: *Sprint: N/A — WD Product Kanban board 894* if the user wants explicit traceability.
 
+### 1.6b New Story + Sub-tasks (Desktop customization — default bundle)
+
+When the user asks to **create a Story with subtasks** (from a **Customer Issue** and/or a **Bug**), apply these **defaults** unless they override:
+
+| Item | Rule |
+|------|------|
+| **Story summary prefix** | **Customer Issue** source → `CIM :` / `CIF :` per §1.2. **Bug** source → **`Bug-Fix :`** per §1.4a — never mix prefixes. |
+| **Assignee** | Krishna Bankar (`712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799`) on the Story and on each Sub-task |
+| **Priority** | P2 (`priority` → `{ "id": "3" }`) |
+| **Priority Rank** | `1` → `customfield_10150` → `{ "id": "10339" }` |
+| **Team** | Desktop-Customization (`customfield_10075` → `{ "id": "11209" }`) |
+| **Type** | **Customization** (`customfield_10298` → `{ "id": "10882" }`) when the source is a Customer Issue; when the Story tracks a **Bug**, prefer **Bug** (`customfield_10298` → `{ "id": "10880" }`) unless the user says otherwise |
+| **StoryType** | **Implementation** (`customfield_10427` → `{ "id": "11224" }`) when the work is implementation (not Feasibility-only) |
+| **Story Points** | **Estimate** total effort to complete **all** Sub-tasks (scope from Customer Issue description, feasibility/quote comments, or typical split). Set `customfield_10053` on the **Story**, then run §2.4 for Original Estimate on Sub-tasks. Prefer half-point increments when needed (e.g. `3.5`). |
+| **Story-only fields from Customer Issue** | Copy onto the **Story only** (not Sub-tasks) when present on the Customer Issue: **Due date** `customfield_10062`, **Due date to QA** `customfield_10183`, **MRR** `customfield_10113`, **Subscriber ID** `customfield_10226`, **Revenue Received** `customfield_10130`. Re-verify field ids with create/edit meta if the project schema changes. |
+| **Sub-tasks** | Use **`parent`** only — **never** add Sub-tasks under **Linked work items** (§1.11). **Never** duplicate the same Sub-task summary on the same Story (§1.5). |
+
+Import from **Customer Issue**: copy **summary** (with `CIM :` / `CIF :` prefix per §1.2 only), **description** (ADF), and the fields above; link Story ↔ Customer Issue per §1.4. Import from **Bug**: use **`Bug-Fix :`** summary prefix (§1.4a), not `CIM`/`CIF`; link Story ↔ Bug.
+
 ### 1.7 Idempotency
 
 Before creating, search for an existing Story linked to the same Customer Issue. If found, report the existing Story and offer to update instead of duplicating.
@@ -108,6 +141,13 @@ Before creating, search for an existing Story linked to the same Customer Issue.
 | Sprint | `customfield_10010` (numeric sprint id) |
 | Team | `customfield_10075` |
 | **Priority Rank** (1–10) | `customfield_10150` — **not** the same as **Priority** (P0–P4); see §1.8a |
+| **Type** (e.g. Customization) | `customfield_10298` |
+| **StoryType** (e.g. Implementation) | `customfield_10427` |
+| **Due date** (custom) | `customfield_10062` |
+| **Due date to QA** | `customfield_10183` |
+| **MRR** | `customfield_10113` |
+| **Subscriber ID** | `customfield_10226` |
+| **Revenue Received** | `customfield_10130` |
 
 Re-verify with `getJiraIssueTypeMetaWithFields` if the project changes.
 
@@ -138,8 +178,9 @@ For **exact** names, still verify the id via `getJiraIssue` or sprint metadata b
 
 ### 1.10 Story Points (optional)
 
-- **Set** `customfield_10053` **only** when the user explicitly provides a number (or clearly says “set story points to X”).
-- **Do not** overwrite existing SP with a guess. **Do not** require SP to complete create/rename/subtask operations.
+- **Set** `customfield_10053` when (a) the user explicitly provides a number, **or** (b) the user (or §1.6b) asks for a **new Story with Sub-tasks** — then **estimate** SP from scope / Customer Issue / feasibility output (state the rationale briefly in the reply).
+- **Do not** overwrite existing SP with a guess when updating an old issue unless the user asks.
+- **Do not** require SP to complete create/rename/subtask operations that are not OE-driven.
 - When SP exists on the Story **and** subtasks exist, apply §2 for Original Estimate and later worklogs as written.
 
 ### 1.11 Sub-tasks and parent Story — parent only (no issue links)
@@ -292,18 +333,41 @@ When the user says an issue is **closed**, asks to **close** it, or uses phrases
 
    | Sub-task `status.name` | Action |
    |------------------------|--------|
-   | **To Do** | Transition to **Closed** (use `getTransitionsForJiraIssue` on that sub-task; pick transition to **Closed**). **Do not** add a worklog on To Do → Closed unless the user explicitly asks. |
-   | **In Progress** | Transition to **Done** (not Closed), then apply **§3.1**: if the **parent Story** has Story Points and the sub-task has an **Original Estimate**, log work equal to OE with the standard comment; idempotency per §3.1. |
-   | **Done** | **No change** (already complete). |
+   | **To Do** | Transition to **Closed** (use `getTransitionsForJiraIssue` on that sub-task; pick transition whose **`to.name`** is **Closed**). **Do not** add a worklog unless the user explicitly asks. |
+   | **In Progress** | Transition to **Closed** (same as To Do — closing the parent means open subtasks are **Closed**, not swept to **Done**). **Do not** add a worklog on In Progress → Closed unless the user explicitly asks. |
+   | **Done** | **No change** (remains **Done**). |
    | **Closed** | **No change** (idempotent). |
 
-4. **Other statuses (e.g. Ready For Testing, Blocked):** Do **not** auto-transition unless the user names them. Report remaining keys and statuses.
+4. **Any other status** (e.g. Ready For Testing, Blocked, or any status that is **not** To Do, In Progress, Done, or Closed): **Leave untouched** — do **not** auto-transition. List those keys and statuses in the reply (and in the optional parent comment).
 
-5. **Comment (recommended):** Add a short traceability **comment on the parent** listing: parent skipped or transitioned to Closed; which sub-task keys were Closed vs Done+worklog; **§1.11** — no issue links to sub-tasks.
+5. **Comment (recommended):** Add a short traceability **comment on the parent** listing: parent skipped or transitioned to Closed; which sub-task keys were transitioned to **Closed** vs left as-is; **§1.11** — no issue links to sub-tasks.
 
 6. If **Closed** is not available from a sub-task’s current status, report the error and list **`getTransitionsForJiraIssue`** candidates for that key.
 
 **Relationship to §3.2:** §3.2 applies when the user asks to mark a **Story Done** (typically status **Done**). §3.5 applies when the user explicitly wants **Closed** and the sub-task cleanup rules above.
+
+### 3.6 “Open” a Jira — parent and Sub-tasks back to **To Do** (reopen for work)
+
+When the user asks to **open** an issue, **reopen** it, or **mark it To Do** so work can continue (issue may be **Done**, **Closed**, **In Progress**, or any other status):
+
+**Trigger phrases (non-exhaustive):** *open*, *open the jira*, *open UD-xxxx*, *reopen*, *set to To Do*, *move to To Do*, *put back in To Do*.
+
+1. **Target issue:** Resolve the issue key. Fetch `getJiraIssue` for the parent and read **`subtasks`** (or `parent = KEY` JQL).
+
+2. **Parent → To Do:**
+   - Use **`getTransitionsForJiraIssue`** on the parent. Choose a transition (or **chain** transitions) so the parent ends in **`status.name`** **To Do**.
+   - **Idempotency:** If the parent is already **To Do**, **skip** the parent transition.
+   - **No direct path:** Many workflows require intermediate steps (e.g. **Closed** → **Reopened** → **To Do**, or **Done** → **Reopened** → **To Do**). Apply the shortest valid chain; if automation cannot reach **To Do**, report available transitions and the blocking status.
+
+3. **Sub-tasks — only if Closed:**
+   - For **each** Sub-task under that parent: if **`status.name`** is **Closed**, transition it to **To Do** (same rules: **`getTransitionsForJiraIssue`**, chain if needed).
+   - **All other Sub-task statuses** (**Done**, **In Progress**, **To Do**, **Ready For Testing**, **Blocked**, etc.): **leave unchanged** — do **not** move them to **To Do** as part of this action.
+
+4. **Comment (optional):** Brief note on the parent: parent reopened to **To Do**; which Sub-task keys moved from **Closed** → **To Do**; **§1.11** — no issue links for hierarchy.
+
+5. If a required transition is unavailable (permissions or workflow), report the error and list **`getTransitionsForJiraIssue`** candidates.
+
+**Relationship to §3.5:** §3.5 closes work; §3.6 **opens** work again. Sub-task handling differs: §3.6 only touches Sub-tasks in **Closed**; §3.5 sweeps **To Do** / **In Progress** to **Closed**.
 
 ---
 
