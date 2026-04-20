@@ -105,7 +105,7 @@ Confluence "folders" are a newer content type (distinct from pages). These are t
 - **Comment for QA Testing** — ID `3021209607` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing) · [tiny `BwAUt`](https://webgility.atlassian.net/wiki/x/BwAUt) — RFT Jira comment (§8).
 - **Customization Notes Template** — ID `3029205012` [web](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3029205012/Customization+Notes+Template) · [tiny `FACOt`](https://webgility.atlassian.net/wiki/x/FACOt) — personal per-customer notes template used for pages inside the **Customizations** folder (§9).
 
-**Customizations folder (`3027959816`):** Krishna's personal knowledge base, one page per **Customer Issue**. Each page is titled `UD-<CUSTOMER_ISSUE_ID> <SUFFIX>` (e.g. `UD-31982 CIM`, `UD-28484 R-Bug`, `UD-29162 CFC`) and follows the **Customization Notes Template** structure. See §9 for the full workflow.
+**Customizations folder (`3027959816`):** Krishna's personal knowledge base (also referred to as the **“public customizations”** folder — the working folder where customization index pages live), one page per **Customer Issue**. Each page is titled `UD-<CUSTOMER_ISSUE_ID> <SUFFIX>` (e.g. `UD-31982 CIM`, `UD-28484 R-Bug`, `UD-29162 CFC`) and follows the **Customization Notes Template** structure. New pages are **appended last** in this folder when possible. See §9 for the full workflow.
 
 **Important:** Confluence folders use `type=folder` in CQL, not `type=page`. The v2 page API (`getConfluencePage`) returns 404 for folders. To find folders, use `searchConfluenceUsingCql` with `type=folder`.
 
@@ -356,9 +356,16 @@ Use when the user asks for a **Comment for QA Testing**, **RFT**, or **Ready For
 
 ### 9. Customization Notes Page (Personal Customizations folder)
 
-Use when the user asks to **prepare a customizations page** or **new notes page for UD-XXXXX**. These are **personal short-form notes**, not documents to share or publish. Keep them minimal.
+**Triggers (treat as §9 create/update):** Phrases such as **“prepare a customizations personal page for Jira [UD-XXXXX]”**, **“prepare a customizations page …”**, **“new notes page for UD-XXXXX”**, or **“customization notes for UD-XXXXX”** — same workflow as below.
 
-**Template:** page `3029205012` (tiny `FACOt`) — **Customization Notes Template**. Mirror its content exactly, fill only what's asked; do **not** add sections that aren't in the template.
+These are **personal short-form notes** in folder **`3027959816`** (the **Customizations** / “public customizations” folder), not long-form handoff docs. Keep the **default** to the minimal pattern (exemplars: **UD-32242 R-Bug**, **UD-32081 CFC+CIM**).
+
+**Default vs extra (mandatory):**
+
+- **Default (always do):** Read template `3029205012` / `FACOt`. `getJiraIssue` for the **Customer Issue** and the **linked Story** (and **CFC** line when the case has a separate CFC story, e.g. `CFC+CIM`). Fill **full Jira browse URL + current status** for each line you add. HubSpot URL(s) from the Customer Issue description when present. **`Backup:`** / **`Dropbox DB:`** only when a real **https** URL is known from Jira or the user — else leave blank. Pick **`UD-<CUSTOMER_ISSUE_ID> <SUFFIX>`** from Jira evidence. **Do not** list **Jira sub-tasks** on the page by default. **Do not** add paragraphs, reproduction steps, status tickers, triage essays, or template fields the user did not ask to fill.
+- **Extra (only if the user explicitly asks in that request or a follow-up):** Additional lines (e.g. sub-tasks, extra linked issues, PR/build lines filled, more HubSpot context, narrative). If the user only gives a Jira key and asks for a “personal page,” deliver **default** only.
+
+**Template:** page `3029205012` (tiny `FACOt`) — **Customization Notes Template**. Mirror its structure; default fill matches the short exemplar pages, not a maximal dump of every template placeholder unless the user wants that.
 
 **Page title:** `UD-<CUSTOMER_ISSUE_ID> <SUFFIX>` where `<SUFFIX>` is one of:
 
@@ -366,25 +373,25 @@ Use when the user asks to **prepare a customizations page** or **new notes page 
 
 **Suffix picked from Jira:** component `Retention` → `R`; Story summary `Bug-Fix :` → `Bug` (or `R-Bug` if component also Retention); `CIM :` / `CIF :` → `CIM`; `CFC :` → `CFC`; RN customer → prepend `RN-`. When ambiguous, ask.
 
-**Jira links in notes (mandatory for §9 work).** Base URL: `https://webgility.atlassian.net/browse/<KEY>`. For **every** Jira key on the page (Customer Issue, Story, Bug, sub-tasks, etc.), write the **full browse URL** and the **current status** from `getJiraIssue` (e.g. `https://webgility.atlassian.net/browse/UD-32242 — To Do`). One issue per line unless the user asks to compress sub-tasks onto one line.
+**Jira links in notes (mandatory for §9 work).** Base URL: `https://webgility.atlassian.net/browse/<KEY>`. For **every** Jira key **you put on the page** (Customer Issue, Story, CFC, Bug — **not** sub-tasks unless the user asked for sub-tasks), write the **full browse URL** and the **current status** from `getJiraIssue` (e.g. `https://webgility.atlassian.net/browse/UD-32242 — To Do`). One issue per line unless the user asks to compress several keys onto one line.
 
 **Backup link.** If a customer **database backup** URL exists (e.g. Dropbox / shared file from Jira description or user message), add **`Backup:`** with that **https** URL as an active link. If none is known, leave `Backup:` blank — do not invent.
 
 **Create:**
 
-1. `getJiraIssue` for the Customer Issue, linked Story, and any linked bugs/sub-tasks you list — pull **status** and (if present in the description) HubSpot URL and backup URL. **Do not** scrape or summarize the full description; these notes are for Krishna's own reference, not a write-up.
+1. `getJiraIssue` for the Customer Issue and linked Stories (CFC/CIM/Bug as needed for the chosen suffix) — pull **status** and (if present in the description) HubSpot URL and backup URL. **Do not** scrape or summarize the full description. **Skip sub-tasks** unless the user explicitly asked to include them.
 2. CQL-dedupe `title="UD-XXXXX <SUFFIX>" AND space.key="~712020cb0bd6e5b43649f9a0f56211a8cc8799"`; if it exists, offer to update instead.
-3. `createConfluencePage` with `spaceId=2590998546`, `parentId=3027959816` (Customizations folder), `title=UD-<ID> <SUFFIX>`, `contentFormat=markdown`.
-4. Body = the template's short line list, filled with full Jira URLs + status for each listed issue, HubSpot URL, Backup line when available, and other placeholders. **No** paragraphs, **no** reproduction steps, **no** status ticker, **no** triage narrative.
+3. `createConfluencePage` with `spaceId=2590998546`, `parentId=3027959816` (Customizations folder), `title=UD-<ID> <SUFFIX>`, `contentFormat=markdown`. **Placement:** create as a **new child of `3027959816`** so it appears **at the end / last** among siblings (Confluence typically orders new pages after existing ones; if your MCP/API exposes an explicit “after” or position for ordering, prefer **last**). Do not insert in the middle of the folder unless the user asks.
+4. Body = **default** short line list per exemplar pages (heading, Customer issue, Story and/or CFC lines as required by the case, HubSpot, blank Backup/Dropbox, short Notes). Full Jira URLs + status for each line. **No** default paragraphs, reproduction steps, status ticker, or triage narrative. **Extras** only if the user asked.
 
 **Update:** resolve page by title → `getConfluencePage` → refresh Jira URL lines with `getJiraIssue` when statuses may have changed → `updateConfluencePage`.
 
 **Rules:**
 
-- Parent is **always** the Customizations folder (`3027959816`).
-- Never invent PR URLs, builds, nodes, or credentials — leave the placeholder.
+- Parent is **always** the Customizations folder (`3027959816`). New pages **last** in that folder when possible.
+- Never invent PR URLs, builds, nodes, or credentials — leave the placeholder unless the user asked you to fill those lines **and** gave real values.
 - Never copy credentials / Dropbox / PR URLs from one customer's page into another (except when the user explicitly pastes a new URL for *this* customer).
-- Do **not** expand beyond the template's short-form lines. This is a personal notes page, not a handoff document.
+- **Default** = minimal exemplar-style body; **expand** only when the user explicitly requests extra content or fields.
 
 ---
 
