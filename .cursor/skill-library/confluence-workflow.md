@@ -196,7 +196,7 @@ Krishna Bankar Personal Space (2590998546)
 │   ├── UD-29517 FR-CIM (3028516908)
 │   ├── UD-30989 CIM (3028680714)
 │   ├── UD-31982 CIM (3028713505)
-│   ├── UD-32081 CFC+CIM (3031662599)                   — 2026-04-20
+│   ├── UD-32081 CIM (3031662599)                       — 2026-04-20 (CFC line on page; title CIM — CFC owned by other assignee)
 │   └── UD-32242 R-Bug (3029008405)                     — created 2026-04-17 from Customization Notes Template
 │
 └── [page] Overview (2590998867)
@@ -358,11 +358,11 @@ Use when the user asks for a **Comment for QA Testing**, **RFT**, or **Ready For
 
 **Triggers (treat as §9 create/update):** Phrases such as **“prepare a customizations personal page for Jira [UD-XXXXX]”**, **“prepare a customizations page …”**, **“new notes page for UD-XXXXX”**, or **“customization notes for UD-XXXXX”** — same workflow as below.
 
-These are **personal short-form notes** in folder **`3027959816`** (the **Customizations** / “public customizations” folder), not long-form handoff docs. Keep the **default** to the minimal pattern (exemplars: **UD-32242 R-Bug**, **UD-32081 CFC+CIM**).
+These are **personal short-form notes** in folder **`3027959816`** (the **Customizations** / “public customizations” folder), not long-form handoff docs. Keep the **default** to the minimal pattern (exemplars: **UD-32242 R-Bug**, **UD-32081 CIM**).
 
 **Default vs extra (mandatory):**
 
-- **Default (always do):** Read template `3029205012` / `FACOt`. `getJiraIssue` for the **Customer Issue** and the **linked Story** (and **CFC** line when the case has a separate CFC story, e.g. `CFC+CIM`). Fill **full Jira browse URL + current status** for each line you add. HubSpot URL(s) from the Customer Issue description when present. **`Backup:`** / **`Dropbox DB:`** only when a real **https** URL is known from Jira or the user — else leave blank. Pick **`UD-<CUSTOMER_ISSUE_ID> <SUFFIX>`** from Jira evidence. **Do not** list **Jira sub-tasks** on the page by default. **Do not** add paragraphs, reproduction steps, status tickers, triage essays, or template fields the user did not ask to fill.
+- **Default (always do):** Read template `3029205012` / `FACOt`. `getJiraIssue` for the **Customer Issue** and linked **Stories** (CIM/CFC/Bug as needed). **Always** add a **`CFC:`** line (full URL + status) on the page **when a linked CFC Story exists** — even if **CFC is not** in the **page title** (see **Page title vs CFC ownership** below). Fill **full Jira browse URL + current status** for each line you add. HubSpot URL(s) from the Customer Issue description when present. **Scan the Customer Issue `description`** (and linked Story descriptions only if the user asks) for **customer credentials** and **DB / file-backup `https` links** (Dropbox, Drive, OneDrive, SharePoint, DB admin URLs, etc.); copy **only** what appears there into the matching template lines (`Backup:`, `Dropbox DB:`, `Login`/`Password`, `QBD / WD login`, `Database`, etc.) — **never** invent, **never** copy from another ticket. If the description has no creds or backup links, leave those lines blank. Pick **`UD-<CUSTOMER_ISSUE_ID> <SUFFIX>`** from Jira evidence and CFC ownership rules. **Do not** list **Jira sub-tasks** on the page by default. **Do not** add paragraphs, reproduction steps, status tickers, triage essays, or template fields the user did not ask to fill.
 - **Extra (only if the user explicitly asks in that request or a follow-up):** Additional lines (e.g. sub-tasks, extra linked issues, PR/build lines filled, more HubSpot context, narrative). If the user only gives a Jira key and asks for a “personal page,” deliver **default** only.
 
 **Template:** page `3029205012` (tiny `FACOt`) — **Customization Notes Template**. Mirror its structure; default fill matches the short exemplar pages, not a maximal dump of every template placeholder unless the user wants that.
@@ -371,15 +371,17 @@ These are **personal short-form notes** in folder **`3027959816`** (the **Custom
 
 `CIM` (Customization Implementation) · `CFC` (Feasibility Check) · `FR` (Feature Request) · `R` (Retention) · `RN` (Right Network) · `RN-CIM` (RN customization) · `Bug` · `R-Bug` (Retention + Bug-Fix Story, e.g. `UD-28484 R-Bug`) · `CFC+CIM` · `FR-CIM` / `CIM-FR` · `RN-CFC` / `RN-CFC+CIM`.
 
-**Suffix picked from Jira:** component `Retention` → `R`; Story summary `Bug-Fix :` → `Bug` (or `R-Bug` if component also Retention); `CIM :` / `CIF :` → `CIM`; `CFC :` → `CFC`; RN customer → prepend `RN-`. When ambiguous, ask.
+**Page title vs CFC ownership (mandatory):** Krishna’s Jira **account ID** is **`712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799`** (see table at top of this file). Use a **compound title that includes `CFC`** (e.g. **`CFC+CIM`**, **`RN-CFC+CIM`**) **only if** the linked **CFC Story** exists **and** `fields.assignee.accountId` on **that CFC Story** equals Krishna’s account ID (i.e. **you** owned feasibility). If the CFC Story assignee is **missing** or is **anyone else**, **do not** put `CFC` in the **page title** — use the suffix for **your** current phase instead (usually **`CIM`** when you own the implementation Story). **Regardless of title**, still add a **`CFC:`** line in the **page body** with full Jira URL + status when a CFC Story is linked.
+
+**Suffix picked from Jira (after CFC title rule):** component `Retention` → `R`; Story summary `Bug-Fix :` → `Bug` (or `R-Bug` if component also Retention); `CIM :` / `CIF :` → `CIM`; `CFC :` → `CFC` **for title** only when **you** are assignee on that CFC Story; RN customer → prepend `RN-`. When ambiguous, ask.
 
 **Jira links in notes (mandatory for §9 work).** Base URL: `https://webgility.atlassian.net/browse/<KEY>`. For **every** Jira key **you put on the page** (Customer Issue, Story, CFC, Bug — **not** sub-tasks unless the user asked for sub-tasks), write the **full browse URL** and the **current status** from `getJiraIssue` (e.g. `https://webgility.atlassian.net/browse/UD-32242 — To Do`). One issue per line unless the user asks to compress several keys onto one line.
 
-**Backup link.** If a customer **database backup** URL exists (e.g. Dropbox / shared file from Jira description or user message), add **`Backup:`** with that **https** URL as an active link. If none is known, leave `Backup:` blank — do not invent.
+**Backup / creds from Jira description.** On every §9 prepare/update, read **`description`** on the **Customer Issue** (plain text / markdown from `getJiraIssue`). Extract and add to the page: (1) any **`https` URLs** that point to **DB backups**, **Dropbox/shared files**, cloud drives, or **DB admin** tools; (2) explicit **customer credentials** or login details **only as they appear** in that description (map to template lines: `Backup:`, `Dropbox DB:`, `Store`/`Login`/`Password`, `Database`/`User`/`Password`, `QBD / WD login`, etc.). If nothing is present, leave those lines blank — do not invent.
 
 **Create:**
 
-1. `getJiraIssue` for the Customer Issue and linked Stories (CFC/CIM/Bug as needed for the chosen suffix) — pull **status** and (if present in the description) HubSpot URL and backup URL. **Do not** scrape or summarize the full description. **Skip sub-tasks** unless the user explicitly asked to include them.
+1. `getJiraIssue` for the Customer Issue and linked Stories (CFC/CIM/Bug as needed) — include **`description`** on the Customer Issue. Pull **status**, HubSpot links, and **scan `description` for backup URLs and customer creds** to fill template lines (see above). **Do not** paste the entire description into Confluence as prose. **Skip sub-tasks** unless the user explicitly asked to include them.
 2. CQL-dedupe `title="UD-XXXXX <SUFFIX>" AND space.key="~712020cb0bd6e5b43649f9a0f56211a8cc8799"`; if it exists, offer to update instead.
 3. `createConfluencePage` with `spaceId=2590998546`, `parentId=3027959816` (Customizations folder), `title=UD-<ID> <SUFFIX>`, `contentFormat=markdown`. **Placement:** create as a **new child of `3027959816`** so it appears **at the end / last** among siblings (Confluence typically orders new pages after existing ones; if your MCP/API exposes an explicit “after” or position for ordering, prefer **last**). Do not insert in the middle of the folder unless the user asks.
 4. Body = **default** short line list per exemplar pages (heading, Customer issue, Story and/or CFC lines as required by the case, HubSpot, blank Backup/Dropbox, short Notes). Full Jira URLs + status for each line. **No** default paragraphs, reproduction steps, status ticker, or triage narrative. **Extras** only if the user asked.
@@ -390,7 +392,7 @@ These are **personal short-form notes** in folder **`3027959816`** (the **Custom
 
 - Parent is **always** the Customizations folder (`3027959816`). New pages **last** in that folder when possible.
 - Never invent PR URLs, builds, nodes, or credentials — leave the placeholder unless the user asked you to fill those lines **and** gave real values.
-- Never copy credentials / Dropbox / PR URLs from one customer's page into another (except when the user explicitly pastes a new URL for *this* customer).
+- Never copy credentials / Dropbox / PR URLs from one customer's page into another. Only populate those fields from **this** ticket’s Jira description (or what the user pastes for this ticket).
 - **Default** = minimal exemplar-style body; **expand** only when the user explicitly requests extra content or fields.
 
 ---
