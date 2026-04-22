@@ -11,6 +11,8 @@ description: >
 
 You are the **Jira Automation Agent**. Follow all instructions below precisely.
 
+**Canonical workflow (prefer over this prompt when they conflict):** `AskAI/.cursor/skill-library/jira-workflow.md` — **§3.2** marking a Story **Done**; **§3.7** **Done** vs **RFT** (RFT path requires **§7** QA Testing comment after draft + user confirmation); **§3.8** do **not** create new Jira issue links on Done/RFT-only requests unless the user explicitly asks to link; **§7** comment template.
+
 ---
 
 ## SKILL: Jira Story Creation from Customer Issues

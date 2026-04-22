@@ -1,6 +1,6 @@
 # Jira Workflow — Consolidated Skill
 
-Single skill file for the `jira-automation` agent. Covers issue creation, subtasks, Original Estimate, worklogs, status transitions, and sprint lifecycle.
+Single skill file for the `jira-automation` agent. Covers issue creation, subtasks, Original Estimate, worklogs, **Sub-task Done / Story Done: OE from Story SP when missing** (§3.1.1), status transitions, **Done vs RFT handoff** (§3.7), **no unsolicited issue links on Done/RFT** (§3.8), and sprint lifecycle.
 
 ---
 
@@ -284,31 +284,45 @@ Whenever the user asks to **add**, **remove**, **delete**, or **move** a sub-tas
 
 ### 3.1 Marking a subtask Done
 
-When the user asks to mark a **subtask** Done:
+When the user asks to mark a **subtask** Done — or when §3.2 moves an **In Progress** subtask to **Done** — follow this order:
 
-1. Transition the subtask to **Done** (respect workflow; chain transitions if needed).
-2. **If the Story has Story Points and the subtask has an Original Estimate:**
-   - Log work (`timeSpent`) equal to that subtask's **Original Estimate**.
-   - Comment: `"Auto: worklog matches Original Estimate on Done"`.
-3. **If the Story has no Story Points:**
-   - Mark the subtask Done **without** logging work.
+#### 3.1.1 Resolve Original Estimate before transition (mandatory)
 
-**Idempotency:** If the subtask already has work logged (total time spent >= OE), do **not** add a duplicate worklog.
+1. **Load context:** Fetch the Sub-task and its **parent** Story (`fields.parent.key` or equivalent). Read the Sub-task’s `timetracking.originalEstimate` (may be empty).
+2. **If OE is missing or unreadable** and the parent Story has **numeric Story Points** (`customfield_10053`):
+   - Re-fetch **all** Sub-tasks under that Story (`parent = STORYKEY` or `fields.subtasks` on the Story). Let **N** = count of Sub-tasks.
+   - If **N ≥ 1**, compute `hours_per_subtask = (SP × 8) / N` per **§2.2** (round to **0.25h**), convert to a Jira duration string (e.g. `20h`, `6h 30m`).
+   - **Set** `fields.timetracking.originalEstimate` to that value on **every** Sub-task under the Story (**same** OE on all **N** — same rule as **§2.4**). This keeps siblings aligned when OE was never set or was stale.
+3. **If the Story has no Story Points** and the Sub-task still has no OE: do **not** invent SP; proceed **without** OE-based worklog unless the user supplies SP in the same session (then re-run step 2).
+
+#### 3.1.2 Transition and worklog
+
+4. **Transition** the Sub-task to **Done** (respect workflow; transition id whose `to.name` is **Done** — often **`231`** in UD; chain if needed).
+5. **Worklog (when OE applies):** After step 2 has ensured an OE (or one was already present), if the Sub-task now has **Original Estimate** and the parent Story has **Story Points** (or OE was user-provided on the Sub-task):
+   - **Idempotency:** If total logged time on the Sub-task is already **≥** that Original Estimate, **skip** adding another worklog.
+   - Otherwise log **`timeSpent`** equal to the Sub-task’s **Original Estimate** (after §3.1.1).
+   - Worklog comment: `"Auto: worklog matches Original Estimate on Done"`.
+   - Set **`remainingEstimateSeconds`: `0`** in the worklog payload (**§3.4**).
+6. **If** after §3.1.1 there is still **no** OE (no Story SP and none set): transition to **Done** **without** logging work.
+
+**Already-Done Sub-task (backfill):** If the user asks to align worklogs/OE **after** the Sub-task is already **Done**, or you discover **Done** with **no** worklog but Story SP exists: run **§3.1.1** to set OE on all siblings if needed, then add the **§3.1.2** worklog on that key (same idempotency check).
+
+**Issue links:** On “mark Sub-task Done only” requests, **do not** create new issue links (**§3.8**).
 
 ### 3.2 Marking a Story Done
 
 When the user asks to mark a **Story** Done:
 
 1. **Only transition subtasks that are "In Progress" to Done.** Leave untouched subtasks (e.g. To Do) as-is.
-2. For each subtask moved to Done: log work equal to its Original Estimate per §3.1.
+2. For **each** Sub-task that will move **In Progress** → **Done**, run **§3.1** in full: **§3.1.1** (resolve/set OE from Story SP ÷ **N** if OE missing) **before** transition, then **§3.1.2** transition + worklog. Do **not** skip OE resolution because the Sub-task had empty OE at the start of the request.
 3. Transition the **Story** to Done.
-4. Add a brief traceability **comment** on the Story (transitions, worklogs, sprint/SP, Customer Issue link if any). **Do not** add issue links between the Story and its Sub-tasks (§1.11). **Do not** paste a full sub-task key list **only** to associate children with the Story — they are already visible under **Subtasks**; mention sub-task keys only when documenting **this session’s** concrete actions (e.g. which keys transitioned or received worklogs).
+4. Add a brief traceability **comment** on the Story (transitions, worklogs, sprint/SP; may **name** related keys in text). **Do not** add **issue links** of any kind unless the user explicitly asked to link issues in the same request (**§3.8**). **Do not** add issue links between the Story and its Sub-tasks (§1.11). **Do not** paste a full sub-task key list **only** to associate children with the Story — they are already visible under **Subtasks**; mention sub-task keys only when documenting **this session’s** concrete actions (e.g. which keys transitioned or received worklogs).
 
 > **Key difference from previous behavior:** Do NOT sweep all non-Done subtasks to Done. Only In Progress subtasks are moved to Done when the Story is completed.
 
 ### 3.3 Worklog value
 
-The worklog `timeSpent` always equals the subtask's **Original Estimate** (the value set in §2.3). If OE was never set, compute it using §2.2 first, set OE, then log the same duration.
+The worklog `timeSpent` always equals the subtask's **Original Estimate** after **§3.1.1** (or §2.3 / §2.4). If OE was not on the Sub-task when the request started, **re-read** Story SP and Sub-task count **N**, compute §2.2, **set OE**, then log (**§3.1**).
 
 ### 3.4 Remaining estimate when worklog equals OE (Done transition)
 
@@ -368,6 +382,43 @@ When the user asks to **open** an issue, **reopen** it, or **mark it To Do** so 
 5. If a required transition is unavailable (permissions or workflow), report the error and list **`getTransitionsForJiraIssue`** candidates.
 
 **Relationship to §3.5:** §3.5 closes work; §3.6 **opens** work again. Sub-task handling differs: §3.6 only touches Sub-tasks in **Closed**; §3.5 sweeps **To Do** / **In Progress** to **Closed**.
+
+### 3.7 Completing a Story (dev handoff): **Done** vs **RFT**
+
+Use this when the user says a **Story** (e.g. **UD-32332**, **UD-32333**) or related dev work is **finished** and should move forward. **Done** and **RFT** share the same *kind* of work (transitions, optional worklogs per §3.1–§3.2); **RFT adds a mandatory QA Testing Jira note** (skill **§7**).
+
+| Path | Meaning | Sub-tasks / worklogs | QA Testing comment (§7) |
+|------|---------|----------------------|-------------------------|
+| **Done** | Dev completion — Story ends in **Done** | Follow **§3.2**: only subtasks in **In Progress** → **Done** + worklogs per §3.1; then Story → **Done**. | **Not** required unless the user explicitly asks for a QA / RFT comment. |
+| **RFT** | QA handoff — **Ready For Testing**, **Ready For Verification**, or shorthand **RFT** (exact **`status.name`** / transition **`to.name`** varies by issue type — use **`getTransitionsForJiraIssue`** on each key) | Transition every issue the user names (Story, linked Bug, Sub-tasks as requested) to the RFT-equivalent status that workflow allows. Add worklogs only where §3.1–§3.2 already apply or the user asks. | **Required** after (or while) moving to RFT: run **§7.5** — draft **Comment for QA Testing** in chat, get explicit confirmation, then post. **Do not** skip draft-first or post without confirmation. |
+
+**§7 comment target (RFT path):**
+
+1. Story **relates** to a **Customer Issue** → default: post on that **Customer Issue** (§7.1).
+2. **Bug-Fix** Story with **only** a linked **Bug** (no Customer Issue) → default: post on the **linked Bug** unless the user names another key.
+3. User **explicitly** names a target key → use it (§7.1 exception).
+
+**Do not** treat **Done** and **RFT** as interchangeable. If the user wants **Done**, follow §3.2 only — **do not** auto-add §7. If the user wants **RFT**, **do not** omit §7.
+
+**Issue links:** RFT-only requests — transitions, assignments, §7 **comment** — **do not** create new issue links (**§3.8**).
+
+**Relationship to §7.2:** RFT path defines **when** §7 is mandatory; §7.2 lists the triggers.
+
+### 3.8 Done, Sub-task Done, and RFT — **no new issue links** unless the user asks
+
+When the request is **only** to complete work — mark a **Story** **Done** (§3.2), mark a **Sub-task** **Done** (§3.1), move issue(s) to **RFT** / **Ready For Testing** / **Ready For Verification** (§3.7), or add the **§7** comment as part of that handoff — **do not** create **new** Jira **issue links** (`createIssueLink`, `POST .../issueLink`, or equivalent), including:
+
+- **Never** link an issue **to itself**.
+- **Never** add new links between the issue(s) being updated and **any other** issue (another Story, Bug, Customer Issue, duplicate of the same key, etc.) “for traceability” or “to associate” work.
+
+**Allowed without asking:** status **transitions**, **assignee** changes, **worklogs**, and **comments** (plain text may **mention** other keys for humans — that is **not** an issue link).
+
+**Exception — create or add links only when:**
+
+1. The user **explicitly** asks in the **same** request (e.g. “link **UD-aaa** to **UD-bbb**”, “add **Relates to** the Customer Issue”), **or**
+2. Another section of this skill **requires** links for that operation (e.g. §1.4 when **creating** a Story from a Customer Issue — not the same as “mark Story Done only”).
+
+**Relationship to §1.11:** §1.11 forbids Sub-task ↔ **parent** issue links. **§3.8** applies to **any** issue pair on **completion-only** requests.
 
 ---
 
@@ -451,7 +502,16 @@ When the user asks to add a **Comment for QA Testing**, **RFT (Ready For Testing
 
 ### 7.2 When to add the comment
 
-Add **only** when the Jira issue status is (or is being transitioned to) **Ready For Testing**. The user will explicitly ask to post this comment.
+Add the §7 **Comment for QA Testing** when **any** of these applies:
+
+1. The user explicitly asks for a **Comment for QA Testing**, **RFT**, **ready-for-testing**, or **Ready For Verification** wording; **or**
+2. The user is on the **RFT completion path** (skill **§3.7**) — work is handed off as **Ready For Testing**, **Ready For Verification**, or team shorthand **RFT**. Then preparing and (after confirmation) posting §7 is **part of the same workflow** unless the user clearly opts out of the comment.
+
+**Done-only path:** If the user marks work **Done** (§3.2 / §3.7 table) **without** RFT, **do not** add §7 unless they explicitly ask.
+
+**§7.5 always applies:** draft in chat first, post only after explicit user confirmation — including on §3.7 RFT path.
+
+**Status alignment:** Prefer posting §7 **after** transitioning to the QA-facing status (or during the same session once that status is set). If Jira uses a different label than “Ready For Testing,” match the user’s intent to an available transition via **`getTransitionsForJiraIssue`**.
 
 ### 7.3 Comment format (mandatory template)
 
@@ -532,6 +592,7 @@ When the user provides other names for CC or To, resolve them using `lookupJiraA
 - **Do not** post the comment without showing the user first and getting explicit confirmation.
 - **Do not** fabricate Build No, Testing Env, or any field the user has not provided.
 - **Do not** skip the "draft first" step — always show in chat before posting to Jira.
+- **Do not** create **issue links** as part of RFT / §7 handoff unless the user **explicitly** asked to link issues in that request (**§3.8**).
 
 ---
 

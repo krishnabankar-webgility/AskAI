@@ -25,7 +25,7 @@
 |---------------------|-----------------------------------------------|
 | `KrishnaAiGen` | `krishnaaigen-ephemeral-output.md`, `krishnaaigen-skill-evolution.md`, `jira-workflow.md`, `git-sync.md`, `db-restore.md`, `bitbucket-unify-enterprise.md`, `slack-integration.md`, `dev-customization-expertise.md`, `dev-customization-workflow.md`, `confluence-workflow.md` |
 | `agent-learning` | `krishnaaigen-skill-evolution.md` + files being edited |
-| `jira-automation` | `jira-workflow.md` |
+| `jira-automation` | `jira-workflow.md` (§3.1.1 OE/worklog, §3.7–§3.8, §7) |
 | `git-automation` | `git-sync.md` |
 | `db-automation` | `db-restore.md` |
 | `bitbucket-automation` | `git-sync.md`, `bitbucket-unify-enterprise.md` |

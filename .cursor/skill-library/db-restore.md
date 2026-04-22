@@ -1,77 +1,116 @@
-# Skill: SQL Server local database restore
+# Skill: SQL Server local database operations
 
-## Speed rules — FOLLOW THESE FIRST
+## §1 Speed rules — FOLLOW THESE FIRST
 
 1. **Do NOT re-read this file or logs every invocation** — the agent files already have the known environment cached. Only re-read if something fails.
-2. **Combine commands** — load env vars + drop + restore in **one** terminal call when possible. Do not run 6 separate commands for a simple restore.
-3. **Skip prereq checks** when env vars are already loaded in the session. Only check sqlcmd/connectivity on first use or after errors.
-4. **Use known facts** from the "Known environment" section — do not re-query data folder or logical file names for HubSpotDB backups unless RESTORE fails.
-5. **No unnecessary confirmations** — if the user says "restore X at DB Y", they already confirmed. Only ask for DROP confirmation if the user did NOT mention the target DB name (ambiguity risk).
+2. **Combine commands** — use `Invoke-Sqlcmd` pipeline style where possible. Avoid running 6 separate commands for a simple restore.
+3. **Skip prereq checks** when the session already proved connectivity. Only check on first use or after errors.
+4. **Use known facts** from the "Known environment" section — do not re-query data folder or logical file names unless RESTORE fails.
+5. **No unnecessary confirmations** — if the user says "restore X at DB Y", they already confirmed. Only ask for confirmation if the user did NOT mention the target DB name (ambiguity risk).
 
-## Known environment (proven working)
+## §2 Known environment (proven working)
 
 | Fact | Value |
 |------|-------|
-| Server | `$env:SQLCMD_SERVER` → `WGIN-NTB-276\SQLEXPRESS` |
+| Server | `WGIN-NTB-276\SQLEXPRESS` |
 | SQL Server | 2022 Express, MSSQL16 |
-| Auth | SQL Auth: `$env:SQLCMD_USER` (sa) / `$env:SQLCMD_PASSWORD` (***) |
-| sqlcmd | go-sqlcmd v1.9.0, always use `-C` flag |
+| Auth | **Windows Auth** (Trusted Connection) — use `Invoke-Sqlcmd` without `-Username`/`-Password` |
+| PowerShell cmdlet | `Invoke-Sqlcmd` (SqlServer module) |
 | Data folder | `C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\` |
-| HubSpotDB logical files | `UnifyDB` (data), `UnifyDB_log` (log) — same for all HubSpot `.BAK` files |
 | Backup location | Usually `D:\HubSpotDBs\` |
 
-## Fast-path restore (use this for HubSpotDB .BAK files)
+### §2.1 Known backup logical-file patterns
 
-When the user provides **DB name** and **backup path**, run this in **one terminal call**:
+| Backup source | Logical data file | Logical log file |
+|---------------|-------------------|------------------|
+| HubSpotDB / UnifyDB backups | `UnifyDB` | `UnifyDB_log` |
+| UD-DEV / Shopify / Recon backups | `UD-DEV` | `UD-DEV_log` |
 
-```powershell
-$env:SQLCMD_SERVER=[System.Environment]::GetEnvironmentVariable('SQLCMD_SERVER','User'); $env:SQLCMD_USER=[System.Environment]::GetEnvironmentVariable('SQLCMD_USER','User'); $env:SQLCMD_PASSWORD=[System.Environment]::GetEnvironmentVariable('SQLCMD_PASSWORD','User'); sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "IF DB_ID('<db_name>') IS NOT NULL BEGIN ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [<db_name>]; END"; sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "RESTORE DATABASE [<db_name>] FROM DISK = N'<backup_path>' WITH MOVE N'UnifyDB' TO N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\<db_name>.mdf', MOVE N'UnifyDB_log' TO N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\<db_name>_log.ldf', REPLACE, RECOVERY, STATS = 10"; sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -d <db_name> -Q "SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'"
+When unsure which pattern, run `RESTORE FILELISTONLY` first (§4).
+
+## §3 Standard restore procedure
+
+### §3.1 Inputs (always required from user)
+
+1. **Database name** — target DB to create or replace (never cached between sessions)
+2. **Backup file path** — full `.BAK` path (never cached between sessions)
+
+### §3.2 Step-by-step
+
+```
+Step 1: Verify backup file exists
+  Test-Path '<backup_path>'
+
+Step 2: Get logical file names from backup
+  Invoke-Sqlcmd -ServerInstance '<server>' -Query "RESTORE FILELISTONLY FROM DISK = '<backup_path>'"
+
+Step 3: Check if target DB exists and get current file paths
+  Invoke-Sqlcmd -ServerInstance '<server>' -Query "SELECT name, physical_name FROM sys.master_files WHERE database_id = DB_ID('<db_name>')"
+
+Step 4: If DB is in use, set SINGLE_USER
+  Invoke-Sqlcmd -ServerInstance '<server>' -Query "ALTER DATABASE [<db_name>] SET SINGLE_USER WITH ROLLBACK IMMEDIATE"
+
+Step 5: Restore with REPLACE and MOVE
+  Invoke-Sqlcmd -ServerInstance '<server>' -Query "RESTORE DATABASE [<db_name>] FROM DISK = '<backup_path>' WITH REPLACE, MOVE '<logical_data>' TO '<data_folder><db_name>.mdf', MOVE '<logical_log>' TO '<data_folder><db_name>_log.ldf', STATS = 10" -QueryTimeout 300
+
+Step 6: Set back to MULTI_USER (if SINGLE_USER was used)
+  Invoke-Sqlcmd -ServerInstance '<server>' -Query "ALTER DATABASE [<db_name>] SET MULTI_USER"
+
+Step 7: Verify restore
+  - Check state: SELECT name, state_desc FROM sys.databases WHERE name = '<db_name>'
+  - Count tables: USE [<db_name>]; SELECT COUNT(*) AS TableCount FROM sys.tables
 ```
 
-That's **one command**: load env vars → drop if exists → restore with MOVE → verify table count. Done.
+### §3.3 Fast-path (when you know the logical file names)
 
-## When fast-path won't work
+Skip step 2 if the backup source is in the §2.1 table. Go straight from step 1 to step 3.
 
-If the backup is **not** a HubSpotDB backup (logical files might differ), run `RESTORE FILELISTONLY` first:
+## §4 Ad-hoc SQL queries
 
-```powershell
-sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "RESTORE FILELISTONLY FROM DISK = N'<backup_path>'"
-```
-
-Then use the actual logical names in the MOVE clause instead of `UnifyDB` / `UnifyDB_log`.
-
-## Always ask the user for
-
-1. **Database name** — never cache between sessions
-2. **Backup file path** — never cache between sessions
-
-Everything else comes from env vars and known environment above.
-
-## Env var setup (one-time, already done on this machine)
+The agent also supports running arbitrary SQL queries against any database on the server.
 
 ```powershell
-[System.Environment]::SetEnvironmentVariable("SQLCMD_SERVER", "<instance>", "User")
-[System.Environment]::SetEnvironmentVariable("SQLCMD_USER", "<login>", "User")
-[System.Environment]::SetEnvironmentVariable("SQLCMD_PASSWORD", "<password>", "User")
+Invoke-Sqlcmd -ServerInstance 'WGIN-NTB-276\SQLEXPRESS' -Database '<db_name>' -Query '<sql>' | Format-Table -AutoSize
 ```
 
-## Constraints
+For wide result sets, use `Format-List` instead of `Format-Table`.
 
-- **Never** write credentials into repo files — use `$env:SQLCMD_*`.
-- **Never** expose passwords — use `***`.
+## §5 Constraints
+
+- **Never** write credentials into repo files.
+- **Never** expose passwords — mask with `***`.
 - **Never** restore over system databases (`master`, `msdb`, `model`, `tempdb`).
-- Only ask DROP confirmation when the user's intent is ambiguous.
+- Only ask DROP/REPLACE confirmation when the user's intent is ambiguous.
 
-## Troubleshooting (only consult on errors)
+## §6 Troubleshooting (only consult on errors)
 
 | Error | Fix |
 |-------|-----|
-| `SQLCMD.rll` missing | `winget install sqlcmd` (go-sqlcmd) |
-| Login failed | Check `$env:SQLCMD_USER` / `$env:SQLCMD_PASSWORD`; ensure Mixed Mode |
-| Database in use | `ALTER DATABASE [X] SET SINGLE_USER WITH ROLLBACK IMMEDIATE` |
+| Database in use | `ALTER DATABASE [X] SET SINGLE_USER WITH ROLLBACK IMMEDIATE` then retry |
+| Exclusive access could not be obtained | Same as above — set SINGLE_USER first |
 | Access denied (OS error 5) | SQL Server service account needs read on backup path |
-| Logical file mismatch | Run `RESTORE FILELISTONLY` and use actual names |
+| Logical file mismatch | Run `RESTORE FILELISTONLY` and use actual logical names in MOVE |
+| Invoke-Sqlcmd not found | `Install-Module SqlServer` or use `sqlcmd` CLI as fallback |
+| Login failed | Check Windows Auth; try SQL Auth with env vars as fallback |
 
-## Output format
+### §6.1 Fallback: go-sqlcmd (SQL Auth)
 
-End with: status (pass/fail), table count, connection string (password masked).
+If `Invoke-Sqlcmd` is unavailable, use `sqlcmd` CLI with SQL Auth env vars:
+
+```powershell
+$env:SQLCMD_SERVER=[System.Environment]::GetEnvironmentVariable('SQLCMD_SERVER','User')
+$env:SQLCMD_USER=[System.Environment]::GetEnvironmentVariable('SQLCMD_USER','User')
+$env:SQLCMD_PASSWORD=[System.Environment]::GetEnvironmentVariable('SQLCMD_PASSWORD','User')
+sqlcmd -S "$env:SQLCMD_SERVER" -U "$env:SQLCMD_USER" -P "$env:SQLCMD_PASSWORD" -C -Q "<sql>"
+```
+
+Env vars should already be configured on the machine (one-time setup).
+
+## §7 Output format
+
+End every restore with a summary:
+- Status: pass/fail
+- Database name and state (ONLINE / etc.)
+- Table count
+- Backup file used
+- Server instance

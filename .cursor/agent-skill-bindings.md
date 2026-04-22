@@ -16,7 +16,7 @@ All specialist behavior is defined in **`.cursor/skill-library/*.md`**. GitHub C
 |-----------------|-----------------------------------------------|
 | `KrishnaAiGen` (master) | `krishnaaigen-ephemeral-output.md`, `krishnaaigen-skill-evolution.md`, plus **all** rows below as needed |
 | `agent-learning` | `krishnaaigen-skill-evolution.md` + target skill(s) being edited |
-| `jira-automation` | `jira-workflow.md` |
+| `jira-automation` | `jira-workflow.md` (§3.1.1 OE+worklog on Sub-task/Story Done, §3.7 RFT, §3.8 links, §7 QA) |
 | `db-automation` | `db-restore.md` *(append more `db-*.md` to `db-automation.md`’s read list)* |
 | `git-automation` | `git-sync.md` *(append more `git-*.md` as needed)* |
 | `bitbucket-automation` | `git-sync.md`, then `bitbucket-unify-enterprise.md` |
