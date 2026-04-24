@@ -1,6 +1,6 @@
 # Jira Workflow — Consolidated Skill
 
-Single skill file for the `jira-automation` agent. Covers issue creation, subtasks, Original Estimate, worklogs, **Sub-task Done / Story Done: OE from Story SP when missing** (§3.1.1), status transitions, **Done vs RFT handoff** (§3.7), **no unsolicited issue links on Done/RFT** (§3.8), and sprint lifecycle.
+Single skill file for the `jira-automation` agent. Covers issue creation (default **Priority Rank 1** + **estimated Story Points** on new Stories — §1.6c), subtasks, Original Estimate, worklogs, **Sub-task Done / Story Done: OE from Story SP when missing** (§3.1.1), status transitions, **Done vs RFT handoff** (§3.7), **no unsolicited issue links on Done/RFT** (§3.8), and sprint lifecycle.
 
 ---
 
@@ -27,7 +27,7 @@ When the user says **"create jira story"**:
 1. Create a **Story** in project `UD`.
 2. Status: **To Do** (do **not** transition after create).
 3. **Do NOT create subtasks** unless the user **explicitly** asks for them.
-4. **Story Points:** If the user **provides** a value, set `customfield_10053` on the Story. If they **do not** provide SP, **leave the field unchanged** (do not clear an existing value; do not invent a default). Optionally mention that SP enables automatic Original Estimate on subtasks — do **not** block issue creation on missing SP.
+4. **Story Points** and **Priority Rank:** Apply **§1.6c** (estimated SP + Priority Rank **1**) unless the user overrides or opts out.
 
 ### 1.4 Creating a Story linked to a Customer Issue
 
@@ -40,7 +40,7 @@ When the user says **"create jira story for customer issue UD-xxxx"**:
    - **Link** the Story to the Customer Issue (e.g. "relates to" / project-standard link type).
 3. Status: **To Do**.
 4. No subtasks unless explicitly requested.
-5. Story Points: set **only** when the user supplies a value **or** §1.6b applies (Story + Sub-tasks bundle with estimated SP); otherwise leave as-is (see §1.10).
+5. **Story Points** and **Priority Rank:** Apply **§1.6c** (unless user overrides). §1.6b still requires estimated SP for the bundle — align with **§1.6c** when both apply.
 
 ### 1.4a Creating a Story linked to a Bug
 
@@ -97,12 +97,24 @@ Apply unless the user overrides:
 | **Priority** | P2 default (`{ "id": "3" }`); **P1** = `{ "id": "2" }` when the user requests |
 | **Team** | Desktop-Customization (`customfield_10075` → `{ "id": "11209" }`) |
 | **Assignee** | Krishna Bankar (`712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799`) |
-| **Story Points** | Set **only** when the user explicitly gives a number; otherwise leave unchanged (§1.10) |
+| **Priority Rank** | **`1`** → `customfield_10150` → `{ "id": "10339" }` on **new Stories** unless the user specifies another rank (§1.6c) |
+| **Story Points** | On **new Story** creates: **always estimate and set** `customfield_10053` (§1.6c). If the user gives a number, use theirs. |
 | **Due Date** | Copied from Customer Issue if available |
 | **QA Date** | Copied from Customer Issue if available |
 | **Sprint** | **Optional.** Set only when the user explicitly asks for a sprint, gives a sprint name, or legacy workflow requires it. **Kanban default (WD Product):** omit `customfield_10010` — work is visible on the **[WD Product Kanban board (894)](https://webgility.atlassian.net/jira/software/c/projects/UD/boards/894)** without sprint membership. If the user says sprint is **N/A** or they track on Kanban only, **never** auto-assign a sprint. If a sprint name **is** provided, resolve to numeric id (`customfield_10010`) per §1.9. |
 
-Set optional fields **only** when the user provides them. Do not force defaults the user did not mention (except Priority, Team, Assignee which are standard defaults).
+Apply **§1.6c** (Priority Rank **1** + estimated **Story Points**) on every **new Story** unless the user opts out or overrides.
+
+For fields not listed above, set **only** when the user provides them — except **§1.6c** fields on Story **create**.
+
+### 1.6c Default Priority Rank **1** and estimated Story Points (new Stories)
+
+Whenever you **create** a **Story** in project **UD** (standalone §1.3, from Customer Issue §1.4, from Bug §1.4a, or with subtasks §1.5 / §1.6b):
+
+1. **Priority Rank:** Set **`customfield_10150`** to **`{ "id": "10339" }`** (label **"1"**) unless the user explicitly asks for rank **2–10** or says to leave rank unset.
+2. **Story Points:** **Always** set **`customfield_10053`** to a **numeric estimate** from scope (title, description, linked Customer Issue / Bug if present). Prefer **half-point** increments (e.g. `2`, `2.5`, `3.5`). State a **brief rationale** in the reply (one line). If the user **explicitly** supplies SP, use that value instead.
+3. **Opt-out:** If the user says **not** to set SP or rank (e.g. “no story points”, “leave rank blank”), honor that and note it in the reply.
+4. **Updates vs create:** When **editing an existing** Story, **do not** overwrite **Story Points** with a new guess unless the user asks to change SP (same as §1.10).
 
 ### 1.6a WD Product Kanban (board 894)
 
@@ -123,7 +135,7 @@ When the user asks to **create a Story with subtasks** (from a **Customer Issue*
 | **Team** | Desktop-Customization (`customfield_10075` → `{ "id": "11209" }`) |
 | **Type** | **Customization** (`customfield_10298` → `{ "id": "10882" }`) when the source is a Customer Issue; when the Story tracks a **Bug**, prefer **Bug** (`customfield_10298` → `{ "id": "10880" }`) unless the user says otherwise |
 | **StoryType** | **Implementation** (`customfield_10427` → `{ "id": "11224" }`) when the work is implementation (not Feasibility-only) |
-| **Story Points** | **Estimate** total effort to complete **all** Sub-tasks (scope from Customer Issue description, feasibility/quote comments, or typical split). Set `customfield_10053` on the **Story**, then run §2.4 for Original Estimate on Sub-tasks. Prefer half-point increments when needed (e.g. `3.5`). |
+| **Story Points** | **Estimate** total effort (§1.6c): same field **`customfield_10053`** — set on the **Story**, then run §2.4 for Original Estimate on Sub-tasks. Prefer half-point increments (e.g. `3.5`). |
 | **Story-only fields from Customer Issue** | Copy onto the **Story only** (not Sub-tasks) when present on the Customer Issue: **Due date** `customfield_10062`, **Due date to QA** `customfield_10183`, **MRR** `customfield_10113`, **Subscriber ID** `customfield_10226`, **Revenue Received** `customfield_10130`. Re-verify field ids with create/edit meta if the project schema changes. |
 | **Sub-tasks** | Use **`parent`** only — **never** add Sub-tasks under **Linked work items** (§1.11). **Never** duplicate the same Sub-task summary on the same Story (§1.5). |
 
@@ -156,6 +168,7 @@ Re-verify with `getJiraIssueTypeMetaWithFields` if the project changes.
 - **Priority** (system field `priority`): **P0**, **P1**, **P2**, **P3**, **P4**, or **None** — urgency / triage. Example: user says “make it **P1**” → set `priority` to `{ "name": "P1" }` (id `2`).
 - **Priority Rank** (`customfield_10150`, label **Priority Rank**): dropdown values **`"1"`** through **`"10"`** (option ids **`10339`**–**`10348`** in the current UD metadata). Used for **ordering / sequencing** in the backlog. **Do not** treat “priority rank 1” as “set Priority to P1” — they are different fields.
 - When the user says **“Priority Rank = 1”** / **“priority rank 1”**, set `customfield_10150` to `{ "id": "10339" }`. For rank **N** (1–10), option id is **`10338 + N`** (re-verify if options change).
+- **Default on new Story create:** If the user does **not** specify rank, use **Priority Rank 1** (`10339`) per **§1.6c**.
 
 ### 1.9 Resolving sprint id (exact and fuzzy names)
 
@@ -176,11 +189,12 @@ When the user gives a **sprint name** (or partial phrase such as “customizatio
 
 For **exact** names, still verify the id via `getJiraIssue` or sprint metadata before writing the field.
 
-### 1.10 Story Points (optional)
+### 1.10 Story Points
 
-- **Set** `customfield_10053` when (a) the user explicitly provides a number, **or** (b) the user (or §1.6b) asks for a **new Story with Sub-tasks** — then **estimate** SP from scope / Customer Issue / feasibility output (state the rationale briefly in the reply).
-- **Do not** overwrite existing SP with a guess when updating an old issue unless the user asks.
-- **Do not** require SP to complete create/rename/subtask operations that are not OE-driven.
+- **New Story creates:** **Always** estimate and set SP per **§1.6c** unless the user gives a number (use theirs) or opts out of SP.
+- **§1.6b** (Story + Sub-tasks bundle): **estimate** SP from scope / Customer Issue / feasibility (state rationale); same numeric field **`customfield_10053`**.
+- **Updates:** **Do not** overwrite existing SP with a new guess when **editing** an issue unless the user asks to change SP.
+- **Rename / structural ops** that are not full creates: **do not** require inventing SP to complete the operation.
 - When SP exists on the Story **and** subtasks exist, apply §2 for Original Estimate and later worklogs as written.
 
 ### 1.11 Sub-tasks and parent Story — parent only (no issue links)
@@ -311,14 +325,34 @@ When the user asks to mark a **subtask** Done — or when §3.2 moves an **In Pr
 
 ### 3.2 Marking a Story Done
 
-When the user asks to mark a **Story** Done:
+When the user asks to mark a **Story** Done — or names the Story **and** linked issues (e.g. Customer Issue) as “done” — **always** reconcile **Sub-tasks under that Story**, not only the keys the user typed.
 
-1. **Only transition subtasks that are "In Progress" to Done.** Leave untouched subtasks (e.g. To Do) as-is.
-2. For **each** Sub-task that will move **In Progress** → **Done**, run **§3.1** in full: **§3.1.1** (resolve/set OE from Story SP ÷ **N** if OE missing) **before** transition, then **§3.1.2** transition + worklog. Do **not** skip OE resolution because the Sub-task had empty OE at the start of the request.
-3. Transition the **Story** to Done.
-4. Add a brief traceability **comment** on the Story (transitions, worklogs, sprint/SP; may **name** related keys in text). **Do not** add **issue links** of any kind unless the user explicitly asked to link issues in the same request (**§3.8**). **Do not** add issue links between the Story and its Sub-tasks (§1.11). **Do not** paste a full sub-task key list **only** to associate children with the Story — they are already visible under **Subtasks**; mention sub-task keys only when documenting **this session’s** concrete actions (e.g. which keys transitioned or received worklogs).
+#### 3.2.0 Blocking rule (mandatory)
 
-> **Key difference from previous behavior:** Do NOT sweep all non-Done subtasks to Done. Only In Progress subtasks are moved to Done when the Story is completed.
+**Do not** transition the parent Story to **Done**, and **do not** treat the request as finished, while **any** Sub-task under that Story is still **`In Progress`** (unless the user explicitly waives specific keys — note the waiver in the reply).
+
+**Anti-pattern:** Transitioning **only** the Story (and optionally linked Customer Issue / Bug keys) **without** listing children via **`parent = STORYKEY`** JQL or **`fields.subtasks`** on the Story — this leaves Sub-tasks **In Progress** while the Story shows **Done**.
+
+#### 3.2.1 Standard order (Story not yet Done)
+
+1. **Discover:** `searchJiraIssuesUsingJql` with `parent = STORYKEY` (or read `fields.subtasks` on the Story). Record **key**, **status.name**, **summary** for each child.
+2. **In Progress → Done:** For **each** Sub-task whose **`status.name`** is **`In Progress`**, run **§3.1** in full: **§3.1.1** (OE from Story SP ÷ **N** if needed) **before** transition, then **§3.1.2** transition + worklog. Do **not** skip OE resolution because the Sub-task started with empty OE.
+3. **Verify:** Re-query `parent = STORYKEY`. If **any** Sub-task is still **`In Progress`**, **stop** — finish those with §3.1 **before** transitioning the Story. **Do not** report success for “Story Done” until this check passes (for the In Progress rule).
+4. Transition the **Story** to **Done** (only after step 3 is clean).
+5. Add a brief traceability **comment** on the Story if useful (may **name** related keys in **plain text** only — **§3.8**). **Do not** add **issue links** unless the user explicitly asked to link issues in the same request. **Do not** link Story ↔ Sub-task (§1.11).
+
+**To Do (and other non-Done statuses):** By default, **leave** Sub-tasks in **To Do** unchanged when marking the Story **Done**. Only **`In Progress`** is **automatically** moved to **Done** under §3.2. If the user asks to **sweep** all open Sub-tasks or to **close** everything, follow their wording or **§3.5** as applicable.
+
+#### 3.2.2 Repair: Story already **Done**, Sub-tasks still open
+
+If the Story is already **Done** but one or more Sub-tasks remain **`In Progress`** (e.g. prior automation skipped §3.2.1):
+
+1. **Do not** re-transition the Story unless the workflow requires it.
+2. Run **§3.1** on **each** stuck Sub-task (**In Progress** → **Done**, OE + worklog per §3.1).
+3. Re-verify `parent = STORYKEY` until no Sub-task is **`In Progress`** (unless waived).
+4. Optionally add a short **comment** on the Story: Sub-tasks **UD-…** corrected — **plain text keys only**, **§3.8**.
+
+> **Reminder:** Do **not** sweep **every** non-Done Sub-task to **Done** without user intent — the default auto-move is **`In Progress` → `Done`** only. **`To Do`** stays unless the user asks otherwise.
 
 ### 3.3 Worklog value
 
@@ -389,7 +423,7 @@ Use this when the user says a **Story** (e.g. **UD-32332**, **UD-32333**) or rel
 
 | Path | Meaning | Sub-tasks / worklogs | QA Testing comment (§7) |
 |------|---------|----------------------|-------------------------|
-| **Done** | Dev completion — Story ends in **Done** | Follow **§3.2**: only subtasks in **In Progress** → **Done** + worklogs per §3.1; then Story → **Done**. | **Not** required unless the user explicitly asks for a QA / RFT comment. |
+| **Done** | Dev completion — Story ends in **Done** | Follow **§3.2**: discover via `parent = STORYKEY`; **blocking:** no Story **Done** until every **In Progress** Sub-task has §3.1 applied; **verify** with a second query. If Story is already **Done** but Sub-tasks remain **In Progress**, run **§3.2.2** repair (do **not** skip Sub-tasks when the user also names linked Customer Issues). | **Not** required unless the user explicitly asks for a QA / RFT comment. |
 | **RFT** | QA handoff — **Ready For Testing**, **Ready For Verification**, or shorthand **RFT** (exact **`status.name`** / transition **`to.name`** varies by issue type — use **`getTransitionsForJiraIssue`** on each key) | Transition every issue the user names (Story, linked Bug, Sub-tasks as requested) to the RFT-equivalent status that workflow allows. Add worklogs only where §3.1–§3.2 already apply or the user asks. | **Required** after (or while) moving to RFT: run **§7.5** — draft **Comment for QA Testing** in chat, get explicit confirmation, then post. **Do not** skip draft-first or post without confirmation. |
 
 **§7 comment target (RFT path):**
@@ -523,6 +557,7 @@ Use this **structure** in ADF (headings, bullets, nested lists, mentions). Alway
 
 - **Single enhancement:** one bullet per line — what it does; **Customization Node** with `<ProfileID>`; **Build No**; **Local Branch** (if user provides); **Testing Env**; **Accounting**; **Store**.
 - **Multiple enhancements (umbrella / RN-style):** First bullet: **bold** one-line theme (e.g. `Sales Order to partial invoice customization enhancements :`), then **nested sub-bullets** — one line per enhancement (marketplace tax, group-item posting, Create Invoice button, invoice number UI, refund posting, late payment + open invoices, Shopify payout / extra node with sub-bullet for node name, etc.). Follow with **separate** top-level bullets: **Build No:** `#xxxx`, **Local Branch:** `101/...`, **Customization Nodes:** `NODE1_<ProfileID>, NODE2_<ProfileID>, ...`, **Testing Env:** (e.g. `CIS-QA.`), **Accounting:**, **Store:**.
+- **Customization Node (required):** Always include the full **node key** as `SYMBOLIC_PREFIX_<ProfileID>` (e.g. `QBTXN_CUSTOMNUMBERING_12345`). If the user does **not** name the node, **discover** it (§7.4 / §7.9) — do **not** leave this section generic.
 
 **### Limitations:** (heading level 3)
 
@@ -530,11 +565,11 @@ Use this **structure** in ADF (headings, bullets, nested lists, mentions). Alway
 
 **Impacted Area:** (bold label + bullets)
 
-- Product-level bullets (e.g. existing SO→partial invoice customization, Post to QBD, customization UI settings).
+- **Code-backed, not generic:** Describe **QuickBooks / posting** behavior the change touches — e.g. **single-order** posting vs **consolidation** posting paths, **transaction reference / RefNumber / invoice numbering**, and (when the code branches on it) **QBD US transaction types** such as **Invoice**, **Sales Order**, **Sales Receipt**; also scheduler vs manual post — inferred from **`git diff`** / branch and call sites (see §7.9). Avoid vague phrases like “customization UI only” unless that is truly the whole scope.
 
 **Test Cases:**
 
-- e.g. “In Customization Details each enhancement take as a case.” or user-provided matrix.
+- **Structured (mandatory style):** For **each** test case / scenario, include **(1)** **Customization node(s)** — full **`KEY_<ProfileID>`** and, when code uses a colon-delimited value (`GetCustomizationNodeValue`, etc.), the **complete WD line** **`KEY_<ProfileID>:VALUE`** (e.g. `QBTXN_CUSTOMNUMBERING_14:ABC-1234`); **(2)** **Inputs / setup** — how QA enters that line (WD customization UI, CSV, text file per Customer Issue); **(3)** **Steps** — what to post (single SO, consolidated batch, txn type Invoice vs Sales Order vs Sales Receipt if relevant); **(4)** **Expected output** in QuickBooks / WD (RefNumber vs stored `QBInvoiceNo` format if code removes hyphen); **(5)** **Short “how it works”** — one or two sentences tying node → posting flow (from code/customization doc). Umbrella tickets may use nested bullets per enhancement.
 
 **CC:** Mentions — default often **@Hitesh Devashrayee**; add **@Arvind Chavan** and others when the user or exemplar includes them.
 
@@ -548,16 +583,16 @@ Optional blocks when user provides evidence: **QBD Items**, **WD Sync ReorderPoi
 |-------|--------|------|
 | **To (@mention at top)** | Default: `@Alok Mendhe` (`712020:aa018f8d-2c6b-43a1-a859-ce6dd2544059`) | Greeting line: `Hi @Alok Mendhe ,`. User may change the person. Use ADF `mention` node. |
 | **Customization Details** | Customer Issue description → "Customization Details" section | Bullet(s): what the customization does. For **umbrella** issues, use **nested sub-bullets** under one bold theme line (see §7.3 / UD-32268). |
-| **Customization Node(s)** | Branch diff or user provides | One or more `NODE_<ProfileID>` — list under **Customization Nodes** comma-separated when multiple. |
+| **Customization Node(s)** | **User** **or §7.9 discovery** | One or more `PREFIX_<ProfileID>` (e.g. `QBTXN_CUSTOMNUMBERING_<ProfileID>`). If **not** specified by the user, search the repo: primary file **`wg.eCC.DTO/Shared/CustomizationConstant.cs`** (and same path under `Unify-Enterprise/Desktop/`) for `// UD-xxxx` or constant names tied to the feature; confirm usages in controllers/helpers (e.g. `AccountingSoftwareController.cs`, `OrderController.cs`, `AccountingDashboardHelper.cs`, `CommonUtility.cs`). **Never** invent a prefix; cite the **symbol** from code. |
 | **Build No** | User provides | e.g. `#6198`. **Never invent.** If not shared, ask. |
-| **Local Branch** | User provides | e.g. `101/UD-29932-user/krishna_2`. Optional line in comment when user shares it. |
+| **Local Branch** | User provides **or §7.8 inference** | e.g. `101/UD-29932-user/krishna_2`. When the user omits it, use **§7.8** (Customer Issue key + **`krishna`** segment); **verify** via `git branch -a` / Bitbucket when repo access exists. |
 | **Testing Env** | User provides | e.g. `CIS-QA.`, `CISQA2`, `Local`. If not shared, ask. |
 | **Accounting** | Customer Issue description → "Accounting" field | e.g. "QuickBooks Desktop Enterprise US." |
 | **Store** | Customer Issue description → "Store" field | e.g. "WooCommerce". |
 | **Limitations** | Customer Issue description → "Limitations" section | Bullet list, copy from the Customer Issue. |
-| **Impacted Area** | Agent-drafted, then user-confirmed | Agent shares its understanding of impacted areas. User confirms, edits, or adds. Include screenshots inline if user shares them. **Do not finalize without user confirmation.** |
+| **Impacted Area** | **Code + CI** — agent-drafted | Ground in **QB transaction posting** paths: **single** vs **consolidation** (or batch) posting, **txn reference / RefNumber / invoice numbering**, and any scheduler paths touched per **§7.9**. User may confirm or edit. Include screenshots only if user shares them. |
 | **QBD Items / WD Sync / WooCommerce item** | User provides optional evidence | Optional blocks after **Impacted Area** for screenshots or one-line notes (see §7.3). Omit entire blocks if nothing to show. |
-| **Test Cases** | Agent-drafted, then user-confirmed | Agent drafts test cases based on the customization functionality flow. May include sub-bullets for value-specific scenarios (empty / 0 / > 0). User confirms, edits, or adds. **Do not finalize without user confirmation.** |
+| **Test Cases** | Agent-drafted (§7.3 structure) | Each scenario: **node input** (`PREFIX_<ProfileID>`), **how to use** (enable/configure per CI), **actions**, **expected QBE/WD outcome**, **brief how-it-works** from customization flow / code. Sub-bullets for edge values (empty / 0 / > 0) when relevant. User may confirm or edit. |
 | **Screenshots** | User provides | Embed inline within **Impacted Area** or under **QBD Items** / **WD Sync** / **WooCommerce item** as in §7.3. If user does not share screenshots, omit those blocks. |
 | **CC (@mention at bottom)** | Often `@Hitesh Devashrayee` (`5a4d00c0fed274297effdf04`) and `@Arvind Chavan` (`625e632060d67c0068d8080b`) on customization umbrella RFTs. Also: `@Tanay Khandelwal` (`60194dca47a954006935667c`), `@Aditya Farkya` (`712020:330a4c36-5f24-465a-9a87-837a5f664b74`) when user asks. | Always at the bottom. User may add/remove CC names. |
 
@@ -565,9 +600,9 @@ Optional blocks when user provides evidence: **QBD Items**, **WD Sync ReorderPoi
 
 1. **Identify target issue**: If the user named a key (Story or Customer Issue), use that. Otherwise, from the Story's `issuelinks`, find the linked **Customer Issue** and use that key.
 2. **Gather**: Pull Customization Details, Accounting, Store, and Limitations from the Customer Issue (or Story) description; for umbrella work, list enhancements as **nested** bullets per §7.3.
-3. **Ask for missing fields**: If Build No, Testing Env, Local Branch, or Customization Node(s) are not provided, present each missing field and let the user provide or skip.
-4. **Draft Impacted Area**: Share your understanding of impacted areas based on the customization implementation. Ask the user to confirm or update.
-5. **Draft Test Cases**: Share your understanding of test cases from the customization functionality flow. Ask the user to confirm or update.
+3. **Ask for missing fields**: Run **§7.9** when **Customization Node(s)** are unknown — populate node keys from **`CustomizationConstant.cs`** before asking the user. If **Build No**, **Testing Env**, or **Local Branch** are still missing after §7.8 defaults, ask — **never** invent Build No.
+4. **Draft Impacted Area**: Ground in **QB posting** paths (**single** vs **consolidation**, **RefNumber / txn reference**) per **§7.9** + Customer Issue; ask the user to confirm or edit.
+5. **Draft Test Cases**: Use **§7.3** structure (node input, how to enable, steps, expected QBE outcome, brief how-it-works). Ask the user to confirm or edit.
 6. **Draft full comment**: Present the complete comment to the user **in chat first** for review.
 7. **Confirm CC**: Show the CC list and ask if the user wants to add or remove anyone.
 8. **Post**: Only after the user **explicitly confirms**, post the comment to the **target issue** using `addCommentToJiraIssue`. Use markdown or ADF with proper mentions so Jira sends notifications.
@@ -588,11 +623,42 @@ When the user provides other names for CC or To, resolve them using `lookupJiraA
 ### 7.7 What NOT to do
 
 - **Do not** post on the dev Story **when the team expects RFT on the Customer Issue** — unless the user **explicitly** chose a Story/umbrella key (§7.1).
-- **Do not** add verbose implementation details, file-level diffs, RCA, or code-level analysis unless the user explicitly asks.
+- **Do not** add verbose implementation details, full file dumps, RCA, or deep code walkthroughs unless the user explicitly asks. **Naming** symbols/paths from **§7.9** (e.g. `CustomizationConstant.cs`, `QBTXN_CUSTOMNUMBERING_<ProfileID>`) to ground the node and impacted area is **required**, not “verbose.”
 - **Do not** post the comment without showing the user first and getting explicit confirmation.
 - **Do not** fabricate Build No, Testing Env, or any field the user has not provided.
 - **Do not** skip the "draft first" step — always show in chat before posting to Jira.
 - **Do not** create **issue links** as part of RFT / §7 handoff unless the user **explicitly** asked to link issues in that request (**§3.8**).
+- **Exception:** **§7.8** — shorthand RFT + QA comment when the user names the CI key and supplies **Build No** (and branch convention is defaulted); still **never fabricate Build No**.
+
+### 7.8 Minimal-input RFT (“mark UD-xxxx RFT”) — Customer Issue key + QA comment prep
+
+Use when the user invokes **short** phrases such as **“mark UD-xxxx RFT”**, **“Customer Issue UD-xxxx Ready For Testing”**, or gives **only** an issue key **and** expects the **§7 Comment for QA Testing** without pasting the full template.
+
+**Workflow:**
+
+1. **Resolve target:** Confirm the key is the **Customer Issue** (default §7.1). If workflow allows, transition to **Ready For Testing** / **Ready For Verification** via **`getTransitionsForJiraIssue`** (common UD transition id **`251`** — verify per issue and current status).
+2. **`getJiraIssue`** on that key: pull **Customization Details**, **Accounting**, **Store**, **Limitations** from **`description`** (ADF → plain text).
+3. **Build No:** Use the number from the user (**never invent** — §7.4). Prefix **`#`** in the comment when the user gives digits (e.g. **`#6225`**).
+4. **Local Branch — Krishna Bankar convention (default when user does not paste a branch):** Assume working branches contain **both**:
+   - The **Customer Issue key** verbatim (e.g. **`UD-32081`**), **and**
+   - The developer segment **`krishna`** (first-name token, lowercase), matching branches such as **`101/UD-xxxx-krishna`** or repo-specific prefixes (`101/<area>/UD-xxxx-krishna_<suffix>`).
+   State that pattern explicitly in the **Local Branch** line so QA can search Bitbucket/Git. When the workspace has the repo, **`git branch -a`** / **`git log`** scoped to branches matching **`UD-xxxx`** **and** **`krishna`** — refine the line with the **exact** branch name; **never** invent a branch string if tooling returns nothing — keep the convention text only.
+5. **Code / diff context (optional):** When repo access exists, run **§7.9** first ( **`CustomizationConstant.cs`** + usages), then infer **Impacted Area** / **Test Cases** from **`git diff`**, **`git log --oneline`**, or Bitbucket APIs for branches matching §7.8 step 4. **Never** fabricate paths or commits; cite only evidence from tools or Jira-linked Stories.
+6. **Linked Stories:** Include a short line listing **`issuelinks`** **Story** keys related to the Customer Issue for traceability (optional bullet).
+7. **§7 comment:** Build full ADF per **§7.3** (greeting **@Alok Mendhe**, CC defaults per §7.4). **Confluence:** optional `getConfluencePage` **`3021209607`** (`BwAUt`) for wording parity.
+8. **Draft vs post:** Prefer **§7.5** (draft in chat → confirm). If the user supplies **Build No** **and** explicitly asks to **add the QA comment** in the **same** message, you may **post after** presenting the complete draft once in-chat (same-thread confirmation). If **Build No** is missing, **ask** — do not invent.
+
+### 7.9 Discovering customization nodes & QB posting impact from code
+
+When the user **does not** specify the customization node key(s), or **Impacted Area** must be sharper than Customer Issue prose alone:
+
+1. Search **`wg.eCC.DTO/Shared/CustomizationConstant.cs`** (under `Unify-Enterprise/Desktop/` when present) for **`// UD-xxxx`** matching the Customer Issue **or** comments on constants tied to the ticket.
+2. Record the **symbol** (e.g. `QBTXN_CUSTOMNUMBERING`) and **string prefix** (e.g. `"QBTXN_CUSTOMNUMBERING_"`). The **full runtime node key** is **`PREFIX` + `<ProfileID>`** — e.g. `QBTXN_CUSTOMNUMBERING_12345`.
+3. **How QA enters the node (full line):** From usages (e.g. `GetCustomizationNodeValue(nodeKey, ':')`), determine whether the value is **colon-suffix** on the same line. Example pattern (UD-32081): **`QBTXN_CUSTOMNUMBERING_<ProfileID>:<PREFIX>-<NUMBER>`** (e.g. `QBTXN_CUSTOMNUMBERING_14:ABC-1234`). **`CommonUtility`** / controller comments often state that the part after `:` must be **`PREFIX-NUMBER`** with a hyphen, while **QuickBooks RefNumber / stored txn number** may be **`PREFIX` + `NUMBER`** without the hyphen — include that in **Test Cases → How to use** when the code says so.
+4. **Find usages** of that symbol (e.g. `AccountingSoftwareController.cs`, `OrderController.cs`, `AccountingDashboardHelper.cs`, `CommonUtility.cs`). Use call sites + **`git diff`** / branch to draft **Impacted Area**: **single-order** vs **consolidation** posting to QuickBooks Desktop, **txn RefNumber / reference numbering**, scheduler vs manual post — only what the diff and references support. When logic branches on **`QBTxnType`** (e.g. **Invoice**, **Sales Order**, **Sales Receipt** for QBD US custom numbering), list those **transaction types** explicitly in **Impacted Area** — do not rely only on “posting” generically.
+5. **Test Cases:** Each scenario lists **full WD line** (key + optional `:` value when applicable), **how QA enables it** (per Customer Issue — WD customization UI, CSV, text file), **steps** (single post, consolidated post, etc.), **expected outcome in QBE/WD** (including formatted RefNumber vs stored number if documented in code), **one short “how it works”** (node gates which posting branch).
+
+**Never** invent a prefix not backed by `CustomizationConstant.cs` or an explicit user/diff citation.
 
 ---
 

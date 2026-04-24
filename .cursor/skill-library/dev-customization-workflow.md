@@ -1,6 +1,15 @@
 # Customization workflow skill
 
-Use this skill for **customer-specific customization** tasks in this repository. Load **`dev-customization-expertise.md`** first for rules and architecture discipline; this file focuses on **workflow patterns**.
+Use this skill for **customer-specific customization** tasks in this repository. Load **`dev-customization-expertise.md`** first for rules (including **Jira-in-code policy**, **call-site guards**, and **completion checklist**); this file focuses on **workflow order**.
+
+## Decision order (follow top to bottom)
+
+1. **Parse intent:** Must-haves (API, payload, UI, profile gate), implied constraints (minimal change, non-impact).
+2. **Locate architecture:** Data source → transform → persistence; find the narrowest injection point.
+3. **Choose gate:** `CustomizationConstant.<NODE>_` + `profileID`; confirm constant’s Jira link exists only in `CustomizationConstant.cs` when adding a new node.
+4. **Choose shape:** Few guarded lines inline vs named helper — see expertise **Naming and structure**.
+5. **Implement** without touching unrelated profiles or shared flows.
+6. **Verify:** Expertise **Completion checklist** (review → build → fix errors → summarize).
 
 ## Intent parsing
 

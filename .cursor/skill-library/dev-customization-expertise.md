@@ -8,6 +8,18 @@ Use with **`dev-customization-workflow.md`** for customer-specific customization
 - **Reuse** existing architecture paths first (controllers, DTOs, API contracts, sync pipelines).
 - Prefer **profile-level feature flags** so default behavior stays unchanged.
 
+## Jira and traceability in code (strict)
+
+- **One place for the Jira link per customization node:** `Unify-Enterprise/.../wg.eCC.DTO/Shared/CustomizationConstant.cs` — place the `// https://webgility.atlassian.net/browse/UD-…` (or short product note) **immediately above the const** for that node only.
+- **Do not** scatter the same Jira URL, story id, or `UD-####` in method names, regions, inline comments across production files, or interface declarations. Use **neutral, meaningful** comments when behavior needs explanation.
+
+## Naming and structure
+
+- **Method and type names must be meaningful** (domain language: profile, QB transaction, posting, sync). **Never** embed ticket ids (`UD-32081`, etc.) in identifiers.
+- **Gate at the call site:** `if (CommonUtility.CustomizationNode.Contains(CustomizationConstant.<NODE> + profileId)) { … }` **before** calling customization helpers so idle profiles never pay for parsing or helper entry. Helpers should assume the caller gated **or** document that they are only for customization paths — **do not** hide the only `CustomizationNode.Contains` check inside a helper that is invoked unconditionally from hot paths.
+- **Small vs large changes:** A few lines in an existing method → wrap in the customization `if` inline. Larger logic → **new private/static helper** in the appropriate layer (e.g. `CommonUtility`, controller, DAL) and **call only under the guard**.
+- **`IOrder` / interface surfaces:** Do **not** add block comments or Jira URLs on interface method declarations; document on the implementation if needed.
+
 ## Working style
 
 - Read requirements **end-to-end** first; then map to architecture before coding.
@@ -47,6 +59,13 @@ Use with **`dev-customization-workflow.md`** for customer-specific customization
   - high-confidence **non-impact** behavior,
   - explicit **high / mid / low-level** explanation after implementation.
 - If wording is ambiguous, align implementation with the **latest clarified** instruction.
+
+## Completion checklist (after implementation, bugfix, or story — follow in order)
+
+1. **Self-review:** Syntax, null paths, duplication, unnecessary branches; prefer concise C# (including LINQ/lambdas **where they improve clarity**, not density for its own sake).
+2. **Build:** Run the same clean/build the team uses for `Unify-Enterprise` (e.g. Visual Studio **Build Solution** or `dotnet build` / `MSBuild` on the appropriate `.sln`). Fix **all** compile errors introduced or exposed by the change.
+3. **Lint / analyzers:** Address new warnings that indicate real issues; do not broaden scope to pre-existing noise unless asked.
+4. **Summarize** at high / mid / low level and note QA/rollback as in the post-implementation routine below.
 
 ## Post-implementation routine
 

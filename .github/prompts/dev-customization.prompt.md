@@ -1,6 +1,6 @@
 # dev-customization — prompt routing
 
-Use for **implementation** of customer-specific desktop customizations: minimum diff, reuse sync/DTO/controller paths, profile + customization node gating, structured logging.
+Use for **implementation** of customer-specific desktop customizations: minimum diff, reuse sync/DTO/controller paths, profile + customization node gating, structured logging. **Jira URLs** belong only next to the matching const in `CustomizationConstant.cs`; gate customization work **at the call site** with `CustomizationNode.Contains` before helpers.
 
 **Load first**
 

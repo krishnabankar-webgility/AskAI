@@ -350,7 +350,7 @@ Use when the user asks for a **Comment for QA Testing**, **RFT**, or **Ready For
 
 **Source of truth (preferred):** `getConfluencePage` with `pageId` **`3021209607`** (tiny **`BwAUt`**). Canonical URL: [Comment for QA Testing](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing).
 
-**Repo skill (must stay aligned):** `jira-workflow.md` **§7** and **§3.7** (RFT handoff requires §7 after draft + confirmation). Default post target is the **Customer Issue**; **Bug-Fix** Stories with only a linked **Bug** → default **Bug** per §3.7 / §7.1. Draft in chat, ADF mentions, post only after confirmation.
+**Repo skill (must stay aligned):** `jira-workflow.md` **§7**, **§7.8** (minimal “mark UD-xxxx RFT” + branch pattern **UD-xxxx** + **krishna**), **§7.9** (when the node is unknown: **`CustomizationConstant.cs`** + usages → full `PREFIX_<ProfileID>` and, if `GetCustomizationNodeValue(…, ':')`, the **full WD line** `KEY:VALUE` e.g. `QBTXN_CUSTOMNUMBERING_14:ABC-1234`; **Impacted Area** = QB **single** vs **consolidation** + **RefNumber** + **QBD txn types** from code e.g. **Invoice / Sales Order / Sales Receipt**; **Test Cases** = full line, how to enable, steps, expected QBE outcome, short how-it-works), and **§3.7**. Default post target is the **Customer Issue**; **Bug-Fix** Stories with only a linked **Bug** → default **Bug** per §3.7 / §7.1. Draft in chat, ADF mentions, post after confirmation per §7.5 / §7.8.
 
 **Exemplar in Jira:** [UD-31982?focusedCommentId=236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780).
 
