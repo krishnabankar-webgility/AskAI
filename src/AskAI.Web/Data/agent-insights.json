@@ -1,0 +1,170 @@
+{
+  "defaults": {
+    "capabilities": [
+      "Follows the repo’s declared skill read order before acting.",
+      "Mirrors are tracked for Cursor, GitHub Copilot, and VS Code agent pickers."
+    ],
+    "weaknesses": [
+      "Effectiveness depends on MCP tokens, git remotes, and external services configured on the machine running the agent.",
+      "Very large skill files can crowd the model context window."
+    ],
+    "performance": "This dashboard does not record runtime telemetry. Expect performance to track API latency, tool parallelism, and model choice.",
+    "learnings": [
+      "When you add an agent, update `.cursor/agent-skill-bindings.md` and `.github/copilot/AGENT-SKILL-BINDINGS.md` together.",
+      "Close specialist sessions with `/agent-learning` when corrections should become durable skill edits."
+    ],
+    "suggestions": [
+      "Keep Copilot agent files referencing `.cursor/skill-library/` paths (single source of truth).",
+      "Add measurable checks per agent in this file under `agents.<id>`."
+    ]
+  },
+  "agents": {
+    "KrishnaAiGen": {
+      "capabilities": [
+        "Loads the full skill registry for cross-domain orchestration.",
+        "Routes work to specialists when the user names `/jira-automation`, `/git-automation`, etc."
+      ],
+      "weaknesses": [
+        "Large combined context; easy to exceed limits if every skill is pulled eagerly.",
+        "Broad scope increases the chance of answering without loading the right specialist skill first."
+      ],
+      "performance": "Best when delegating early; avoid pasting entire product repos into one turn.",
+      "learnings": [
+        "Prefer specialist agents for single-domain execution to reduce errors and cost."
+      ],
+      "suggestions": [
+        "Split rarely-used guidance into separate skills and reference them only from relevant agents."
+      ]
+    },
+    "jira-automation": {
+      "capabilities": [
+        "UD Jira workflows: create Story/Bug/Task, subtasks, OE from SP, Done/RFT, QA comments, sprint helpers."
+      ],
+      "weaknesses": [
+        "Rule density in `jira-workflow.md` requires careful section navigation (§ references).",
+        "MCP/Jira availability and permissions must be correct or actions fail mid-flow."
+      ],
+      "performance": "Dominated by Jira REST latency and number of follow-up queries for verification steps.",
+      "learnings": [
+        "Kanban-first defaults (board 894) mean sprint fields are intentionally omitted unless asked."
+      ],
+      "suggestions": [
+        "Consider a quick-reference card at the top of the Jira skill for the most common happy paths."
+      ]
+    },
+    "git-automation": {
+      "capabilities": [
+        "Commit/push/merge guidance with a master-first default for this repo."
+      ],
+      "weaknesses": [
+        "Cannot see private remotes or credentials; user must authenticate locally."
+      ],
+      "performance": "Usually fast; merges may require human conflict resolution.",
+      "learnings": [
+        "The develop sync flow is opt-in and should not run unless explicitly requested."
+      ],
+      "suggestions": [
+        "Add a short checklist output after each push (branch, remote, divergence summary)."
+      ]
+    },
+    "bitbucket-automation": {
+      "capabilities": [
+        "Authenticated git operations against the Bitbucket `unify-enterprise` mirror when tokens are set."
+      ],
+      "weaknesses": [
+        "Token type confusion (Bitbucket HTTP access token vs Atlassian API token) is a common failure mode."
+      ],
+      "performance": "Network-bound; large fetches can be slow on constrained links.",
+      "learnings": [
+        "URL-encode tokens with special characters when embedding in remote URLs."
+      ],
+      "suggestions": [
+        "Document a single blessed remote URL pattern per environment (slug vs x-token-auth)."
+      ]
+    },
+    "db-automation": {
+      "capabilities": [
+        "SQL Server restore and related database workflows from `db-restore.md`."
+      ],
+      "weaknesses": [
+        "Requires local/remote SQL access; not applicable if only documentation work is requested."
+      ],
+      "performance": "Restore time depends on backup size and disk throughput.",
+      "learnings": [],
+      "suggestions": [
+        "Add additional `db-*.md` skills and extend the agent read list when new DB playbooks appear."
+      ]
+    },
+    "slack-automation": {
+      "capabilities": [
+        "Slack MCP workflows: channels, messages, and workspace-aware operations when tokens are configured."
+      ],
+      "weaknesses": [
+        "Slack API rate limits and workspace policy can block automation."
+      ],
+      "performance": "Generally low latency for small reads; batch carefully for history scans.",
+      "learnings": [],
+      "suggestions": [
+        "Keep prompts explicit about channel IDs vs names to reduce ambiguity."
+      ]
+    },
+    "dev-customization": {
+      "capabilities": [
+        "Customer customization flows: architecture reuse, gating, logging patterns."
+      ],
+      "weaknesses": [
+        "Requires deep product context from Unify-Enterprise code not always present in AskAI alone."
+      ],
+      "performance": "Depends on how much code context is loaded per request.",
+      "learnings": [
+        "Two-step skill read (expertise then workflow) keeps prompts smaller until needed."
+      ],
+      "suggestions": [
+        "Link to canonical code pointers (types/files) in the skill to reduce hallucinated APIs."
+      ]
+    },
+    "confluence-automation": {
+      "capabilities": [
+        "Confluence page search, authoring, and knowledge-base maintenance via Atlassian tooling."
+      ],
+      "weaknesses": [
+        "Large pages and permission boundaries can make automated edits risky without review."
+      ],
+      "performance": "Search and render can be slower on big spaces.",
+      "learnings": [],
+      "suggestions": [
+        "Prefer draft-in-comment patterns for sensitive QA notes (see mirrored Jira §7 guidance)."
+      ]
+    },
+    "agent-learning": {
+      "capabilities": [
+        "Persists corrections into skills/agents and keeps Cursor + Copilot + VS Code mirrors aligned."
+      ],
+      "weaknesses": [
+        "Meta-edits can propagate mistakes if the learning payload is underspecified."
+      ],
+      "performance": "Mostly file I/O and careful multi-file diffs.",
+      "learnings": [
+        "Treat `/agent-learning` as the default close-out after specialist work when feedback should stick."
+      ],
+      "suggestions": [
+        "Add a lightweight template for “what was wrong / what changed / where verified”."
+      ]
+    },
+    "KrishnaAIGen-autonomous": {
+      "capabilities": [
+        "VS Code / GitHub autonomous variant with heavier tooling expectations (see its agent file)."
+      ],
+      "weaknesses": [
+        "Not the same as the KrishnaAiGen master; mixing them up causes mismatched assumptions."
+      ],
+      "performance": "Depends on enabled tools and workspace size.",
+      "learnings": [
+        "Keep this agent’s scope clearly labeled in UI and docs to avoid accidental selection."
+      ],
+      "suggestions": [
+        "Cross-link from the master agent doc to this variant with explicit when-to-use guidance."
+      ]
+    }
+  }
+}

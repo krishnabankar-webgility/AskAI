@@ -4,9 +4,10 @@
 
 ### Technology Stack
 - **Language/Framework:** C# / .NET 8 (LTS)
-- **Project Type:** Console application
+- **Project Type:** Console application + optional **ASP.NET Core** catalog site
 - **Solution file:** `AskAI.sln` (root)
 - **Main project:** `src/AskAI/AskAI.csproj`
+- **Web catalog:** `src/AskAI.Web/AskAI.Web.csproj` (browser UI for agents, skills, prompts, and a keyword “catalog assistant”)
 - **Test project:** `tests/AskAI.Tests/AskAI.Tests.csproj` (xUnit)
 
 ### .NET SDK Setup
@@ -81,6 +82,7 @@ git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket
 | Restore dependencies | `dotnet restore` |
 | Build solution | `dotnet build` |
 | Run application | `dotnet run --project src/AskAI` |
+| Run agent catalog web | `dotnet run --project src/AskAI.Web` (then open the URL shown, e.g. `http://localhost:5088`) |
 | Run tests | `dotnet test` |
 | Lint (warnings as errors) | `dotnet build /p:TreatWarningsAsErrors=true` |
 

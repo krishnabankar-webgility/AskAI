@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AskAI Agent Catalog</title>
+  <link rel="stylesheet" href="css/site.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">AskAI</span>
+      <span class="subtitle">Agent &amp; skill catalog</span>
+    </div>
+    <nav class="tabs" id="main-tabs">
+      <button type="button" data-tab="agents" class="active">Agents</button>
+      <button type="button" data-tab="skills">Skills</button>
+      <button type="button" data-tab="copilot">Copilot mirrors</button>
+      <button type="button" data-tab="prompts">Prompts</button>
+      <button type="button" data-tab="about">About</button>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="pane list-pane" id="list-pane">
+      <div class="toolbar">
+        <input type="search" id="filter" placeholder="Filter by name, path, or description…" autocomplete="off" />
+        <div class="chips" id="platform-chips" hidden>
+          <button type="button" data-platform="all" class="chip active">All</button>
+          <button type="button" data-platform="cursor" class="chip">Cursor</button>
+          <button type="button" data-platform="copilot" class="chip">GitHub Copilot</button>
+          <button type="button" data-platform="vscode" class="chip">VS Code picker</button>
+        </div>
+      </div>
+      <div id="list" class="card-list"></div>
+      <p class="muted footnote" id="repo-foot"></p>
+    </section>
+
+    <section class="pane detail-pane" id="detail-pane">
+      <div id="detail-empty" class="empty-state">
+        <h2>Select an item</h2>
+        <p>Choose an agent, skill, or prompt on the left. Markdown opens here with quick metadata.</p>
+      </div>
+      <div id="detail-agent" hidden></div>
+      <div id="detail-doc" hidden>
+        <div class="doc-head">
+          <h2 id="doc-title"></h2>
+          <button type="button" class="ghost" id="copy-doc">Copy markdown</button>
+        </div>
+        <article id="doc-render" class="markdown-body"></article>
+      </div>
+    </section>
+  </main>
+
+  <aside class="bot" id="bot-panel">
+    <button type="button" class="bot-toggle" id="bot-toggle" aria-expanded="false" aria-controls="bot-body">
+      Catalog assistant
+    </button>
+    <div class="bot-body" id="bot-body" hidden>
+      <div class="bot-header">
+        <strong>Ask about this repo</strong>
+        <span class="muted small">Keyword matches over agents &amp; skills (no cloud LLM).</span>
+      </div>
+      <div id="bot-messages" class="bot-messages"></div>
+      <form id="bot-form" class="bot-form">
+        <label class="sr-only" for="bot-input">Message</label>
+        <textarea id="bot-input" rows="2" placeholder="e.g. Which agent owns Jira worklogs?"></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </aside>
+</body>
+</html>
