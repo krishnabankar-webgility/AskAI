@@ -122,6 +122,8 @@ When a session fixes wrong or incomplete instructions, follow **`.cursor/skill-l
 
 ### Cursor subagents (`.cursor/agents/`)
 
+**Workspace root:** Cursor loads **project** subagents only from **`<workspace_folder>/.cursor/agents/`** (see [Subagents — file locations](https://cursor.com/docs/subagents)). In this monorepo, open **`Agentic_Unify-Enterprise`** as the workspace folder and keep **`.cursor/` at that repository root** — not under `AskAI/.cursor/` only — otherwise custom subagents do not appear for `@` / Task delegation after nesting AskAI inside a larger repo.
+
 The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, model picker, ∞) is **not** populated from `.cursor/agents/*.md`. That control is for **chat mode and model**, not a catalog of custom subagents. Cursor documents custom subagents as tools the main Agent delegates to; the canonical way to see what exists is the `.cursor/agents/` folder on disk.
 
 See [Subagents](https://cursor.com/docs/subagents) in the Cursor docs.

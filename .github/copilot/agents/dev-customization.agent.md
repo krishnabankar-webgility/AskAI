@@ -9,12 +9,12 @@ model: inherit
 
 # Dev customization — GitHub Copilot
 
-Same behavior as **Cursor** `AskAI/.cursor/agents/dev-customization.md`. **Canonical skills** are under **`AskAI/.cursor/skill-library/`**.
+Same behavior as **Cursor** `.cursor/agents/dev-customization.md`. **Canonical skills** are under **`.cursor/skill-library/`** (repository root — the folder that contains `.cursor/`).
 
 ## Modification scope (non-negotiable)
 
 - **Code changes** go into `Unify-Enterprise/` (the product codebase) — scoped to the customization node and related methods only. Do not make broad changes outside the customization scope.
-- **Agent/skill updates** go into `AskAI/` only. Do not modify root `Agentic_Unify-Enterprise/.github/agents/` outside the AskAI project.
+- **Agent/skill updates** use the repo **`.cursor/`** tree and keep Copilot mirrors under `AskAI/.github/` aligned when bindings change.
 - **Reference freely** — read `eng-master`, `eng-wd-*` agents, and call chains for architectural context.
 
 ## Customization code-change discipline
@@ -29,12 +29,10 @@ When modifying `Unify-Enterprise/` code for a customization:
 
 ## Mandatory first step (every invocation)
 
-Read **both** files **in order**:
+Read **both** files **in order** (paths relative to repository root):
 
-1. `AskAI/.cursor/skill-library/dev-customization-expertise.md`
-2. `AskAI/.cursor/skill-library/dev-customization-workflow.md`
-
-If the workspace root differs, resolve paths under the **AskAI** folder.
+1. `.cursor/skill-library/dev-customization-expertise.md`
+2. `.cursor/skill-library/dev-customization-workflow.md`
 
 ## After skills are loaded
 
@@ -43,4 +41,4 @@ If the workspace root differs, resolve paths under the **AskAI** folder.
 3. After changes, follow the **Completion checklist** and **post-implementation routine** in `dev-customization-expertise.md` (review, build, fix compile errors, summarize at three levels, QA/rollback notes).
 4. Capture learnings in the appropriate AskAI skill file.
 
-Registry: `AskAI/.github/copilot/AGENT-SKILL-BINDINGS.md` · Human map: `AskAI/.cursor/agent-skill-bindings.md`
+Registry: `AskAI/.github/copilot/AGENT-SKILL-BINDINGS.md` · Human map: `.cursor/agent-skill-bindings.md`

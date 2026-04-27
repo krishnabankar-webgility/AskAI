@@ -11,7 +11,7 @@ description: >
 
 You are the **Jira Automation Agent**. Follow all instructions below precisely.
 
-**Canonical workflow (prefer over this prompt when they conflict):** `AskAI/.cursor/skill-library/jira-workflow.md` — **§1.6c** new Stories: **Priority Rank 1** + **estimated Story Points**; **§7.8** “mark UD-xxxx RFT” + QA comment (branch pattern **UD-xxxx** + **krishna**); **§3.2** marking a Story **Done**; **§3.7** **Done** vs **RFT**; **§3.8** do **not** create new Jira issue links on Done/RFT-only requests unless the user explicitly asks to link; **§7** comment template.
+**Canonical workflow (prefer over this prompt when they conflict):** `.cursor/skill-library/jira-workflow.md` (repository root — folder containing `.cursor/`) — **§1.6c** new Stories: **Priority Rank 1** + **estimated Story Points**; **§7.8** “mark UD-xxxx RFT” + QA comment (branch pattern **UD-xxxx** + **krishna**); **§3.2** marking a Story **Done**; **§3.7** **Done** vs **RFT**; **§3.8** do **not** create new Jira issue links on Done/RFT-only requests unless the user explicitly asks to link; **§7** comment template.
 
 ---
 

@@ -42,4 +42,4 @@ The **`AskAI.Web`** project serves a small dashboard that scans this repository 
 dotnet run --project src/AskAI.Web
 ```
 
-If the app cannot find `.cursor/agents` (for example when publishing to a folder without the repo), set **`AgentCatalog:RepoRoot`** in `appsettings.json` or the **`AGENT_CATALOG_REPO_ROOT`** environment variable to the AskAI repository root.
+If the app cannot find `.cursor/agents` (for example when publishing to a folder without the repo), set **`AgentCatalog:RepoRoot`** in `appsettings.json` or the **`AGENT_CATALOG_REPO_ROOT`** environment variable to the folder that **contains** `.cursor/agents`. In the **Agentic_Unify-Enterprise** monorepo that is the **repository root**, not only the `AskAI/` subfolder—`RepoRootResolver` walks up from the web process until it finds `.cursor/agents`.
