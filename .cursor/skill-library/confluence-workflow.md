@@ -134,6 +134,7 @@ These pages are in the personal space (space ID `2590998546`). The agent should 
 | `3021275138` | Customization Delivery | `3021045763` | 2026-04-10 |
 | `3021209607` | Comment for QA Testing | `3021045763` | 2026-04-10 |
 | `3029205012` | Customization Notes Template | `3021045763` | 2026-04-17 |
+| `3037495319` | UD-32071 CIM | `3027959816` (Customizations folder) | 2026-04-27 |
 | `3027632135` | Customization Dev Notes | `3027337225` (My Notes folder) | 2026-04-16 |
 | `3027468302` | QBD Custom Field Code | `3027337225` (My Notes folder) | 2026-04-16 |
 | `3024093188` | KPI Report — Customizations & Revenue (Oct 2025 – Mar 2026) | `2590998867` | 2026-04-13 |
@@ -196,6 +197,7 @@ Krishna Bankar Personal Space (2590998546)
 │   ├── UD-29517 FR-CIM (3028516908)
 │   ├── UD-30989 CIM (3028680714)
 │   ├── UD-31982 CIM (3028713505)
+│   ├── UD-32071 CIM (3037495319)                       — 2026-04-27 (CFC UD-32085 assignee ≠ Krishna → title CIM only)
 │   ├── UD-32081 CIM (3031662599)                       — 2026-04-20 (CFC line on page; title CIM — CFC owned by other assignee)
 │   └── UD-32242 R-Bug (3029008405)                     — created 2026-04-17 from Customization Notes Template
 │
@@ -362,7 +364,7 @@ These are **personal short-form notes** in folder **`3027959816`** (the **Custom
 
 **Default vs extra (mandatory):**
 
-- **Default (always do):** Read template `3029205012` / `FACOt`. `getJiraIssue` for the **Customer Issue** and linked **Stories** (CIM/CFC/Bug as needed). **Always** add a **`CFC:`** line (full URL + status) on the page **when a linked CFC Story exists** — even if **CFC is not** in the **page title** (see **Page title vs CFC ownership** below). Fill **full Jira browse URL + current status** for each line you add. HubSpot URL(s) from the Customer Issue description when present. **Scan the Customer Issue `description`** (and linked Story descriptions only if the user asks) for **customer credentials** and **DB / file-backup `https` links** (Dropbox, Drive, OneDrive, SharePoint, DB admin URLs, etc.); copy **only** what appears there into the matching template lines (`Backup:`, `Dropbox DB:`, `Login`/`Password`, `QBD / WD login`, `Database`, etc.) — **never** invent, **never** copy from another ticket. If the description has no creds or backup links, leave those lines blank. Pick **`UD-<CUSTOMER_ISSUE_ID> <SUFFIX>`** from Jira evidence and CFC ownership rules. **Do not** list **Jira sub-tasks** on the page by default. **Do not** add paragraphs, reproduction steps, status tickers, triage essays, or template fields the user did not ask to fill.
+- **Default (always do):** Read template `3029205012` / `FACOt`. `getJiraIssue` for the **Customer Issue** and linked **Stories** (CIM/CFC/Bug as needed). **Always** add a **`CFC:`** line (full URL + status) on the page **when a linked CFC Story exists** — even if **CFC is not** in the **page title** (see **Page title vs CFC ownership** below). Fill **full Jira browse URL + current status** for each line you add. HubSpot URL(s) from the Customer Issue description when present. **Customization node (mandatory when the workspace/repo is available):** Resolve from **`CustomizationConstant.cs`** — see **§9.1** — and fill the **Customization node:** template line with the **symbol** and **prefix string** (and runtime pattern `PREFIX_<ProfileID>`). **Never** invent a node name; cite what appears in code. **Scan the Customer Issue `description`** (and linked Story descriptions only if the user asks) for **customer credentials** and **DB / file-backup `https` links** (Dropbox, Drive, OneDrive, SharePoint, DB admin URLs, etc.); copy **only** what appears there into the matching template lines (`Backup:`, `Dropbox DB:`, `Login`/`Password`, `QBD / WD login`, `Database`, etc.) — **never** invent, **never** copy from another ticket. If the description has no creds or backup links, leave those lines blank. Pick **`UD-<CUSTOMER_ISSUE_ID> <SUFFIX>`** from Jira evidence and CFC ownership rules. **Do not** list **Jira sub-tasks** on the page by default. **Do not** add paragraphs, reproduction steps, status tickers, triage essays, or template fields the user did not ask to fill.
 - **Extra (only if the user explicitly asks in that request or a follow-up):** Additional lines (e.g. sub-tasks, extra linked issues, PR/build lines filled, more HubSpot context, narrative). If the user only gives a Jira key and asks for a “personal page,” deliver **default** only.
 
 **Template:** page `3029205012` (tiny `FACOt`) — **Customization Notes Template**. Mirror its structure; default fill matches the short exemplar pages, not a maximal dump of every template placeholder unless the user wants that.
@@ -375,6 +377,18 @@ These are **personal short-form notes** in folder **`3027959816`** (the **Custom
 
 **Suffix picked from Jira (after CFC title rule):** component `Retention` → `R`; Story summary `Bug-Fix :` → `Bug` (or `R-Bug` if component also Retention); `CIM :` / `CIF :` → `CIM`; `CFC :` → `CFC` **for title** only when **you** are assignee on that CFC Story; RN customer → prepend `RN-`. When ambiguous, ask.
 
+### 9.1 Customization node from `CustomizationConstant.cs` (mandatory when repo access exists)
+
+Desktop customizations declare their **customization node** in source. For every **Customization Notes** page tied to Customer Issue **`UD-xxxx`**, the agent **must** populate **Customization node:** from code when the workspace is available:
+
+1. **Open** `Unify-Enterprise/Desktop/wg.eCC.DTO/Shared/CustomizationConstant.cs` (same relative path under the repo root; on disk may appear as `Unify-Enterprise\Desktop\wg.eCC.DTO\Shared\CustomizationConstant.cs`).
+2. **Search** for the ticket reference: `UD-xxxx`, or the browse URL `webgility.atlassian.net/browse/UD-xxxx`, in a **comment line immediately above** a `public const string` declaration.
+3. **Record** the **C# symbol** (e.g. `AMZF_EF_SETTLEMENT_CUSTJOB`) and the **string literal** assigned to it (e.g. `"AMZF_EF_SETTLEMENT_CUSTJOB_"`). The **runtime node key** is typically **`literal` + `<ProfileID>`** (e.g. `AMZF_EF_SETTLEMENT_CUSTJOB_12345`).
+4. **On the Confluence page**, set **Customization node:** to something like: **`AMZF_EF_SETTLEMENT_CUSTJOB` → `AMZF_EF_SETTLEMENT_CUSTJOB_<ProfileID>`** (adjust to match the literal — show the prefix pattern QA/dev use).
+5. If **no** matching comment/constant is found, **`grep`** / search the branch or `git diff` for `UD-xxxx` in that file or related changes; only if still absent, leave **Customization node:** blank and add a one-line **Notes** hint that no entry was found in `CustomizationConstant.cs` for this UD (do **not** guess names).
+
+This aligns with **`jira-workflow.md` §7.9** (Jira RFT) so Jira QA comments and Confluence Customization Notes stay consistent.
+
 **Jira links in notes (mandatory for §9 work).** Base URL: `https://webgility.atlassian.net/browse/<KEY>`. For **every** Jira key **you put on the page** (Customer Issue, Story, CFC, Bug — **not** sub-tasks unless the user asked for sub-tasks), write the **full browse URL** and the **current status** from `getJiraIssue` (e.g. `https://webgility.atlassian.net/browse/UD-32242 — To Do`). One issue per line unless the user asks to compress several keys onto one line.
 
 **Backup / creds from Jira description.** On every §9 prepare/update, read **`description`** on the **Customer Issue** (plain text / markdown from `getJiraIssue`). Extract and add to the page: (1) any **`https` URLs** that point to **DB backups**, **Dropbox/shared files**, cloud drives, or **DB admin** tools; (2) explicit **customer credentials** or login details **only as they appear** in that description (map to template lines: `Backup:`, `Dropbox DB:`, `Store`/`Login`/`Password`, `Database`/`User`/`Password`, `QBD / WD login`, etc.). If nothing is present, leave those lines blank — do not invent.
@@ -382,16 +396,17 @@ These are **personal short-form notes** in folder **`3027959816`** (the **Custom
 **Create:**
 
 1. `getJiraIssue` for the Customer Issue and linked Stories (CFC/CIM/Bug as needed) — include **`description`** on the Customer Issue. Pull **status**, HubSpot links, and **scan `description` for backup URLs and customer creds** to fill template lines (see above). **Do not** paste the entire description into Confluence as prose. **Skip sub-tasks** unless the user explicitly asked to include them.
-2. CQL-dedupe `title="UD-XXXXX <SUFFIX>" AND space.key="~712020cb0bd6e5b43649f9a0f56211a8cc8799"`; if it exists, offer to update instead.
-3. `createConfluencePage` with `spaceId=2590998546`, `parentId=3027959816` (Customizations folder), `title=UD-<ID> <SUFFIX>`, `contentFormat=markdown`. **Placement:** create as a **new child of `3027959816`** so it appears **at the end / last** among siblings (Confluence typically orders new pages after existing ones; if your MCP/API exposes an explicit “after” or position for ordering, prefer **last**). Do not insert in the middle of the folder unless the user asks.
-4. Body = **default** short line list per exemplar pages (heading, Customer issue, Story and/or CFC lines as required by the case, HubSpot, blank Backup/Dropbox, short Notes). Full Jira URLs + status for each line. **No** default paragraphs, reproduction steps, status ticker, or triage narrative. **Extras** only if the user asked.
+2. **Customization node:** Run **§9.1** against `CustomizationConstant.cs` before writing the page body (when the repo is present in the workspace).
+3. CQL-dedupe `title="UD-XXXXX <SUFFIX>" AND space.key="~712020cb0bd6e5b43649f9a0f56211a8cc8799"`; if it exists, offer to update instead.
+4. `createConfluencePage` with `spaceId=2590998546`, `parentId=3027959816` (Customizations folder), `title=UD-<ID> <SUFFIX>`, `contentFormat=markdown`. **Placement:** create as a **new child of `3027959816`** so it appears **at the end / last** among siblings (Confluence typically orders new pages after existing ones; if your MCP/API exposes an explicit “after” or position for ordering, prefer **last**). Do not insert in the middle of the folder unless the user asks.
+5. Body = **default** short line list per exemplar pages (heading, Customer issue, Story and/or CFC lines as required by the case, HubSpot, **Customization node from §9.1**, blank Backup/Dropbox, short Notes). Full Jira URLs + status for each line. **No** default paragraphs, reproduction steps, status ticker, or triage narrative. **Extras** only if the user asked.
 
-**Update:** resolve page by title → `getConfluencePage` → refresh Jira URL lines with `getJiraIssue` when statuses may have changed → `updateConfluencePage`.
+**Update:** resolve page by title → `getConfluencePage` → refresh Jira URL lines with `getJiraIssue` when statuses may have changed → re-run **§9.1** for **Customization node:** if code may have changed → `updateConfluencePage`.
 
 **Rules:**
 
 - Parent is **always** the Customizations folder (`3027959816`). New pages **last** in that folder when possible.
-- Never invent PR URLs, builds, nodes, or credentials — leave the placeholder unless the user asked you to fill those lines **and** gave real values.
+- Never invent PR URLs, builds, or credentials. **Customization node** names come from **`CustomizationConstant.cs`** (**§9.1**) when the repo is available — do not fabricate prefixes. Leave PR/build lines blank unless Jira or the user supplied values.
 - Never copy credentials / Dropbox / PR URLs from one customer's page into another. Only populate those fields from **this** ticket’s Jira description (or what the user pastes for this ticket).
 - **Default** = minimal exemplar-style body; **expand** only when the user explicitly requests extra content or fields.
 

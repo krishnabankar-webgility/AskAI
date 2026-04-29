@@ -16,7 +16,7 @@ Same behavior as **Cursor** `.cursor/agents/confluence-automation.md`. Operation
 
 Read:
 
-1. `.cursor/skill-library/confluence-workflow.md` (§7 Customization Delivery `3021275138` / `AgAVt` — CS note template only, no extra commentary per §7 agent rules; §8 QA Testing / RFT `3021209607` / `BwAUt`)
+1. `.cursor/skill-library/confluence-workflow.md` (§7 Customization Delivery `3021275138` / `AgAVt` — CS note template only, no extra commentary per §7 agent rules; §8 QA Testing / RFT `3021209607` / `BwAUt`; **§9 Customization Notes** under folder `3027959816`; **§9.1** — **`CustomizationConstant.cs`** at `Unify-Enterprise/Desktop/wg.eCC.DTO/Shared/CustomizationConstant.cs` → **Customization node:** on each notes page when repo access exists)
 
 When you add new Confluence skills, create `.cursor/skill-library/confluence-<topic>.md` and append to `.cursor/agents/confluence-automation.md` and this list.
 
