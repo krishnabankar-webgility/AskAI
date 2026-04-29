@@ -29,11 +29,15 @@ Read, in order:
 
 1. Compute window in `Asia/Kolkata` (yesterday; Monday → since last Friday).
 2. Run sources A–D in parallel (Jira / Slack / Bitbucket+GitHub / Confluence-optional). Skip any source whose secret/MCP is missing and record it in the *Sources skipped* footer.
+   - Jira: prefer `searchJiraIssuesUsingJql` MCP, else `POST /rest/api/3/search/jql` (the legacy `GET /rest/api/3/search` was removed by Atlassian).
+   - Slack: this MCP exposes `slack_search_public_and_private`, `slack_search_channels`, `slack_search_users`, `slack_send_message` (parameter `message`, not `text`), `slack_read_thread`. There is **no** `slack_list_channels` / `slack_get_users` / `slack_post_message`.
+   - Bitbucket: use `git` only (REST returns 401 for HTTP access tokens). `git clone --depth N` only fetches default branch; fetch Krishna's branches by name. Match commits with `--regexp-ignore-case --author="krishna"` (commit author = `krishna.bankar`).
+   - GitHub: `gh` runs as the `cursor` bot in Cloud Agents — pass `--author=krishnabankar-webgility` explicitly. `gh search prs --state` accepts only `open|closed`.
 3. Categorize each item per the table in `daily-work-update.md`; earliest bucket wins so nothing duplicates.
 4. Render the Slack `mrkdwn` digest from the skill's "Output format" section. Empty sections render `_(nothing)_`.
-5. Deliver:
+5. Deliver via `slack_send_message` (`channel_id` + `message`):
    - Manual `/daily-work-update`: show in chat → ask `Post to #my-daily-work-update? (yes / no / DM only)`.
-   - Scheduled (`DAILY_UPDATE_AUTOSEND=1`): post directly. Fall back to DM Krishna if channel missing; chat-only if Slack MCP missing.
+   - Scheduled (`DAILY_UPDATE_AUTOSEND=1`): post directly. Fall back to DM Krishna (pass his user_id `U08FTS2SRAP` as `channel_id`) if channel missing; chat-only if Slack MCP missing.
 6. Read the previous digest from `#my-daily-work-update` first and deduplicate by link.
 
 ## Hard safety rules

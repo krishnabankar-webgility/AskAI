@@ -65,7 +65,11 @@ For every section below, run all queries in **parallel where possible** and **fa
 
 ### A. Jira — issues Krishna touched
 
-Use Jira MCP (`searchJiraIssuesUsingJql` or equivalent) with these JQLs. Prefer `currentUser()` over the literal account id when the bot account == Krishna; otherwise use the account id.
+Use Jira MCP (`searchJiraIssuesUsingJql` or equivalent) **or** Jira REST directly with these JQLs. Prefer `currentUser()` over the literal account id when the bot account == Krishna; otherwise use the account id.
+
+> **REST endpoint (2026):** Atlassian removed the legacy `GET /rest/api/3/search`. Use **`POST /rest/api/3/search/jql`** with body `{"jql": "...", "fields": ["summary","status",...], "maxResults": 50}` and Basic auth `${JIRA_EMAIL}:${JIRA_API_TOKEN}`. Pagination uses `nextPageToken` / `isLast`.
+>
+> **Author-name pitfall:** Krishna's commits in `unify-enterprise` are authored as **`krishna.bankar`** (lowercase, dotted), not `Krishna Bankar`. Match author with `git log --regexp-ignore-case --author="krishna"` so case/format variations are caught.
 
 ```jql
 -- Yesterday window — anything Krishna closed, moved, or worked
@@ -155,30 +159,46 @@ Skip any channel message **not** containing `@here`, `@channel`, `<@KRISHNA_USER
 Bitbucket `unify-enterprise` (Krishna's primary repo for product work):
 
 ```bash
-# 1. Make sure auth + remote URL are set per bitbucket-unify-enterprise.md.
-# 2. Fetch only — never push from this agent.
-git -C $UNIFY_CLONE fetch --all --quiet
+# 1. Auth + remote URL per bitbucket-unify-enterprise.md.
+#    (Bitbucket REST API at api.bitbucket.org returns 401 with the standard
+#     HTTP access token; only the git transport is reliably authenticated.
+#     Use git for everything, not REST.)
 
-# 3. Krishna's commits in the last 24h on every branch.
-git -C $UNIFY_CLONE log --all --since="yesterday 00:00" \
-    --author="Krishna" --pretty=format:'%h%x09%ci%x09%d%x09%s'
+# 2. Use a thin clone or worktree. `git clone --depth N` only fetches the default branch;
+#    if you need other branches in the window, fetch them explicitly:
+git -C $UNIFY_CLONE ls-remote origin 2>/dev/null \
+    | grep -iE "krishna|UD-<keys>"
+git -C $UNIFY_CLONE fetch --depth 50 origin "refs/heads/<branch>:refs/remotes/origin/<branch>"
+
+# 3. Krishna's commits in the IST window across the fetched branches.
+#    Krishna's commit author is "krishna.bankar" — case/format-insensitive match.
+git -C $UNIFY_CLONE log --all \
+    --since="2026-04-27 00:00 +0530" --until="2026-04-29 09:00 +0530" \
+    --regexp-ignore-case --author="krishna" \
+    --pretty=format:'%h | %ci | %an | %d | %s'
 
 # 4. Branches Krishna pushed in the window.
-git -C $UNIFY_CLONE for-each-ref --sort=-committerdate refs/remotes/bitbucket/ \
-    --format='%(committerdate:iso8601)%09%(authorname)%09%(refname:short)' \
-  | awk -F'\t' '$2 ~ /Krishna/ {print}'
+git -C $UNIFY_CLONE for-each-ref --sort=-committerdate refs/remotes/origin/ \
+    --format='%(committerdate:iso8601)|%(authorname)|%(refname:short)' \
+  | awk -F'|' 'tolower($2) ~ /krishna/'
 ```
 
-For PRs use the **Bitbucket MCP** when available (`getPullRequest`, `listPullRequests`, `getPullRequestComments`). Otherwise list URLs of branches starting with `krishna/` or matching `UD-*krishna*` for manual follow-up.
+For PRs use the **Bitbucket MCP** when available (`getPullRequest`, `listPullRequests`, `getPullRequestComments`). Otherwise list URLs of branches matching `*krishna*` or `*UD-<key>*` for manual follow-up. **Do not** retry the REST API after a 401 — switch back to git.
 
-GitHub (AskAI repo + any other repos in scope) — use the pre-authenticated `gh` CLI:
+GitHub (AskAI repo + any other repos in scope) — use the pre-authenticated `gh` CLI. The cloud agent's `gh` runs as the bot account `cursor`, so `--author=@me` finds the bot, not Krishna. Use Krishna's GitHub login `krishnabankar-webgility` explicitly. `gh search prs` only accepts `--state {open|closed}`; query each separately or omit the flag.
 
 ```bash
-gh search prs --author=@me --updated=">=$(date -u -d 'yesterday 00:00' +%Y-%m-%d)" \
-  --state=all --json number,title,state,url,updatedAt,repository
-gh search commits --author=@me --committer-date=">=$(date -u -d 'yesterday 00:00' +%Y-%m-%d)" \
-  --json sha,commit,repository,url
+KRISHNA_GH=krishnabankar-webgility
+SINCE=$(TZ=UTC date -d 'TZ="Asia/Kolkata" yesterday 00:00' +%Y-%m-%d)
+
+gh search prs --author=$KRISHNA_GH --updated=">=$SINCE" \
+  --json number,title,state,url,updatedAt,repository --limit 30
+
+gh pr list -R krishnabankar-webgility/AskAI --state all --limit 20 \
+  --json number,title,state,url,createdAt,updatedAt,author
 ```
+
+`gh search commits` rarely returns Krishna's `unify-enterprise` work because that repo is on **Bitbucket**, not GitHub — rely on §C step 3 above for product-code commits and use `gh` only for AskAI-style GitHub repos.
 
 For each commit/PR surfaced, capture: repo, branch, short SHA / PR #, title, status (open/merged/draft), URL, link to any QA-testing comment posted to Jira (cross-reference §7 of `jira-workflow.md`).
 
@@ -266,9 +286,9 @@ If a section is **empty**, render `_(nothing)_` rather than dropping the header 
 
 ## Posting rules
 
-1. **Resolve** the channel id for `#my-daily-work-update` via `slack_list_channels` (cache only for the run; do **not** persist).
-2. **Send** with `slack_post_message` — single message, Block Kit + mrkdwn fallback.
-3. If the channel does not exist, fall back to **DM Krishna** (`slack_get_users` → `slack_post_message`); add a one-line note "channel `#my-daily-work-update` not found, DM-ing instead".
+1. **Resolve** the channel id for `#my-daily-work-update` via `slack_search_channels` (the Cursor Slack MCP does not expose a generic `slack_list_channels`). If the search returns no result, the channel does not exist for the bot.
+2. **Send** with **`slack_send_message`** (Cursor Slack MCP). The parameter is **`message`**, not `text`. Use Slack `mrkdwn` syntax (`*bold*`, `_italic_`, `<url|label>`). Do **not** invent the protocol-spec name `slack_post_message` — that is not the tool name in this MCP.
+3. If the channel does not exist, fall back to **DM Krishna** by passing his Slack `user_id` as `channel_id` to `slack_send_message` (resolve via `slack_search_users "Krishna Bankar"` → `U08FTS2SRAP` for this account). Add a one-line note at the top of the digest: `Channel #my-daily-work-update not found, DM-ing instead.`
 4. If Slack MCP is unavailable, **render to Cursor chat** and tell Krishna to set up Slack secrets.
 5. Mask any token / secret / email-with-token as `***` (per `slack-integration.md` safety rules).
 6. Never include source code snippets, customer PII, full QA testing comments, or HubSpot ticket bodies. Only short summaries with links.
