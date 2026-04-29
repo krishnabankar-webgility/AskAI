@@ -8,6 +8,7 @@ Produce a single **daily work update** for Krishna Bankar that summarizes:
 2. **Today / In progress — my work** — Jira items currently `In Progress` and **assigned to Krishna**, threads still open in Slack / Jira / customer-issue Jira (via HubSpot Atish-Sinha automation) where Krishna is the active driver, things planned to start today.
 3. **Pending / Queue / TODO — my actionable work** — Jira items in `To Do` **assigned to Krishna**, plus Slack mentions / customer-issue comments where someone has asked Krishna for a reply or decision and Krishna has not yet responded. **Excludes** anything in `RFT` / `In Test` and anything where Krishna is **not the assignee** — those are not Krishna's pending action.
 4. **Follow-ups (QA / others driving)** — Jira items currently in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, plus customer-issue Jira / Slack discussions where someone else (QA, another dev, customer, Atish) is the next actor. Each line names **who** is driving and what's blocking, so Krishna knows what to chase, not what to do.
+5. **High-level summary + Blockers** — at the very end of the digest, a compact one-screen summary: counts (Done / In Progress / Pending / Follow-ups / meetings / discussions / commits / PRs / installer requests / QA testing comments) and an explicit **Blockers** list. A blocker is anything outside Krishna's control that is holding up Krishna's task — typically a dependency on QA, another dev, a customer, infra, or a missing decision. The agent must reason across §1–§4 to derive this; do not just dump §4 verbatim.
 
 The update is delivered automatically each weekday morning around **09:00 IST** to the public Slack channel **`#my-daily-update`** (channel id **`C0B0CBW8G03`**). The Cursor Slack bot is already a member, so no `/invite` is needed. If the channel is missing or Slack MCP is unavailable, fall back to **DM Krishna** (`U08FTS2SRAP`), then to chat.
 
@@ -228,6 +229,8 @@ For every raw item from sources A–D:
 | **§3.2 Pending — Discussions on me** | Slack mentions / DMs / customer-issue comments where someone has asked Krishna a question / for a decision / for help / for a build / for an ETA, and Krishna has not yet replied. |
 | **§4.1 Follow-ups — Jira (QA / others)** | Status `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, **regardless of assignee**. Line names **who** is driving (current assignee = QA), the QA reviewer (if known from the §7 comment CC), days since RFT, and whether QA has commented since handoff. |
 | **§4.2 Follow-ups — Discussions where someone else owes me** | Threads / customer-issue comments where Krishna posted last and the next actor is **not** Krishna (e.g. "awaiting Faaque's check", "awaiting Lokesh's confirmation", Atish-Sinha comment on a CI Krishna previously commented on). |
+| **§5.1 Summary counts** | Pure counts derived from §1–§4: `done`, `in_progress_started`, `in_progress_now` (§2.1), `pending_jira` (§3.1), `pending_discussions` (§3.2), `followups_qa` (§4.1), `followups_others` (§4.2), `meetings_discussions` (§1.2), `updates_shared` (§1.3), `commits`, `prs`, `installer_requests`, `qa_testing_comments`. |
+| **§5.2 Blockers** | Auto-derived from §2–§4. Anything where Krishna's progress is held up by an external actor: an RFT / In Test item with **no QA activity for ≥24h**; a §4.2 thread with no reply in ≥24h; a Pending §3 item flagged as blocked in its last comment ("waiting on…", "blocked by…", "needs decision from…"); a sub-task whose parent Story is `In Progress` for someone else; an installer request whose build is overdue. Each blocker line names: the blocked Jira/thread, **who** Krishna is waiting on, and **for what action**. If there is no blocker, render `_(none — nothing externally blocking your work)_`. |
 
 **Tie-breaker (no duplicates):** if an item could land in two buckets, prefer the **earliest** numbered bucket (Yesterday > Today > Pending > Follow-ups) **except** that **§1.1 Yesterday excludes anything currently in RFT/In Test** — those move to §4.1 even if Krishna acted on them yesterday (but the §1.3 line still records the QA comment Krishna posted as part of the handoff).
 
@@ -283,6 +286,19 @@ _4.1 Jira in RFT / In Test_
 
 _4.2 Discussions where someone else owes me_
 • <channel> — "<snippet>" — <link>   _(awaiting <person>'s <action>)_
+
+*:bar_chart: 5. High-level summary*
+
+_5.1 Counts_
+• Yesterday: *<N>* done · *<N>* in-progress started · *<N>* meetings/discussions · *<N>* updates shared · *<N>* commits · *<N>* PRs · *<N>* installer requests · *<N>* QA-testing comments
+• Today: *<N>* in-progress on me · *<N>* threads I'm driving
+• Pending (action on me): *<N>* Jira · *<N>* discussions
+• Follow-ups (others driving): *<N>* Jira (RFT/In Test) · *<N>* threads
+
+_5.2 Blockers (external dependencies holding up my work)_
+• `<UD-XXXX>` <title> — _waiting on <who> for <what action> since <when>_ — <url>
+• <channel/thread> — _<who> hasn't responded since <when>_ — <link>
+_(or `_(none — nothing externally blocking your work)_`)_
 
 —
 _Sources used: Jira ✅ · Slack ✅ · Bitbucket ✅ · GitHub ✅ · HubSpot (via Atish-Sinha bridge) ✅_
@@ -363,6 +379,10 @@ Follow .cursor/skill-library/daily-work-update.md exactly:
 - Today §2: my In-Progress Jira + threads I'm driving.
 - Pending §3: only items assigned to me OR a question waiting on my reply.
 - Follow-ups §4: RFT / In Test (QA-driven) and threads where someone else owes me.
+- §5 High-level summary + Blockers at the very end: compact counts (done / in-progress
+  / pending / follow-ups / meetings / commits / PRs / installer requests / QA testing
+  comments) and an explicit Blockers list naming what's blocked, who I'm waiting on,
+  for what action. If none, render "(none — nothing externally blocking your work)".
 Every Jira line must show UD-XXXX + title + what I did.
 Post to #my-daily-update (channel id C0B0CBW8G03). DAILY_UPDATE_AUTOSEND=1 is set,
 so skip the confirm step and post directly. If anything fails, list it in

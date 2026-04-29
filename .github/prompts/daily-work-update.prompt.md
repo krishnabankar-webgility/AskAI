@@ -20,6 +20,7 @@ Use this prompt to generate **Krishna's daily work digest** (yesterday / today /
   - **§3.1 Pending** = `To Do` AND `assignee = me` only.
   - **§3.2 Pending** = mentions/DMs awaiting Krishna's reply.
   - **§4 Follow-ups** = QA-driven Jiras + threads where someone else owes Krishna; name who is driving.
+  - **§5 High-level summary + Blockers** = compact counts (done / in-progress / pending / follow-ups / meetings / commits / PRs / installer requests / QA testing comments) followed by an explicit Blockers list (RFT/In Test idle ≥24h, §4.2 threads idle ≥24h, Pending items with "waiting on…", overdue builds); each blocker names what's blocked, who Krishna is waiting on, for what action. If none, render `_(none — nothing externally blocking your work)_`.
   - **Every Jira line** = `` `UD-XXXX` `` + title + what was done + URL.
 - Render the Slack `mrkdwn` template from the skill; empty sections render `_(nothing)_`.
 - Manual run: render in chat, ask `Post to #my-daily-update? (yes / no / DM only)`. Scheduled run with `DAILY_UPDATE_AUTOSEND=1`: post directly to channel id `C0B0CBW8G03`.

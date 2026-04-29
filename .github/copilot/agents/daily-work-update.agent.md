@@ -38,6 +38,7 @@ Read, in order:
    - **§3.1 Pending** = `To Do` AND `assignee = me` only (RFT / In Test / not-assigned-to-me are **not** Krishna's pending).
    - **§3.2 Pending** = mentions/DMs awaiting Krishna's reply.
    - **§4 Follow-ups** = QA-driven Jiras (RFT / In Test, regardless of assignee, where Krishna handed off) + threads where someone else owes Krishna; name **who** is driving.
+   - **§5 High-level summary + Blockers** = compact counts derived from §1–§4 (done / in-progress / meetings / discussions / updates / commits / PRs / installer requests / QA testing comments / pending / follow-ups), then an explicit **Blockers** list (RFT/In Test items idle ≥24h, §4.2 threads idle ≥24h, Pending items whose last comment says "waiting on…" / "blocked by…", overdue installer builds). Each blocker names *what is blocked*, *who Krishna is waiting on*, *for what action*. If none, render `_(none — nothing externally blocking your work)_`.
    - **Every Jira line** in any section: `` `UD-XXXX` `` + title + what was done verb-clause + URL.
 4. Render the Slack `mrkdwn` digest from the skill's "Output format" section. Empty sections render `_(nothing)_`.
 5. Deliver via `slack_send_message` (`channel_id` + `message`):
