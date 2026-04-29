@@ -1,5 +1,5 @@
 ---
-description: "Use when: cannot access UNC path over VPN, network share not accessible from home, net use hangs, SMB share access denied, \\server\\share not opening, file share works at office but not remote, VPN connected but cannot browse shares, Kerberos authentication failed, MTU issue VPN, SMB negotiation timeout, net use hangs forever."
+description: "Use when: cannot access UNC path over VPN, network share not accessible from home, net use hangs, SMB share access denied, \\server\\share not opening, file share works at office but not remote, VPN connected but cannot browse shares, Kerberos authentication failed, MTU issue VPN, SMB negotiation timeout, net use hangs forever, cannot access Jenkins over VPN, RDP not working over VPN, internal web services not loading."
 alwaysApply: false
 ---
 
@@ -11,6 +11,18 @@ alwaysApply: false
 - Can **ping** the server but `net use \\server\share` **hangs or fails**
 - Share works from office but not from home/remote
 - Error: `The password is invalid`, `System error 53/64/67`, or command freezes
+- Cannot access internal web services (Jenkins, web apps) over VPN
+- RDP/Remote Desktop fails to VMs over VPN
+
+## Real-World Success Examples
+
+✅ **Jenkins** — http://jenkins.webgility.com:8080 not loading → Fixed with MTU 1200 + Private profile
+
+✅ **RDP to VMs** — Remote Desktop failing → Fixed with network profile + Kerberos refresh
+
+✅ **UNC paths** — `\\inwsfs02\UDInstaller` inaccessible → Fixed with MTU 1200 + NTLM auth
+
+**Pattern**: Same MTU fix resolves HTTP, RDP, and SMB simultaneously.
 
 ---
 

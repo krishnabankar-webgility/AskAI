@@ -11,6 +11,18 @@ description: "Use when: cannot access UNC path over VPN, network share not acces
 - You can **ping** the server but `net use \\server\share` **hangs or fails**
 - The share works from the office but not from a remote/home location
 - You get: `The password is invalid`, `System error 53/64/67`, or the command just freezes
+- Cannot access internal web services (Jenkins, web apps) over VPN
+- RDP/Remote Desktop fails to connect to VMs over VPN
+
+### Real-World Success Examples
+
+This skill has successfully fixed:
+
+1. **Jenkins access** — http://jenkins.webgility.com:8080 not loading (MTU 1200 + Private profile fixed HTTP over VPN)
+2. **RDP to VMs** — Remote Desktop connection failing over VPN (network profile + Kerberos refresh)
+3. **Multiple UNC paths** — `\\inwsfs02\UDInstaller` and other shares inaccessible from home (MTU + NTLM auth)
+
+**Pattern**: Same MTU fix resolves HTTP, RDP, and SMB issues simultaneously.
 
 ---
 
