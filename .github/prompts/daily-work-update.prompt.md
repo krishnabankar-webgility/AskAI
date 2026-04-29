@@ -23,8 +23,8 @@ Use this prompt to generate **Krishna's daily work digest** (yesterday / today /
   - **§5 High-level summary + Blockers** = counts derived from §1–§4. Each non-zero parent count expands into indented sub-bullets that name the items (Jira → `UD-XXXX` + title; meetings → topic + with-whom; updates → where + one-line topic; commits → branch + short-sha + one-line fix hint; PRs → repo + PR# + state + title; **installer requests** are cross-checked in `#func-wd-build-updates` for Build No. + branch + Jira IDs/titles from `It's includes:`; Pending §3 and Follow-ups §4 keep just the count line). Then an explicit Blockers list (RFT/In Test idle ≥24h, §4.2 threads idle ≥24h, Pending items with "waiting on…", overdue builds); each blocker names what's blocked, who Krishna is waiting on, for what action. If none, render `_(none — nothing externally blocking your work)_`.
   - **§6 TL;DR (summary of summary)** = exactly 4 short lines derived from §5 numbers only (no IDs, no titles): Yesterday counts / Today counts / Pending + Follow-ups counts / `Blockers — N blocking; next action = "<one short imperative>"`. If no blockers, next action = focus on the top in-progress item title.
   - **Every Jira line** = `` `UD-XXXX` `` + title + what was done + URL.
-- Render the Slack `mrkdwn` template from the skill; empty sections render `_(nothing)_`.
-- Manual run: render in chat, ask `Post to #my-daily-update? (yes / no / DM only)`. Scheduled run with `DAILY_UPDATE_AUTOSEND=1`: post directly to channel id `C0B0CBW8G03`.
+- Render the Slack `mrkdwn` template from the skill **as ONE single message** containing all six sections (§1 Yesterday, §2 Today, §3 Pending, §4 Follow-ups, §5 High-level summary + Blockers, §6 TL;DR). Empty sections render `_(nothing)_`. Never split into multiple posts / replies / "v2" follow-ups.
+- Manual run: render the single-message draft in chat, ask `Post to #my-daily-update? (yes / no / DM only)`. Scheduled run with `DAILY_UPDATE_AUTOSEND=1`: post the single message directly to channel id `C0B0CBW8G03`.
 - Read the previous day's digest from `#my-daily-update` first and deduplicate by link.
 
 **Hard rules**

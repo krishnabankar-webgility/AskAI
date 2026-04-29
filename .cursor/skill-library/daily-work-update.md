@@ -344,12 +344,13 @@ If a section is **empty**, render `_(nothing)_` rather than dropping the header 
 ## Posting rules
 
 1. **Resolve** the channel id for `#my-daily-update` via `slack_search_channels query: "my-daily-update"`. **Locked id:** `C0B0CBW8G03` (public channel; Cursor bot already a member). Do not search again unless the locked id stops working.
-2. **Send** with **`slack_send_message`** (Cursor Slack MCP). The parameter is **`message`**, not `text`. Use Slack `mrkdwn` syntax (`*bold*`, `_italic_`, `<url|label>`). The protocol-spec name `slack_post_message` does **not** exist in this MCP.
-3. If `#my-daily-update` does not resolve, fall back to **DM Krishna** by passing his Slack `user_id` `U08FTS2SRAP` as `channel_id` to `slack_send_message`. Add a one-line note at the top: `Channel #my-daily-update not resolved, DM-ing instead.`
-4. If Slack MCP is unavailable, **render to Cursor chat** and tell Krishna to set up Slack secrets.
-5. Mask any token / secret / email-with-token as `***` (per `slack-integration.md` safety rules).
-6. Never include source code snippets, customer PII, full QA testing comments, or HubSpot ticket bodies. Only short summaries with links.
-7. Do **not** post duplicates — read the previous day's digest from `#my-daily-update` first (`slack_search_public_and_private query: "in:#my-daily-update Daily Work Update"`) and skip items whose link already appeared.
+2. **One message per day, not many.** The entire digest — §1 Yesterday → §2 Today → §3 Pending → §4 Follow-ups → §5 High-level summary + Blockers → §6 TL;DR — **must be sent as a single `slack_send_message` call**. Do **not** split into separate messages, follow-ups, replies, or "v2 / addendum" posts. If the message exceeds Slack's hard payload limit (~40 KB or ~4 000 chars per block), trim **per-line snippets** (≤180 chars instead of ≤280) before splitting; only split into a single thread reply (not a new top-level message) as a last resort, and even then keep §5 + §6 attached to §1–§4 in the parent message so the skim layers stay visible.
+3. **Send** with **`slack_send_message`** (Cursor Slack MCP). The parameter is **`message`**, not `text`. Use Slack `mrkdwn` syntax (`*bold*`, `_italic_`, `<url|label>`). The protocol-spec name `slack_post_message` does **not** exist in this MCP.
+4. If `#my-daily-update` does not resolve, fall back to **DM Krishna** by passing his Slack `user_id` `U08FTS2SRAP` as `channel_id` to `slack_send_message`. Add a one-line note at the top: `Channel #my-daily-update not resolved, DM-ing instead.` The single-message rule still applies to the DM.
+5. If Slack MCP is unavailable, **render to Cursor chat as a single message** and tell Krishna to set up Slack secrets.
+6. Mask any token / secret / email-with-token as `***` (per `slack-integration.md` safety rules).
+7. Never include source code snippets, customer PII, full QA testing comments, or HubSpot ticket bodies. Only short summaries with links.
+8. Do **not** post duplicates — read the previous day's digest from `#my-daily-update` first (`slack_search_public_and_private query: "in:#my-daily-update Daily Work Update"`) and skip items whose link already appeared. The dedupe check counts a previous-day post as one **complete** digest (not the §5/§6 fragments from earlier iterations).
 
 ---
 
@@ -422,9 +423,11 @@ Follow .cursor/skill-library/daily-work-update.md exactly:
   Pending + Follow-ups counts / "Blockers — N blocking; next action = ...". If
   no blockers, next action = focus on top in-progress item title.
 Every Jira line must show UD-XXXX + title + what I did.
-Post to #my-daily-update (channel id C0B0CBW8G03). DAILY_UPDATE_AUTOSEND=1 is set,
-so skip the confirm step and post directly. If anything fails, list it in
-"Sources skipped" and still post the heartbeat.
+Post to #my-daily-update (channel id C0B0CBW8G03) as ONE single Slack message
+containing all six sections (do NOT split into multiple posts, replies, or
+"v2 / addendum" follow-ups). DAILY_UPDATE_AUTOSEND=1 is set, so skip the
+confirm step and post directly. If anything fails, list it in "Sources skipped"
+and still post the single heartbeat.
 ```
 
 **5. Verify:**
@@ -491,6 +494,7 @@ The first live runs surfaced these gotchas. Future invocations **must skip re-di
 | `git clone --depth N` scope | Only fetches the **default branch** (`master`). For Krishna's feature branches, `ls-remote | grep krishna` then `git fetch --depth 50 origin <branch>`. |
 | `gh` identity in Cloud Agent | Runs as bot **`cursor`** — `--author=@me` is wrong. Use `--author=krishnabankar-webgility`. |
 | `gh search prs --state` values | Only `{open|closed}`. Either query each separately or omit. |
+| Single-message rule | The full digest (§1 → §6) **must** ship as ONE `slack_send_message` call. Krishna previously got §5 v2 and §6 TL;DR as separate posts and asked for them to be merged into the same message — never split or follow up with "v2 / addendum". If too large, trim per-line snippets to ≤180 chars before considering an overflow thread reply (§5 + §6 stay in the parent). |
 
 When **anything** new becomes a "I had to figure this out" moment during a run, append a row to this table (or update an existing one) **before** ending the session. The Cursor agent at `.cursor/agents/daily-work-update.md` is also responsible for this and points back here.
 
