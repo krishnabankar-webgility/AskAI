@@ -229,7 +229,8 @@ For every raw item from sources A–D:
 | **§3.2 Pending — Discussions on me** | Slack mentions / DMs / customer-issue comments where someone has asked Krishna a question / for a decision / for help / for a build / for an ETA, and Krishna has not yet replied. |
 | **§4.1 Follow-ups — Jira (QA / others)** | Status `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, **regardless of assignee**. Line names **who** is driving (current assignee = QA), the QA reviewer (if known from the §7 comment CC), days since RFT, and whether QA has commented since handoff. |
 | **§4.2 Follow-ups — Discussions where someone else owes me** | Threads / customer-issue comments where Krishna posted last and the next actor is **not** Krishna (e.g. "awaiting Faaque's check", "awaiting Lokesh's confirmation", Atish-Sinha comment on a CI Krishna previously commented on). |
-| **§5.1 Summary counts** | Pure counts derived from §1–§4: `done`, `in_progress_started`, `in_progress_now` (§2.1), `pending_jira` (§3.1), `pending_discussions` (§3.2), `followups_qa` (§4.1), `followups_others` (§4.2), `meetings_discussions` (§1.2), `updates_shared` (§1.3), `commits`, `prs`, `installer_requests`, `qa_testing_comments`. |
+| **§5.1 Summary counts** | Counts derived from §1–§4: `done`, `in_progress_started`, `in_progress_now` (§2.1), `pending_jira` (§3.1), `pending_discussions` (§3.2), `followups_qa` (§4.1), `followups_others` (§4.2), `meetings_discussions` (§1.2), `updates_shared` (§1.3), `commits`, `prs`, `installer_requests`, `qa_testing_comments`. **Each parent count must expand into indented sub-bullets** showing the *what / which*: see the §5.1 expansion rules below. |
+| **§5.1 expansion rules — what each count expands to** | Each non-zero count line **must** carry one sub-bullet per item (truncate per-line ≤180 chars). Specifically: **done / in-progress started / in-progress now (Today §2.1)** → `` `UD-XXXX` `` + title (so Krishna can scan IDs & titles, not raw numbers). **meetings/discussions** → meeting title or topic + with-whom + duration. **updates shared** → who/where + one-line topic of the update. **commits** → branch + short SHA + one-line fix hint inferred from the commit subject. **PRs** → repo + PR# + state + one-line title. **installer requests** → cross-reference `#func-wd-build-updates` for the corresponding `Build No.` post; show **Build No. + branch + the Jira IDs from the `It's includes:` line + their titles**. If the build hasn't been shared yet, say `installer creation queued; build not yet posted to #func-wd-build-updates`. **Pending Jira (§3.1) and Follow-ups (§4)** → already detailed above; in §5 just keep the count line, no sub-bullets. **Pending discussions (§3.2)** → channel/thread + asker (no need to repeat the snippet from §3.2). |
 | **§5.2 Blockers** | Auto-derived from §2–§4. Anything where Krishna's progress is held up by an external actor: an RFT / In Test item with **no QA activity for ≥24h**; a §4.2 thread with no reply in ≥24h; a Pending §3 item flagged as blocked in its last comment ("waiting on…", "blocked by…", "needs decision from…"); a sub-task whose parent Story is `In Progress` for someone else; an installer request whose build is overdue. Each blocker line names: the blocked Jira/thread, **who** Krishna is waiting on, and **for what action**. If there is no blocker, render `_(none — nothing externally blocking your work)_`. |
 
 **Tie-breaker (no duplicates):** if an item could land in two buckets, prefer the **earliest** numbered bucket (Yesterday > Today > Pending > Follow-ups) **except** that **§1.1 Yesterday excludes anything currently in RFT/In Test** — those move to §4.1 even if Krishna acted on them yesterday (but the §1.3 line still records the QA comment Krishna posted as part of the handoff).
@@ -289,11 +290,31 @@ _4.2 Discussions where someone else owes me_
 
 *:bar_chart: 5. High-level summary*
 
-_5.1 Counts_
-• Yesterday: *<N>* done · *<N>* in-progress started · *<N>* meetings/discussions · *<N>* updates shared · *<N>* commits · *<N>* PRs · *<N>* installer requests · *<N>* QA-testing comments
-• Today: *<N>* in-progress on me · *<N>* threads I'm driving
-• Pending (action on me): *<N>* Jira · *<N>* discussions
-• Follow-ups (others driving): *<N>* Jira (RFT/In Test) · *<N>* threads
+_5.1 Counts (each parent line is followed by indented sub-bullets that name the items)_
+• *Yesterday — done (<N>)*
+    ◦ `<UD-XXXX>` <title>
+    ◦ `<UD-XXXX>` <title>
+• *Yesterday — in-progress started (<N>)*
+    ◦ `<UD-XXXX>` <title>
+• *Yesterday — meetings/discussions (<N>)*
+    ◦ <meeting title or topic> — with <person(s)> — <duration if known>
+• *Yesterday — updates shared (<N>)*
+    ◦ <where (Slack channel / Jira key / DM person)> — <one-line topic>
+• *Yesterday — commits (<N>)*
+    ◦ `<branch>` `<short-sha>` — <one-line fix hint from subject>
+• *Yesterday — PRs (<N>)*
+    ◦ `<repo>` PR #<n> <state> — <title>
+• *Yesterday — installer requests (<N>)* — _cross-checked in `#func-wd-build-updates`_
+    ◦ Build No. <####> from `<branch>` — includes `<UD-XXXX>` <title> [, `<UD-XXXX>` <title>]
+    ◦ _(if the build was not yet posted to `#func-wd-build-updates`)_ installer creation queued; build not yet posted
+• *Yesterday — QA-testing comments (<N>)*
+    ◦ `<UD-XXXX>` — comment for QA Testing posted, CC <names>
+• *Today — in-progress on me (<N>)*
+    ◦ `<UD-XXXX>` <title>  _(or, if non-Jira context: <one-line work context>)_
+• *Today — threads I'm driving (<N>)*
+    ◦ <channel> — <one-line topic>
+• *Pending (action on me): <N> Jira · <N> discussions*  _(no sub-bullets — see §3 above)_
+• *Follow-ups (others driving): <N> Jira (RFT/In Test) · <N> threads*  _(no sub-bullets — see §4 above)_
 
 _5.2 Blockers (external dependencies holding up my work)_
 • `<UD-XXXX>` <title> — _waiting on <who> for <what action> since <when>_ — <url>
@@ -379,10 +400,15 @@ Follow .cursor/skill-library/daily-work-update.md exactly:
 - Today §2: my In-Progress Jira + threads I'm driving.
 - Pending §3: only items assigned to me OR a question waiting on my reply.
 - Follow-ups §4: RFT / In Test (QA-driven) and threads where someone else owes me.
-- §5 High-level summary + Blockers at the very end: compact counts (done / in-progress
-  / pending / follow-ups / meetings / commits / PRs / installer requests / QA testing
-  comments) and an explicit Blockers list naming what's blocked, who I'm waiting on,
-  for what action. If none, render "(none — nothing externally blocking your work)".
+- §5 High-level summary + Blockers at the very end: parent count lines (done /
+  in-progress / meetings / discussions / updates / commits / PRs / installer requests
+  / QA testing comments / today / pending / follow-ups), each non-zero parent
+  expanded into indented sub-bullets naming the items (UD-XXXX + title for Jira;
+  topic + with-whom for meetings; one-line fix hint for commits; branch + Build No.
+  + Jira IDs+titles for installer requests, cross-checked in #func-wd-build-updates).
+  Pending §3 and Follow-ups §4 keep just the count line. Then an explicit Blockers
+  list naming what's blocked, who I'm waiting on, for what action. If none, render
+  "(none — nothing externally blocking your work)".
 Every Jira line must show UD-XXXX + title + what I did.
 Post to #my-daily-update (channel id C0B0CBW8G03). DAILY_UPDATE_AUTOSEND=1 is set,
 so skip the confirm step and post directly. If anything fails, list it in
