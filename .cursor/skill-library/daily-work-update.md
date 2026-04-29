@@ -9,6 +9,7 @@ Produce a single **daily work update** for Krishna Bankar that summarizes:
 3. **Pending / Queue / TODO — my actionable work** — Jira items in `To Do` **assigned to Krishna**, plus Slack mentions / customer-issue comments where someone has asked Krishna for a reply or decision and Krishna has not yet responded. **Excludes** anything in `RFT` / `In Test` and anything where Krishna is **not the assignee** — those are not Krishna's pending action.
 4. **Follow-ups (QA / others driving)** — Jira items currently in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, plus customer-issue Jira / Slack discussions where someone else (QA, another dev, customer, Atish) is the next actor. Each line names **who** is driving and what's blocking, so Krishna knows what to chase, not what to do.
 5. **High-level summary + Blockers** — at the very end of the digest, a compact one-screen summary: counts (Done / In Progress / Pending / Follow-ups / meetings / discussions / commits / PRs / installer requests / QA testing comments) and an explicit **Blockers** list. A blocker is anything outside Krishna's control that is holding up Krishna's task — typically a dependency on QA, another dev, a customer, infra, or a missing decision. The agent must reason across §1–§4 to derive this; do not just dump §4 verbatim.
+6. **TL;DR (summary of summary)** — a 4-line skim layer **after** §5 so Krishna can read the whole day in 10 seconds: one line for *Yesterday* (counts only, no IDs), one for *Today*, one for *Pending + Follow-ups*, one for *Blockers / next action*. This is intentionally **derived from §5.1 / §5.2** — never include new facts here.
 
 The update is delivered automatically each weekday morning around **09:00 IST** to the public Slack channel **`#my-daily-update`** (channel id **`C0B0CBW8G03`**). The Cursor Slack bot is already a member, so no `/invite` is needed. If the channel is missing or Slack MCP is unavailable, fall back to **DM Krishna** (`U08FTS2SRAP`), then to chat.
 
@@ -232,6 +233,7 @@ For every raw item from sources A–D:
 | **§5.1 Summary counts** | Counts derived from §1–§4: `done`, `in_progress_started`, `in_progress_now` (§2.1), `pending_jira` (§3.1), `pending_discussions` (§3.2), `followups_qa` (§4.1), `followups_others` (§4.2), `meetings_discussions` (§1.2), `updates_shared` (§1.3), `commits`, `prs`, `installer_requests`, `qa_testing_comments`. **Each parent count must expand into indented sub-bullets** showing the *what / which*: see the §5.1 expansion rules below. |
 | **§5.1 expansion rules — what each count expands to** | Each non-zero count line **must** carry one sub-bullet per item (truncate per-line ≤180 chars). Specifically: **done / in-progress started / in-progress now (Today §2.1)** → `` `UD-XXXX` `` + title (so Krishna can scan IDs & titles, not raw numbers). **meetings/discussions** → meeting title or topic + with-whom + duration. **updates shared** → who/where + one-line topic of the update. **commits** → branch + short SHA + one-line fix hint inferred from the commit subject. **PRs** → repo + PR# + state + one-line title. **installer requests** → cross-reference `#func-wd-build-updates` for the corresponding `Build No.` post; show **Build No. + branch + the Jira IDs from the `It's includes:` line + their titles**. If the build hasn't been shared yet, say `installer creation queued; build not yet posted to #func-wd-build-updates`. **Pending Jira (§3.1) and Follow-ups (§4)** → already detailed above; in §5 just keep the count line, no sub-bullets. **Pending discussions (§3.2)** → channel/thread + asker (no need to repeat the snippet from §3.2). |
 | **§5.2 Blockers** | Auto-derived from §2–§4. Anything where Krishna's progress is held up by an external actor: an RFT / In Test item with **no QA activity for ≥24h**; a §4.2 thread with no reply in ≥24h; a Pending §3 item flagged as blocked in its last comment ("waiting on…", "blocked by…", "needs decision from…"); a sub-task whose parent Story is `In Progress` for someone else; an installer request whose build is overdue. Each blocker line names: the blocked Jira/thread, **who** Krishna is waiting on, and **for what action**. If there is no blocker, render `_(none — nothing externally blocking your work)_`. |
+| **§6 TL;DR (summary of summary)** | Exactly **4 lines**, each ≤140 chars, **derived from the §5 numbers** — no new facts, no IDs, no titles. Line 1: *Yesterday — N done, N in-progress started, N meetings, N updates, N commits, N installer requests, N QA-testing comments*. Line 2: *Today — N in-progress on me, N threads I'm driving*. Line 3: *Pending — N Jira / N discussions on me · Follow-ups — N Jira (RFT/In Test) / N threads on others*. Line 4: *Blockers — `<blockers count>` blocking; next action = "<one short imperative>"*. The next-action sentence picks the single most important thing Krishna should do today (chase QA on the worst blocker, ping the longest-idle DM thread, deliver the closest-to-RFT story, etc.). If there are no blockers, line 4 becomes "*Blockers — none; next action = focus on `<top in-progress item title>`*". |
 
 **Tie-breaker (no duplicates):** if an item could land in two buckets, prefer the **earliest** numbered bucket (Yesterday > Today > Pending > Follow-ups) **except** that **§1.1 Yesterday excludes anything currently in RFT/In Test** — those move to §4.1 even if Krishna acted on them yesterday (but the §1.3 line still records the QA comment Krishna posted as part of the handoff).
 
@@ -321,6 +323,12 @@ _5.2 Blockers (external dependencies holding up my work)_
 • <channel/thread> — _<who> hasn't responded since <when>_ — <link>
 _(or `_(none — nothing externally blocking your work)_`)_
 
+*:zap: 6. TL;DR (summary of summary)*
+> *Yesterday* — *<N>* done · *<N>* in-progress started · *<N>* meetings · *<N>* updates · *<N>* commits · *<N>* installer requests · *<N>* QA comments
+> *Today* — *<N>* in-progress on me · *<N>* threads I'm driving
+> *Pending* — *<N>* Jira / *<N>* discussions on me · *Follow-ups* — *<N>* Jira (RFT/In Test) / *<N>* threads on others
+> *Blockers* — *<N>* blocking; *next action* = "<one short imperative>"
+
 —
 _Sources used: Jira ✅ · Slack ✅ · Bitbucket ✅ · GitHub ✅ · HubSpot (via Atish-Sinha bridge) ✅_
 _Sources skipped: <list with reason, e.g. "Confluence — secret missing">_
@@ -400,15 +408,19 @@ Follow .cursor/skill-library/daily-work-update.md exactly:
 - Today §2: my In-Progress Jira + threads I'm driving.
 - Pending §3: only items assigned to me OR a question waiting on my reply.
 - Follow-ups §4: RFT / In Test (QA-driven) and threads where someone else owes me.
-- §5 High-level summary + Blockers at the very end: parent count lines (done /
-  in-progress / meetings / discussions / updates / commits / PRs / installer requests
-  / QA testing comments / today / pending / follow-ups), each non-zero parent
-  expanded into indented sub-bullets naming the items (UD-XXXX + title for Jira;
-  topic + with-whom for meetings; one-line fix hint for commits; branch + Build No.
-  + Jira IDs+titles for installer requests, cross-checked in #func-wd-build-updates).
-  Pending §3 and Follow-ups §4 keep just the count line. Then an explicit Blockers
-  list naming what's blocked, who I'm waiting on, for what action. If none, render
-  "(none — nothing externally blocking your work)".
+- §5 High-level summary + Blockers at the end of the detailed digest: parent count
+  lines (done / in-progress / meetings / discussions / updates / commits / PRs /
+  installer requests / QA testing comments / today / pending / follow-ups), each
+  non-zero parent expanded into indented sub-bullets naming the items (UD-XXXX +
+  title for Jira; topic + with-whom for meetings; one-line fix hint for commits;
+  branch + Build No. + Jira IDs+titles for installer requests, cross-checked in
+  #func-wd-build-updates). Pending §3 and Follow-ups §4 keep just the count line.
+  Then an explicit Blockers list naming what's blocked, who I'm waiting on, for
+  what action. If none, render "(none — nothing externally blocking your work)".
+- §6 TL;DR (summary of summary) at the very bottom: exactly 4 short lines derived
+  from §5 numbers only (no IDs, no titles): Yesterday counts / Today counts /
+  Pending + Follow-ups counts / "Blockers — N blocking; next action = ...". If
+  no blockers, next action = focus on top in-progress item title.
 Every Jira line must show UD-XXXX + title + what I did.
 Post to #my-daily-update (channel id C0B0CBW8G03). DAILY_UPDATE_AUTOSEND=1 is set,
 so skip the confirm step and post directly. If anything fails, list it in
