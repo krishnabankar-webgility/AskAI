@@ -2,14 +2,21 @@
 
 ## Purpose
 
-Produce a single **daily work update** for Krishna Bankar that summarizes:
+Produce a single **daily work update** for Krishna Bankar.
 
-1. **Yesterday — my work** — Jira items where Krishna **did something** (status change, comment, worklog) **excluding any item that ended in `Ready For Testing` (RFT) or `In Test`** — those go into a separate **Follow-ups** section because they're QA's work to drive next. Plus meetings & discussions, status updates / fixes / resolutions shared on Slack/Jira/HubSpot (via Atish-Sinha automation), and Git activity (commits, PRs, builds, QA testing comments).
-2. **Today / In progress — my work** — Jira items currently `In Progress` and **assigned to Krishna**, threads still open in Slack / Jira / customer-issue Jira (via HubSpot Atish-Sinha automation) where Krishna is the active driver, things planned to start today.
-3. **Pending / Queue / TODO — my actionable work** — Jira items in `To Do` **assigned to Krishna**, plus Slack mentions / customer-issue comments where someone has asked Krishna for a reply or decision and Krishna has not yet responded. **Excludes** anything in `RFT` / `In Test` and anything where Krishna is **not the assignee** — those are not Krishna's pending action.
-4. **Follow-ups (QA / others driving)** — Jira items currently in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, plus customer-issue Jira / Slack discussions where someone else (QA, another dev, customer, Atish) is the next actor. Each line names **who** is driving and what's blocking, so Krishna knows what to chase, not what to do.
-5. **High-level summary + Blockers** — at the very end of the digest, a compact one-screen summary: counts (Done / In Progress / Pending / Follow-ups / meetings / discussions / commits / PRs / installer requests / QA testing comments) and an explicit **Blockers** list. A blocker is anything outside Krishna's control that is holding up Krishna's task — typically a dependency on QA, another dev, a customer, infra, or a missing decision. The agent must reason across §1–§4 to derive this; do not just dump §4 verbatim.
-6. **TL;DR (summary of summary)** — a 4-line skim layer **after** §5 so Krishna can read the whole day in 10 seconds: one line for *Yesterday* (counts only, no IDs), one for *Today*, one for *Pending + Follow-ups*, one for *Blockers / next action*. This is intentionally **derived from §5.1 / §5.2** — never include new facts here.
+The agent **internally computes** four detailed buckets so it can derive accurate counts, named items, and blockers:
+
+1. **Yesterday — my work** *(internal)* — Jira items where Krishna acted (status change, comment, worklog), excluding anything that ended in `Ready For Testing` / `In Test` (those move to bucket 4). Plus meetings & discussions, status updates Krishna shared, and Git activity (commits, PRs, installer requests, QA testing comments).
+2. **Today / In progress — my work** *(internal)* — Jira items currently `In Progress` AND assigned to Krishna; threads where Krishna is the active driver.
+3. **Pending / Queue / TODO — my actionable work** *(internal)* — Jira items in `To Do` AND assigned to Krishna; Slack mentions / customer-issue comments where Krishna has been asked for a reply / decision / build / ETA and has not yet responded.
+4. **Follow-ups (QA / others driving)** *(internal)* — Jira items currently in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`; customer-issue Jira / Slack discussions where someone else is the next actor. Each line names *who* is driving.
+
+Buckets §1–§4 are **computed only** — they are **not** part of the Slack message Krishna receives. They feed §5 and §6.
+
+The Slack message itself contains **only**:
+
+5. **High-level summary + Blockers** — counts (Done / In Progress / Pending / Follow-ups / meetings / discussions / commits / PRs / installer requests / QA testing comments). **Each non-zero count expands into indented sub-bullets that name the items** (Jira `UD-XXXX` + title; meeting topic + with-whom; update where + topic; commit branch + sha + fix hint; installer request `Build No.` + branch + included Jira IDs/titles cross-checked in `#func-wd-build-updates`). Followed by a derived **Blockers** list naming what is blocked, who Krishna is waiting on, for what action.
+6. **TL;DR (summary of summary)** — exactly 4 short lines (each ≤140 chars) derived from §5 numbers only — no new facts, no IDs, no titles. Yesterday counts / Today counts / Pending + Follow-ups counts / `Blockers — N blocking; next action = "<one short imperative>"`.
 
 The update is delivered automatically each weekday morning around **09:00 IST** to the public Slack channel **`#my-daily-update`** (channel id **`C0B0CBW8G03`**). The Cursor Slack bot is already a member, so no `/invite` is needed. If the channel is missing or Slack MCP is unavailable, fall back to **DM Krishna** (`U08FTS2SRAP`), then to chat.
 
@@ -241,54 +248,14 @@ For every raw item from sources A–D:
 
 ## Output format (Slack-flavored markdown)
 
-The agent produces one Slack message (Block Kit `mrkdwn`). Use **section headers** with emojis only because Slack rendering relies on them; keep the rest plain. Truncate any single bullet to ~280 chars, then add a link.
+The agent produces **one Slack message** containing **only §5 + §6** (Block Kit `mrkdwn`). Use **section headers** with emojis only because Slack rendering relies on them; keep the rest plain. Truncate any single bullet to ~280 chars, then add a link.
 
-Every Jira line **must** follow this shape: `` `UD-XXXX` <title> · <what was done verb-clause> · <url>``.
+Buckets §1–§4 are **computed internally** to derive the §5 sub-bullets and the §6 next-action — they are **not** rendered in the Slack message. (If Krishna asks for the long detailed view, post §1–§4 separately on demand only; the default daily run posts §5 + §6 only.)
+
+Every Jira sub-bullet under §5.1 **must** follow this shape: `` `UD-XXXX` <title>`` (status / verb-clause if it adds new info, otherwise omit to keep it scannable).
 
 ```
 *:sunrise: Daily Work Update — <YYYY-MM-DD, ddd>*  (window: <YYYY-MM-DD> 00:00 → 23:59 IST)
-
-*:white_check_mark: 1. Yesterday — my work*
-
-_1.1 Jira (mine, excluding QA-handed-off items)_
-• *Done* — `<UD-XXXX>` <title> · _moved <from>→Done at HH:MM IST_ · <url>
-• *In Progress (advanced)* — `<UD-XXXX>` <title> · _started: To Do→In Progress at HH:MM; commented "<one-line snippet>"_ · <url>
-• *Commented* — `<UD-XXXX>` <title> · _posted "<one-line snippet>" at HH:MM_ · <url>
-
-_1.2 Meetings & discussions_
-• <slack/jira/HubSpot snippet> — <link>
-
-_1.3 Status updates / fixes / resolutions I shared_
-• <where> — <one-line of what I shared> — <link>
-
-_1.4 Git_
-• `<repo>` `<branch>` `<short-sha>` <commit subject> — <url>
-• PR #<n> <state> — <title> — <url>
-
-*:hammer_and_wrench: 2. Today / In progress*
-
-_2.1 Jira (In Progress, assigned to me)_
-• `<UD-XXXX>` <title> · _last update <when>_ · <url>
-
-_2.2 Open threads I'm driving_
-• <channel> — "<snippet>" — <link>   _(I owe a reply / next step)_
-
-*:hourglass_flowing_sand: 3. Pending / Queue / TODO (action on me)*
-
-_3.1 Jira queue (assigned to me, status To Do)_
-• `<UD-XXXX>` <title> · _Priority Rank <n>_ · <url>
-
-_3.2 Discussions awaiting my reply_
-• <channel> — "<snippet>" — <link>   _(asked by <person>, no reply yet)_
-
-*:mag: 4. Follow-ups (QA / others driving — chase, don't do)*
-
-_4.1 Jira in RFT / In Test_
-• `<UD-XXXX>` <title> · _RFT since <when>; QA: <assignee>; last QA activity: <when or "none yet">_ · <url>
-• `<UD-XXXX>` <title> · _In Test by <assignee>_ · <url>
-
-_4.2 Discussions where someone else owes me_
-• <channel> — "<snippet>" — <link>   _(awaiting <person>'s <action>)_
 
 *:bar_chart: 5. High-level summary*
 
@@ -344,7 +311,7 @@ If a section is **empty**, render `_(nothing)_` rather than dropping the header 
 ## Posting rules
 
 1. **Resolve** the channel id for `#my-daily-update` via `slack_search_channels query: "my-daily-update"`. **Locked id:** `C0B0CBW8G03` (public channel; Cursor bot already a member). Do not search again unless the locked id stops working.
-2. **One message per day, not many.** The entire digest — §1 Yesterday → §2 Today → §3 Pending → §4 Follow-ups → §5 High-level summary + Blockers → §6 TL;DR — **must be sent as a single `slack_send_message` call**. Do **not** split into separate messages, follow-ups, replies, or "v2 / addendum" posts. If the message exceeds Slack's hard payload limit (~40 KB or ~4 000 chars per block), trim **per-line snippets** (≤180 chars instead of ≤280) before splitting; only split into a single thread reply (not a new top-level message) as a last resort, and even then keep §5 + §6 attached to §1–§4 in the parent message so the skim layers stay visible.
+2. **One message per day, contains §5 + §6 only.** The Slack message **must include only** §5 (High-level summary + Blockers, with each non-zero count expanded into named sub-bullets) and §6 (TL;DR). Buckets §1 Yesterday / §2 Today / §3 Pending / §4 Follow-ups are computed internally to derive accurate counts and the next-action sentence — they are **not** posted. **Send as a single `slack_send_message` call.** Do not split into multiple posts, replies, or "v2 / addendum" follow-ups. If Krishna explicitly asks for the long view in chat, render §1–§4 in chat or post them as a thread reply on the day's main message — never as a new top-level message in `#my-daily-update`.
 3. **Send** with **`slack_send_message`** (Cursor Slack MCP). The parameter is **`message`**, not `text`. Use Slack `mrkdwn` syntax (`*bold*`, `_italic_`, `<url|label>`). The protocol-spec name `slack_post_message` does **not** exist in this MCP.
 4. If `#my-daily-update` does not resolve, fall back to **DM Krishna** by passing his Slack `user_id` `U08FTS2SRAP` as `channel_id` to `slack_send_message`. Add a one-line note at the top: `Channel #my-daily-update not resolved, DM-ing instead.` The single-message rule still applies to the DM.
 5. If Slack MCP is unavailable, **render to Cursor chat as a single message** and tell Krishna to set up Slack secrets.
@@ -409,25 +376,33 @@ Follow .cursor/skill-library/daily-work-update.md exactly:
 - Today §2: my In-Progress Jira + threads I'm driving.
 - Pending §3: only items assigned to me OR a question waiting on my reply.
 - Follow-ups §4: RFT / In Test (QA-driven) and threads where someone else owes me.
-- §5 High-level summary + Blockers at the end of the detailed digest: parent count
-  lines (done / in-progress / meetings / discussions / updates / commits / PRs /
-  installer requests / QA testing comments / today / pending / follow-ups), each
-  non-zero parent expanded into indented sub-bullets naming the items (UD-XXXX +
-  title for Jira; topic + with-whom for meetings; one-line fix hint for commits;
-  branch + Build No. + Jira IDs+titles for installer requests, cross-checked in
-  #func-wd-build-updates). Pending §3 and Follow-ups §4 keep just the count line.
-  Then an explicit Blockers list naming what's blocked, who I'm waiting on, for
-  what action. If none, render "(none — nothing externally blocking your work)".
+- The Slack message contains ONLY §5 (High-level summary + Blockers) and §6 (TL;DR).
+  Sections §1 Yesterday / §2 Today / §3 Pending / §4 Follow-ups are computed
+  internally to derive the §5 sub-bullets and the §6 next-action; they are NOT
+  posted to Slack.
+- §5 High-level summary + Blockers: parent count lines (done / in-progress /
+  meetings / discussions / updates / commits / PRs / installer requests / QA
+  testing comments / today / pending / follow-ups), each non-zero parent
+  expanded into indented sub-bullets naming the items (UD-XXXX + title for Jira;
+  topic + with-whom for meetings; one-line fix hint for commits; branch + Build
+  No. + Jira IDs+titles for installer requests, cross-checked in
+  #func-wd-build-updates). Pending and Follow-ups keep just the count line. Then
+  an explicit Blockers list naming what's blocked, who I'm waiting on, for what
+  action. If none, render "(none — nothing externally blocking your work)".
 - §6 TL;DR (summary of summary) at the very bottom: exactly 4 short lines derived
   from §5 numbers only (no IDs, no titles): Yesterday counts / Today counts /
   Pending + Follow-ups counts / "Blockers — N blocking; next action = ...". If
   no blockers, next action = focus on top in-progress item title.
 Every Jira line must show UD-XXXX + title + what I did.
 Post to #my-daily-update (channel id C0B0CBW8G03) as ONE single Slack message
-containing all six sections (do NOT split into multiple posts, replies, or
-"v2 / addendum" follow-ups). DAILY_UPDATE_AUTOSEND=1 is set, so skip the
-confirm step and post directly. If anything fails, list it in "Sources skipped"
-and still post the single heartbeat.
+containing ONLY §5 (High-level summary + Blockers, with each non-zero count
+expanded into named sub-bullets) and §6 (TL;DR). Sections §1 Yesterday /
+§2 Today / §3 Pending / §4 Follow-ups are computed internally to derive
+accurate counts and the next-action sentence, but are NOT posted. Do not
+split into multiple posts, replies, or "v2 / addendum" follow-ups.
+DAILY_UPDATE_AUTOSEND=1 is set, so skip the confirm step and post directly.
+If anything fails, list it in "Sources skipped" and still post the single
+heartbeat (§5 + §6 only).
 ```
 
 **5. Verify:**
@@ -494,7 +469,8 @@ The first live runs surfaced these gotchas. Future invocations **must skip re-di
 | `git clone --depth N` scope | Only fetches the **default branch** (`master`). For Krishna's feature branches, `ls-remote | grep krishna` then `git fetch --depth 50 origin <branch>`. |
 | `gh` identity in Cloud Agent | Runs as bot **`cursor`** — `--author=@me` is wrong. Use `--author=krishnabankar-webgility`. |
 | `gh search prs --state` values | Only `{open|closed}`. Either query each separately or omit. |
-| Single-message rule | The full digest (§1 → §6) **must** ship as ONE `slack_send_message` call. Krishna previously got §5 v2 and §6 TL;DR as separate posts and asked for them to be merged into the same message — never split or follow up with "v2 / addendum". If too large, trim per-line snippets to ≤180 chars before considering an overflow thread reply (§5 + §6 stay in the parent). |
+| Single-message rule | The Slack message **must** ship as ONE `slack_send_message` call — never split into "v2 / addendum" follow-ups. |
+| Posted-content rule | The Slack message contains **only §5 + §6**. Sections §1 Yesterday / §2 Today / §3 Pending / §4 Follow-ups are **computed internally** to feed the §5 sub-bullets and the §6 next-action sentence, but are **never posted** to `#my-daily-update` (Krishna asked to drop them — the high-level summary already names every item via §5.1 sub-bullets, and the TL;DR sits below it). If Krishna explicitly asks for the long view, render §1–§4 in chat or post them as a thread reply to the day's main message — never as a new top-level message. |
 
 When **anything** new becomes a "I had to figure this out" moment during a run, append a row to this table (or update an existing one) **before** ending the session. The Cursor agent at `.cursor/agents/daily-work-update.md` is also responsible for this and points back here.
 
