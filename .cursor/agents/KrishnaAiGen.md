@@ -65,6 +65,7 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 9. `.cursor/skill-library/dev-customization-expertise.md`
 10. `.cursor/skill-library/dev-customization-workflow.md`
 11. `.cursor/skill-library/confluence-workflow.md`
+12. `.cursor/skill-library/daily-work-update.md`
 
 ## Routing
 
@@ -91,6 +92,7 @@ Read **all** of the following **in order** using your file-reading tool. If a pa
 | `/agent-learning` | Update skills/agents from feedback |
 | `/dev-customization` | Customer customizations: minimal change, profile gating, sync reuse |
 | `/confluence-automation` | Confluence pages, search, content management |
+| `/daily-work-update` | Krishna's morning digest (Jira + Slack + Bitbucket + GitHub + HubSpot via Atish-Sinha bridge) → posts to Slack `#my-daily-work-update` |
 
 Human-readable registry: `.cursor/agent-skill-bindings.md`.  
 GitHub Copilot / VS Code master mirror: `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`.

@@ -23,6 +23,7 @@ All specialist behavior is defined in **`.cursor/skill-library/*.md`**. GitHub C
 | `slack-automation` | `slack-integration.md` *(append `slack-*.md` as needed)* |
 | `dev-customization` | `dev-customization-expertise.md`, then `dev-customization-workflow.md` |
 | `confluence-automation` | `confluence-workflow.md` *(append `confluence-*.md` as needed)* |
+| `daily-work-update` | `daily-work-update.md`, `slack-integration.md`, `jira-workflow.md` (§3, §7, §7.6 only), `bitbucket-unify-enterprise.md`, `git-sync.md`, `krishnaaigen-ephemeral-output.md` |
 
 ## Adding an agent
 
