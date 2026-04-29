@@ -13,17 +13,22 @@ Use this prompt to generate **Krishna's daily work digest** (yesterday / today /
 
 **Behavior summary**
 
-- Compute window in `Asia/Kolkata` (yesterday; Monday → since last Friday).
-- Run Jira / Slack / Bitbucket+GitHub / Confluence sources in parallel; skip any missing source and record it in the footer.
-- Categorize per the table in `daily-work-update.md` (Yesterday > Today > Pending; earliest bucket wins).
+- Compute window in `Asia/Kolkata` — previous calendar day **00:00:00 → 23:59:59 IST** (Monday → since last Friday).
+- Run Jira / Slack / Bitbucket+GitHub / Confluence sources in parallel; skip any missing source and record it in the *Sources skipped* footer.
+- Categorize per the table in `daily-work-update.md`. Hard rules:
+  - **§1.1 Yesterday** excludes Jiras currently in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those move to **§4.1 Follow-ups**.
+  - **§3.1 Pending** = `To Do` AND `assignee = me` only.
+  - **§3.2 Pending** = mentions/DMs awaiting Krishna's reply.
+  - **§4 Follow-ups** = QA-driven Jiras + threads where someone else owes Krishna; name who is driving.
+  - **Every Jira line** = `` `UD-XXXX` `` + title + what was done + URL.
 - Render the Slack `mrkdwn` template from the skill; empty sections render `_(nothing)_`.
-- Manual run: render in chat, ask `Post to #my-daily-work-update? (yes / no / DM only)`. Scheduled run with `DAILY_UPDATE_AUTOSEND=1`: post directly.
-- Read the previous day's digest from the channel first and deduplicate by link.
+- Manual run: render in chat, ask `Post to #my-daily-update? (yes / no / DM only)`. Scheduled run with `DAILY_UPDATE_AUTOSEND=1`: post directly to channel id `C0B0CBW8G03`.
+- Read the previous day's digest from `#my-daily-update` first and deduplicate by link.
 
 **Hard rules**
 
 - Read-only on Jira, Bitbucket, GitHub, HubSpot.
-- Write-only target: Slack `#my-daily-work-update` (or DM Krishna). Never post elsewhere.
+- Write-only target: Slack `#my-daily-update` (id `C0B0CBW8G03`; Cursor bot already invited) or DM Krishna (`U08FTS2SRAP`). Never post elsewhere.
 - Mask credentials as `***`. No customer PII / full ticket bodies / source code.
 - Never commit anything; scratch goes under `local/ephemeral/daily-work-update/`.
 

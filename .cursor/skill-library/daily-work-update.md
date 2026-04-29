@@ -4,11 +4,12 @@
 
 Produce a single **daily work update** for Krishna Bankar that summarizes:
 
-1. **Yesterday** — closed/in-progress Jira work, meetings & discussions, status updates / fixes / resolutions shared on Slack/Jira/HubSpot (via Atish-Sinha automation), and Git activity (commits, PRs, builds, QA testing comments).
-2. **Today / In progress** — Jira items currently `In Progress`, threads still open in Slack / Jira / customer-issue Jira (via HubSpot Atish-Sinha automation), things planned to start today.
-3. **Pending / Queue / Future / TODO** — Jira items in `To Do`, RFT items waiting on QA, comments/updates yet to share, meetings yet to attend, discussions not yet started.
+1. **Yesterday — my work** — Jira items where Krishna **did something** (status change, comment, worklog) **excluding any item that ended in `Ready For Testing` (RFT) or `In Test`** — those go into a separate **Follow-ups** section because they're QA's work to drive next. Plus meetings & discussions, status updates / fixes / resolutions shared on Slack/Jira/HubSpot (via Atish-Sinha automation), and Git activity (commits, PRs, builds, QA testing comments).
+2. **Today / In progress — my work** — Jira items currently `In Progress` and **assigned to Krishna**, threads still open in Slack / Jira / customer-issue Jira (via HubSpot Atish-Sinha automation) where Krishna is the active driver, things planned to start today.
+3. **Pending / Queue / TODO — my actionable work** — Jira items in `To Do` **assigned to Krishna**, plus Slack mentions / customer-issue comments where someone has asked Krishna for a reply or decision and Krishna has not yet responded. **Excludes** anything in `RFT` / `In Test` and anything where Krishna is **not the assignee** — those are not Krishna's pending action.
+4. **Follow-ups (QA / others driving)** — Jira items currently in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, plus customer-issue Jira / Slack discussions where someone else (QA, another dev, customer, Atish) is the next actor. Each line names **who** is driving and what's blocking, so Krishna knows what to chase, not what to do.
 
-The update is delivered automatically each weekday morning around **09:00 IST** to the Slack channel **`#my-daily-work-update`** (DM with Krishna's bot or private channel). If Slack is unreachable it is rendered into the Cursor chat instead.
+The update is delivered automatically each weekday morning around **09:00 IST** to the public Slack channel **`#my-daily-update`** (channel id **`C0B0CBW8G03`**). The Cursor Slack bot is already a member, so no `/invite` is needed. If the channel is missing or Slack MCP is unavailable, fall back to **DM Krishna** (`U08FTS2SRAP`), then to chat.
 
 This file is the **canonical** procedure. The Cursor agent at `.cursor/agents/daily-work-update.md` and the Copilot mirror at `.github/copilot/agents/daily-work-update.agent.md` only point at this file.
 
@@ -21,12 +22,16 @@ This file is the **canonical** procedure. The Cursor agent at `.cursor/agents/da
 | User display name | **Krishna Bankar** |
 | Email | `krishna.bankar@webgility.com` |
 | Jira account ID | `712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799` |
-| Slack handle (resolve at runtime) | `@Krishna Bankar` (use `slack_get_users` to map to user ID) |
-| Slack delivery channel | `#my-daily-work-update` (fallback: DM Krishna) |
+| Slack user id | **`U08FTS2SRAP`** (resolve once via `slack_search_users "Krishna Bankar"` if rotated) |
+| Slack delivery channel | **`#my-daily-update`** = id **`C0B0CBW8G03`** (public; Cursor bot already a member) |
+| Slack timezone | `Asia/Kolkata` |
 | Jira project (primary) | `UD` |
+| Jira base URL | `https://webgility.atlassian.net` |
 | Bitbucket repo | `webgility/unify-enterprise` |
-| GitHub repo | `krishnabankar-webgility/AskAI` |
-| Customer-Issue automation author | **Atish Sinha** (HubSpot → Jira comment proxy) |
+| Krishna's git author in `unify-enterprise` | **`krishna.bankar`** (lowercase, dotted) |
+| Krishna's GitHub login | **`krishnabankar-webgility`** |
+| GitHub repo (this agent's home) | `krishnabankar-webgility/AskAI` |
+| Customer-Issue automation author | **Atish Sinha** — Jira account id **`5af1e74db80fc222f236b257`** (HubSpot → Jira comment proxy) |
 | Default timezone | **Asia/Kolkata (IST)** |
 | Default schedule | Every weekday (Mon–Fri) at **09:00 IST** |
 
@@ -38,10 +43,10 @@ If `JIRA_EMAIL` (set in `.cursor/mcp.json`) is present, prefer Jira's own `curre
 
 | Source | Variable / Server | Notes |
 |--------|-------------------|-------|
-| Slack MCP | `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` | See `slack-integration.md`. Bot must be in `#my-daily-work-update`. |
-| Jira MCP | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL` | See `.cursor/mcp.json` `jira` server. |
-| Bitbucket | `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN` | See `bitbucket-unify-enterprise.md`. Used for commits/PRs in `unify-enterprise`. |
-| GitHub | `gh` CLI (already authenticated in Cloud Agent) | Used for AskAI commits/PRs and run logs. |
+| Slack MCP | `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` | See `slack-integration.md`. Bot is already in `#my-daily-update`. |
+| Jira MCP **or** REST | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL` | See `.cursor/mcp.json` `jira` server. REST works without the MCP. |
+| Bitbucket | `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN` | See `bitbucket-unify-enterprise.md`. Used for commits/PRs in `unify-enterprise`. **REST returns 401 — use git only.** |
+| GitHub | `gh` CLI (already authenticated in Cloud Agent) | Cloud Agent's `gh` runs as the bot `cursor`, so `--author=@me` is wrong — pass `--author=krishnabankar-webgility`. |
 | Confluence (optional) | `CONFLUENCE_*` per `confluence-workflow.md` | Mirror RFT comments on `3021209607` if present. |
 
 If any required secret is missing, **skip that source**, mention the gap in a small "Sources skipped" footer of the digest, and **do not block** the rest of the report.
@@ -50,10 +55,11 @@ If any required secret is missing, **skip that source**, mention the gap in a sm
 
 ## Time window
 
-- **Yesterday window:** previous calendar day in IST, **00:00–23:59 IST**.
-- **On Monday** (or after a holiday gap), expand to "since last working day" — Friday 00:00 IST to Monday 08:59 IST. Detect by checking the day-of-week of "now" in IST; if `now.weekday() == Mon`, set `since = last Friday 00:00 IST`.
-- **Today / In progress:** anything currently `In Progress` for Krishna OR last touched within the previous 24h that is not yet `Done`/`Closed`/`Won't Do`.
-- **Pending:** `To Do`, RFT (`Ready For Testing` / `Ready For Verification`) waiting on QA, plus open threads where Krishna was the last poster waiting on someone else, and threads where Krishna was @-mentioned but has not replied.
+- **Yesterday window:** previous calendar day in IST, **00:00:00 to 23:59:59 IST** — i.e. for "now" = `2026-04-29 09:00 IST`, the window is `2026-04-28 00:00:00 +0530` → `2026-04-28 23:59:59 +0530`. Convert to UTC for any system that requires UTC (e.g. `git log --since/--until +0530`).
+- **On Monday** (or after a holiday gap), expand to "since last working day" — Friday 00:00:00 IST through Monday 08:59:59 IST. Detect by checking the day-of-week of "now" in IST; if `now.weekday() == Mon`, set `since = last Friday 00:00:00 IST`.
+- **Today / In progress:** anything currently `In Progress` **and assigned to Krishna**.
+- **Pending:** `To Do` **and assigned to Krishna**, plus open threads where Krishna was @-mentioned but has not yet replied (i.e. action is on Krishna).
+- **Follow-ups:** anything in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` (regardless of assignee, since Krishna often hands off Stories to QA assigned to someone else); plus discussions where the next actor is **not** Krishna.
 
 All timestamps in the rendered digest use **IST** (`Asia/Kolkata`, `+05:30`). Internally use ISO-8601 with timezone for queries.
 
@@ -67,125 +73,123 @@ For every section below, run all queries in **parallel where possible** and **fa
 
 Use Jira MCP (`searchJiraIssuesUsingJql` or equivalent) **or** Jira REST directly with these JQLs. Prefer `currentUser()` over the literal account id when the bot account == Krishna; otherwise use the account id.
 
-> **REST endpoint (2026):** Atlassian removed the legacy `GET /rest/api/3/search`. Use **`POST /rest/api/3/search/jql`** with body `{"jql": "...", "fields": ["summary","status",...], "maxResults": 50}` and Basic auth `${JIRA_EMAIL}:${JIRA_API_TOKEN}`. Pagination uses `nextPageToken` / `isLast`.
->
-> **Author-name pitfall:** Krishna's commits in `unify-enterprise` are authored as **`krishna.bankar`** (lowercase, dotted), not `Krishna Bankar`. Match author with `git log --regexp-ignore-case --author="krishna"` so case/format variations are caught.
+> **REST endpoint (2026):** Atlassian removed the legacy `GET /rest/api/3/search`. Use **`POST /rest/api/3/search/jql`** with body `{"jql": "...", "fields": [...], "maxResults": 50}` and Basic auth `${JIRA_EMAIL}:${JIRA_API_TOKEN}`. Pagination uses `nextPageToken` / `isLast`.
 
 ```jql
--- Yesterday window — anything Krishna closed, moved, or worked
+-- A1. Issues Krishna touched in the window (assignee/reporter scope, status changed, or comment by me)
 project = UD
   AND (assignee = currentUser() OR reporter = currentUser())
-  AND updated >= "-1d"
+  AND updated >= "2026-04-28" AND updated < "2026-04-29"
 ORDER BY updated DESC
 ```
 
 ```jql
--- Status changes by Krishna in the window (uses changelog via expand=changelog)
-project = UD
-  AND status changed BY currentUser() AFTER "-1d"
+-- A2. Status changes BY Krishna in the window (uses changelog via expand=changelog)
+project = UD AND status changed BY currentUser() AFTER "2026-04-28" BEFORE "2026-04-29"
 ORDER BY updated DESC
 ```
 
 ```jql
--- Comments authored by Krishna in the window
-project = UD
-  AND comment ~ "krishna"  -- fallback if comment author filter not available
-  AND updated >= "-1d"
-```
-> When the MCP exposes a comment-author search, prefer it. Otherwise `expand=changelog,renderedFields` and filter comments client-side by `author.accountId == 712020:cb0bd6e5-...`.
-
-```jql
--- Currently In Progress
-project = UD
-  AND assignee = currentUser()
-  AND status = "In Progress"
+-- A3. Currently In Progress AND assigned to Krishna
+project = UD AND assignee = currentUser() AND status = "In Progress"
 ORDER BY priority DESC, updated DESC
 ```
 
 ```jql
--- RFT / Ready For Testing waiting on QA
-project = UD
-  AND assignee = currentUser()
-  AND status in ("Ready For Testing", "Ready For Verification")
-ORDER BY updated DESC
-```
-
-```jql
--- TODO / queue
-project = UD
-  AND assignee = currentUser()
-  AND status = "To Do"
+-- A4. To Do queue assigned to Krishna (only Krishna's own actionable items)
+project = UD AND assignee = currentUser() AND status = "To Do"
 ORDER BY "Priority Rank" ASC, priority DESC, created ASC
 ```
 
 ```jql
--- Mentioned to Krishna in the last 24h (or since-last-working-day)
+-- A5. Follow-ups: Stories Krishna handed to QA — RFT / In Test, regardless of assignee,
+--     where Krishna was the last meaningful actor (assignee at some point, or last status-change-by)
 project = UD
-  AND text ~ "Krishna" AND updated >= "-1d"
+  AND status in ("Ready For Testing", "Ready For Verification", "In Test")
+  AND ( assignee = currentUser()
+        OR reporter = currentUser()
+        OR "Original Assignee" = currentUser()       -- if available
+        OR status changed BY currentUser() AFTER "-30d"
+      )
+ORDER BY updated DESC
 ```
-> Replace with native `mention = currentUser()` if the MCP supports it; otherwise filter rendered comment ADF for `accountId = 712020:cb0bd6e5-...`.
 
 ```jql
--- HubSpot-bridged customer issue updates: comments by Atish Sinha
-project = UD
-  AND issuetype = "Customer Issue"
-  AND updated >= "-1d"
+-- A6. Mentioned to / discussed about Krishna in the window
+project = UD AND text ~ "Krishna" AND updated >= "2026-04-28" AND updated < "2026-04-29"
+ORDER BY updated DESC
 ```
-> Then read each issue's recent comments (`expand=renderedFields`) and **keep only** comments whose `author.displayName == "Atish Sinha"`. From those, surface the ones that **mention** Krishna OR that Krishna has previously replied on.
 
-For each Jira issue surfaced, capture: key, summary, status, last status change (status from → to, by whom, when), last comment (author, snippet ≤180 chars), URL `${JIRA_BASE_URL}/browse/<KEY>`.
+```jql
+-- A7. HubSpot-bridged customer issue updates: Atish Sinha activity in the window
+project = UD AND issuetype = "Customer Issue"
+  AND updated >= "2026-04-28" AND updated < "2026-04-29"
+ORDER BY updated DESC
+```
+
+For every issue surfaced, fetch `expand=changelog,renderedFields` and **inspect**:
+
+- **What did Krishna do?** Status transitions in the window where `author.accountId == ME`, comments where `author.accountId == ME`, worklog entries by Krishna. **The digest line MUST always say**: ``UD-XXXXX`` + **title** + a one-clause **what was done** verb (e.g. *moved In Progress→Done at 23:49 IST*, *commented "Build #6230 shared"*, *re-estimated to 4h*, *closed sub-task with 2h worklog*). Never list a Jira key without saying what Krishna did to it.
+- **Status filter for Yesterday §1.1**: drop the issue if its **end-of-window status** is `Ready For Testing` / `Ready For Verification` / `In Test` — surface it under **§4 Follow-ups** instead.
+- **Atish Sinha comments**: keep only ones that mention Krishna (account id `712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799` or display name `Krishna`) **or** that update an issue Krishna has previously commented on; surface under **§4 Follow-ups** with the next actor named.
 
 ### B. Slack — messages relevant to Krishna
 
-Use the Slack MCP (`slack_search_public_and_private`, `slack_search_channels`, `slack_search_users`, `slack_read_thread`, `slack_read_channel`).
+Use the Cursor Slack MCP. **Available tools:** `slack_search_public_and_private`, `slack_search_channels`, `slack_search_users`, `slack_read_thread`, `slack_read_channel`, `slack_send_message`. **Do NOT** call `slack_list_channels`, `slack_get_users`, or `slack_post_message` — those are protocol-spec names not exposed by this MCP.
 
-1. **Resolve** Krishna's Slack `user_id` once via `slack_get_users` / `slack_search_users` (display name + email match).
-2. **Mentions to Krishna in the last 24h** across all accessible channels:
+1. **Resolve** Krishna's Slack `user_id` once via `slack_search_users "Krishna Bankar"` → `U08FTS2SRAP`.
+2. **Mentions to Krishna in the window:**
    ```
-   slack_search_public_and_private  query: "<@KRISHNA_USER_ID>"  after: <yesterday IST 00:00>
+   slack_search_public_and_private  query: "<@U08FTS2SRAP> after:2026-04-27 before:2026-04-29"
    ```
-3. **Direct messages (DMs)** to/from Krishna in the window:
+3. **Sent BY Krishna** in the window:
    ```
-   slack_search_public_and_private  query: "from:@KrishnaBankar"  after: ...
-   slack_search_public_and_private  query: "to:@KrishnaBankar"   after: ...
+   slack_search_public_and_private  query: "from:@krishna.bankar after:2026-04-27 before:2026-04-29"
    ```
-4. **Personal Slack channel `#my-daily-work-update`** — read the last digest (so we do not duplicate items from yesterday and we can append "no new updates" placeholders).
-5. For each message hit, also pull the **thread** via `slack_read_thread` so we can tell whether Krishna already replied. Items where Krishna is **the last replier** go into "Today / awaiting their response". Items where Krishna is mentioned but **has not yet replied** go into "Pending — discussion to do".
+4. **Sent TO Krishna** (DMs, mentions in threads):
+   ```
+   slack_search_public_and_private  query: "to:@krishna.bankar after:2026-04-27 before:2026-04-29"
+   ```
+5. **Yesterday's digest** — `slack_search_public_and_private query: "in:#my-daily-update Daily Work Update"` so we can deduplicate.
+6. For each message hit, also pull the **thread** via `slack_read_thread` so we can tell whether Krishna already replied. Items where Krishna is **the last replier** waiting on someone go into **§4 Follow-ups** (named: "awaiting <person>"). Items where Krishna was @-mentioned but **has not yet replied** go into **§3.2 Pending discussions**.
 
-Skip any channel message **not** containing `@here`, `@channel`, `<@KRISHNA_USER_ID>`, or `from:@KrishnaBankar` (per the user's rule: "channel-wide stuff: include only if it concerns me; messages by me: track").
+Skip any channel-wide message **not** containing `@here`, `@channel`, `<@U08FTS2SRAP>`, or `from:@krishna.bankar` (per Krishna's rule: "channel-wide stuff: include only if it concerns me; messages by me: track").
 
 ### C. Bitbucket / GitHub — code activity
 
-Bitbucket `unify-enterprise` (Krishna's primary repo for product work):
+Bitbucket `unify-enterprise` (Krishna's primary repo for product work). **Bitbucket REST at `api.bitbucket.org` returns 401 for the standard HTTP access token** (verified 2026-04-29) — only the git transport is reliably authenticated. Use git for everything.
 
 ```bash
-# 1. Auth + remote URL per bitbucket-unify-enterprise.md.
-#    (Bitbucket REST API at api.bitbucket.org returns 401 with the standard
-#     HTTP access token; only the git transport is reliably authenticated.
-#     Use git for everything, not REST.)
+# Auth + remote URL per bitbucket-unify-enterprise.md.
+ENC_TOKEN=$(python3 -c "import os,urllib.parse; print(urllib.parse.quote(os.environ['BITBUCKET_TOKEN'], safe=''))")
+git clone --depth 200 \
+  "https://${BITBUCKET_USERNAME}:${ENC_TOKEN}@bitbucket.org/webgility/unify-enterprise.git" \
+  /tmp/unify-enterprise
 
-# 2. Use a thin clone or worktree. `git clone --depth N` only fetches the default branch;
-#    if you need other branches in the window, fetch them explicitly:
-git -C $UNIFY_CLONE ls-remote origin 2>/dev/null \
-    | grep -iE "krishna|UD-<keys>"
-git -C $UNIFY_CLONE fetch --depth 50 origin "refs/heads/<branch>:refs/remotes/origin/<branch>"
+# `git clone --depth N` only fetches the default branch (master). Find Krishna's
+# active branches via ls-remote and fetch them explicitly:
+git -C /tmp/unify-enterprise ls-remote origin 2>/dev/null \
+  | grep -iE "krishna|UD-32071|UD-29517|<other-active-keys-from-Jira-A1>"
 
-# 3. Krishna's commits in the IST window across the fetched branches.
-#    Krishna's commit author is "krishna.bankar" — case/format-insensitive match.
-git -C $UNIFY_CLONE log --all \
-    --since="2026-04-27 00:00 +0530" --until="2026-04-29 09:00 +0530" \
-    --regexp-ignore-case --author="krishna" \
-    --pretty=format:'%h | %ci | %an | %d | %s'
+git -C /tmp/unify-enterprise fetch --depth 50 origin \
+  "refs/heads/<branch>:refs/remotes/origin/<branch>"
 
-# 4. Branches Krishna pushed in the window.
-git -C $UNIFY_CLONE for-each-ref --sort=-committerdate refs/remotes/origin/ \
-    --format='%(committerdate:iso8601)|%(authorname)|%(refname:short)' \
+# Krishna's commits in the IST window across the fetched branches.
+# Author is "krishna.bankar" (lowercase, dotted) — case-insensitive match.
+git -C /tmp/unify-enterprise log --all \
+  --since="2026-04-28 00:00 +0530" --until="2026-04-29 00:00 +0530" \
+  --regexp-ignore-case --author="krishna" \
+  --pretty=format:'%h | %ci | %an | %d | %s'
+
+# Recent branches authored by Krishna (for the §1.4 line).
+git -C /tmp/unify-enterprise for-each-ref --sort=-committerdate refs/remotes/origin/ \
+  --format='%(committerdate:iso8601)|%(authorname)|%(refname:short)' \
   | awk -F'|' 'tolower($2) ~ /krishna/'
 ```
 
 For PRs use the **Bitbucket MCP** when available (`getPullRequest`, `listPullRequests`, `getPullRequestComments`). Otherwise list URLs of branches matching `*krishna*` or `*UD-<key>*` for manual follow-up. **Do not** retry the REST API after a 401 — switch back to git.
 
-GitHub (AskAI repo + any other repos in scope) — use the pre-authenticated `gh` CLI. The cloud agent's `gh` runs as the bot account `cursor`, so `--author=@me` finds the bot, not Krishna. Use Krishna's GitHub login `krishnabankar-webgility` explicitly. `gh search prs` only accepts `--state {open|closed}`; query each separately or omit the flag.
+GitHub (AskAI repo + any other repos in scope) — use the pre-authenticated `gh` CLI. The cloud agent's `gh` runs as the bot `cursor`, so `--author=@me` finds the bot, not Krishna. Use Krishna's GitHub login `krishnabankar-webgility` explicitly. `gh search prs` only accepts `--state {open|closed}`; query each separately or omit the flag.
 
 ```bash
 KRISHNA_GH=krishnabankar-webgility
@@ -200,7 +204,7 @@ gh pr list -R krishnabankar-webgility/AskAI --state all --limit 20 \
 
 `gh search commits` rarely returns Krishna's `unify-enterprise` work because that repo is on **Bitbucket**, not GitHub — rely on §C step 3 above for product-code commits and use `gh` only for AskAI-style GitHub repos.
 
-For each commit/PR surfaced, capture: repo, branch, short SHA / PR #, title, status (open/merged/draft), URL, link to any QA-testing comment posted to Jira (cross-reference §7 of `jira-workflow.md`).
+For each commit/PR surfaced, capture: repo, branch, short SHA / PR #, **subject (what was done)**, status (open/merged/draft), URL, link to any §7 QA-testing comment posted to Jira.
 
 ### D. (Optional) Confluence
 
@@ -214,39 +218,42 @@ For every raw item from sources A–D:
 
 | Bucket | Rule |
 |--------|------|
-| **§1.1 Jira worked yesterday** | Status changed in window OR last comment by Krishna in window. Sub-buckets: `Done` / `RFT` / `In Progress`. |
-| **§1.2 Meetings & discussions** | Slack message in window with keywords `meeting`, `huddle`, `call`, `discussion`, `notes`, `MOM`; OR any Google Calendar entry (if a calendar source is wired in later); OR Atish-Sinha comment on a Customer Issue containing `discussion`, `call`, `meeting`, `agreed`. |
-| **§1.3 Status updates / fixes / resolutions shared** | Krishna-authored Slack message OR Jira comment OR Atish-Sinha bridged HubSpot reply containing `update`, `fix`, `resolution`, `RFT`, `posted`, `released`, `deployed`. |
-| **§1.4 Git activity** | Source C, plus any §7 QA-testing comment posted in the window. |
-| **§2.1 In progress today** | Jira `In Progress` for Krishna. |
-| **§2.2 Today's running threads** | Slack threads where Krishna posted last but the topic is unresolved (no ✅ / `done` / `resolved` reaction). |
-| **§3.1 Pending Jira** | `To Do` (priority-sorted), and `RFT` items not picked up by QA in >24h. |
-| **§3.2 Pending discussions** | Slack mentions where Krishna has not yet replied; Atish-Sinha customer-issue comments mentioning Krishna with no Krishna comment after them. |
-| **§3.3 Future / planned** | Sub-tasks under Krishna's `In Progress` Stories that are still `To Do` (i.e. work queued behind current task). |
+| **§1.1 Yesterday — Jira (my work)** | Status changed in window by Krishna **OR** comment authored by Krishna in window **OR** worklog by Krishna. **Excludes** issues whose end-of-window status is `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those go to **§4 Follow-ups**. Sub-buckets: `Done` / `In Progress (advanced)` / `Commented / Worklogged`. **Every line:** `` `UD-XXXX` `` + title + verb-clause describing the action. |
+| **§1.2 Meetings & discussions** | Slack message in window with keywords `meeting`, `huddle`, `call`, `discussion`, `notes`, `MOM`, `discord`, `gmeet`, `zoom`; OR any Google Calendar entry (if a calendar source is wired in later); OR Atish-Sinha comment on a Customer Issue containing `discussion`, `call`, `meeting`, `agreed`. |
+| **§1.3 Status updates / fixes / resolutions shared by me** | Krishna-authored Slack message OR Jira comment OR Atish-Sinha bridged HubSpot reply containing `update`, `fix`, `resolution`, `RFT`, `posted`, `released`, `deployed`, `installer`, `build`, `share`. |
+| **§1.4 Git activity (mine)** | Source C, plus any §7 QA-testing comment posted in the window. |
+| **§2.1 Today — In Progress (mine)** | Jira `In Progress` AND `assignee = me`. |
+| **§2.2 Today — Open threads I'm driving** | Slack threads where Krishna posted last but the topic is unresolved (no ✅ / `done` / `resolved` reaction) **and** the next action is Krishna's (e.g. agreed to investigate, share update, deliver build). |
+| **§3.1 Pending — Jira queue (mine)** | `To Do` AND `assignee = me`, priority-sorted. |
+| **§3.2 Pending — Discussions on me** | Slack mentions / DMs / customer-issue comments where someone has asked Krishna a question / for a decision / for help / for a build / for an ETA, and Krishna has not yet replied. |
+| **§4.1 Follow-ups — Jira (QA / others)** | Status `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, **regardless of assignee**. Line names **who** is driving (current assignee = QA), the QA reviewer (if known from the §7 comment CC), days since RFT, and whether QA has commented since handoff. |
+| **§4.2 Follow-ups — Discussions where someone else owes me** | Threads / customer-issue comments where Krishna posted last and the next actor is **not** Krishna (e.g. "awaiting Faaque's check", "awaiting Lokesh's confirmation", Atish-Sinha comment on a CI Krishna previously commented on). |
 
-If an item could land in two buckets, prefer the **earliest** bucket (Yesterday > Today > Pending) so nothing is reported twice.
+**Tie-breaker (no duplicates):** if an item could land in two buckets, prefer the **earliest** numbered bucket (Yesterday > Today > Pending > Follow-ups) **except** that **§1.1 Yesterday excludes anything currently in RFT/In Test** — those move to §4.1 even if Krishna acted on them yesterday (but the §1.3 line still records the QA comment Krishna posted as part of the handoff).
 
 ---
 
 ## Output format (Slack-flavored markdown)
 
-The agent produces one Slack message (Block Kit `mrkdwn`). Use **section headers** with emojis only because Slack rendering relies on them; keep the rest plain. Truncate any single bullet to ~240 chars, then add a link.
+The agent produces one Slack message (Block Kit `mrkdwn`). Use **section headers** with emojis only because Slack rendering relies on them; keep the rest plain. Truncate any single bullet to ~280 chars, then add a link.
+
+Every Jira line **must** follow this shape: `` `UD-XXXX` <title> · <what was done verb-clause> · <url>``.
 
 ```
-*:sunrise: Daily Work Update — <YYYY-MM-DD, ddd>*  (window: <since> → <until> IST)
+*:sunrise: Daily Work Update — <YYYY-MM-DD, ddd>*  (window: <YYYY-MM-DD> 00:00 → 23:59 IST)
 
-*:white_check_mark: 1. Yesterday*
+*:white_check_mark: 1. Yesterday — my work*
 
-_1.1 Jira_
-• *Done* — `<UD-XXXX>` <summary> · _moved <from>→Done at HH:MM IST_ · <url>
-• *RFT* — `<UD-XXXX>` <summary> · _RFT comment posted HH:MM_ · <url>
-• *In progress (advanced)* — `<UD-XXXX>` <summary> · <url>
+_1.1 Jira (mine, excluding QA-handed-off items)_
+• *Done* — `<UD-XXXX>` <title> · _moved <from>→Done at HH:MM IST_ · <url>
+• *In Progress (advanced)* — `<UD-XXXX>` <title> · _started: To Do→In Progress at HH:MM; commented "<one-line snippet>"_ · <url>
+• *Commented* — `<UD-XXXX>` <title> · _posted "<one-line snippet>" at HH:MM_ · <url>
 
 _1.2 Meetings & discussions_
 • <slack/jira/HubSpot snippet> — <link>
 
-_1.3 Status updates / fixes shared_
-• <where> — <snippet> — <link>
+_1.3 Status updates / fixes / resolutions I shared_
+• <where> — <one-line of what I shared> — <link>
 
 _1.4 Git_
 • `<repo>` `<branch>` `<short-sha>` <commit subject> — <url>
@@ -254,28 +261,33 @@ _1.4 Git_
 
 *:hammer_and_wrench: 2. Today / In progress*
 
-_2.1 Jira (In Progress)_
-• `<UD-XXXX>` <summary> · last update <when> · <url>
+_2.1 Jira (In Progress, assigned to me)_
+• `<UD-XXXX>` <title> · _last update <when>_ · <url>
 
-_2.2 Open threads / running discussions_
-• <channel> — "<snippet>" — <url>   _(awaiting <person> reply)_
+_2.2 Open threads I'm driving_
+• <channel> — "<snippet>" — <link>   _(I owe a reply / next step)_
 
-*:hourglass_flowing_sand: 3. Pending / Queue / TODO*
+*:hourglass_flowing_sand: 3. Pending / Queue / TODO (action on me)*
 
-_3.1 Jira queue_
-• `<UD-XXXX>` <summary> · status `To Do` · Priority Rank <n> · <url>
-• `<UD-XXXX>` <summary> · status `RFT` waiting on QA since <when> · <url>
+_3.1 Jira queue (assigned to me, status To Do)_
+• `<UD-XXXX>` <title> · _Priority Rank <n>_ · <url>
 
-_3.2 Discussions to do_
-• <channel> — "<snippet>" — <url>   _(@-mention to you, no reply yet)_
+_3.2 Discussions awaiting my reply_
+• <channel> — "<snippet>" — <link>   _(asked by <person>, no reply yet)_
 
-_3.3 Future / planned sub-tasks_
-• `<UD-XXXX>` <summary> — under `<UD-PARENT>` — <url>
+*:mag: 4. Follow-ups (QA / others driving — chase, don't do)*
+
+_4.1 Jira in RFT / In Test_
+• `<UD-XXXX>` <title> · _RFT since <when>; QA: <assignee>; last QA activity: <when or "none yet">_ · <url>
+• `<UD-XXXX>` <title> · _In Test by <assignee>_ · <url>
+
+_4.2 Discussions where someone else owes me_
+• <channel> — "<snippet>" — <link>   _(awaiting <person>'s <action>)_
 
 —
 _Sources used: Jira ✅ · Slack ✅ · Bitbucket ✅ · GitHub ✅ · HubSpot (via Atish-Sinha bridge) ✅_
 _Sources skipped: <list with reason, e.g. "Confluence — secret missing">_
-_Generated by `daily-work-update` agent · next run <when>_
+_Generated by `daily-work-update` agent · canonical skill `.cursor/skill-library/daily-work-update.md` · next run <when>_
 ```
 
 When the digest is generated **outside** Slack (Cursor chat fallback), drop the Slack-only emoji codes and use the same headings as plain markdown.
@@ -286,27 +298,87 @@ If a section is **empty**, render `_(nothing)_` rather than dropping the header 
 
 ## Posting rules
 
-1. **Resolve** the channel id for `#my-daily-work-update` via `slack_search_channels` (the Cursor Slack MCP does not expose a generic `slack_list_channels`). If the search returns no result, the channel does not exist for the bot.
-2. **Send** with **`slack_send_message`** (Cursor Slack MCP). The parameter is **`message`**, not `text`. Use Slack `mrkdwn` syntax (`*bold*`, `_italic_`, `<url|label>`). Do **not** invent the protocol-spec name `slack_post_message` — that is not the tool name in this MCP.
-3. If the channel does not exist, fall back to **DM Krishna** by passing his Slack `user_id` as `channel_id` to `slack_send_message` (resolve via `slack_search_users "Krishna Bankar"` → `U08FTS2SRAP` for this account). Add a one-line note at the top of the digest: `Channel #my-daily-work-update not found, DM-ing instead.`
+1. **Resolve** the channel id for `#my-daily-update` via `slack_search_channels query: "my-daily-update"`. **Locked id:** `C0B0CBW8G03` (public channel; Cursor bot already a member). Do not search again unless the locked id stops working.
+2. **Send** with **`slack_send_message`** (Cursor Slack MCP). The parameter is **`message`**, not `text`. Use Slack `mrkdwn` syntax (`*bold*`, `_italic_`, `<url|label>`). The protocol-spec name `slack_post_message` does **not** exist in this MCP.
+3. If `#my-daily-update` does not resolve, fall back to **DM Krishna** by passing his Slack `user_id` `U08FTS2SRAP` as `channel_id` to `slack_send_message`. Add a one-line note at the top: `Channel #my-daily-update not resolved, DM-ing instead.`
 4. If Slack MCP is unavailable, **render to Cursor chat** and tell Krishna to set up Slack secrets.
 5. Mask any token / secret / email-with-token as `***` (per `slack-integration.md` safety rules).
 6. Never include source code snippets, customer PII, full QA testing comments, or HubSpot ticket bodies. Only short summaries with links.
-7. Do **not** post duplicates — read the previous day's digest from `#my-daily-work-update` first; skip items whose link already appeared.
+7. Do **not** post duplicates — read the previous day's digest from `#my-daily-update` first (`slack_search_public_and_private query: "in:#my-daily-update Daily Work Update"`) and skip items whose link already appeared.
 
 ---
 
 ## Scheduling
 
-Cursor / Copilot subagents do not run on a clock by themselves. Use one of:
+Cursor / Copilot subagents do not run on a clock by themselves. Krishna prefers to wire this through **Cursor Automations / Scheduled Cloud Agents**. See "Cursor Automation setup" below for the full step-by-step.
+
+Other supported triggers (opt-in only — do not commit GitHub Actions / cron files unless Krishna asks):
 
 | Mechanism | Setup |
 |-----------|-------|
-| **Cursor scheduled cloud agent** (preferred) | Cursor Dashboard → Cloud Agents → New Schedule → "Daily 09:00 IST" → Branch `master` → Prompt = `/daily-work-update`. Secrets injected from the same dashboard. |
+| **Cursor scheduled cloud agent** *(preferred)* | Cursor Dashboard → Cloud Agents → New Schedule → "Mon–Fri 09:00 IST" → Branch `master` → Prompt = `/daily-work-update`. Secrets injected from the same dashboard. |
 | **GitHub Actions** | Workflow `.github/workflows/daily-work-update.yml` (cron `30 3 * * 1-5` UTC = 09:00 IST Mon–Fri) calling the same prompt via the Cursor / Copilot CLI. |
-| **Local cron / Windows Task Scheduler** | Krishna's machine triggers `gh` or `cursor agent run /daily-work-update` at 09:00 local. |
+| **Local cron / Windows Task Scheduler** | Krishna's machine triggers `cursor agent run /daily-work-update` at 09:00 local. |
 
-Do **not** commit a new GitHub Actions workflow as part of adding this agent — only do that when the user explicitly opts in (so the schedule does not start surprising them). The agent file documents the cron that they can enable.
+When the scheduler fires, set the env var `DAILY_UPDATE_AUTOSEND=1` so the agent skips the manual confirm step and posts directly.
+
+---
+
+## Cursor Automation setup (copy/paste-ready)
+
+Krishna runs this from **Cursor Dashboard → Cloud Agents → New Schedule** (or **Cursor Settings → Automations** in newer builds).
+
+**1. Repository / branch:**
+
+| Field | Value |
+|-------|-------|
+| Repository | `krishnabankar-webgility/AskAI` |
+| Branch | `master` |
+| Working directory | repo root (default) |
+
+**2. Schedule:**
+
+| Field | Value |
+|-------|-------|
+| Cron expression | `30 3 * * 1-5` (UTC) — equivalent to **09:00 IST Mon–Fri** |
+| Timezone | `Asia/Kolkata` (if the form supports it; otherwise leave UTC and use the cron above) |
+
+**3. Environment / secrets** (Cursor Dashboard → Cloud Agents → Secrets — already set today, just verify):
+
+| Secret | Required for |
+|--------|--------------|
+| `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL` | Jira REST/MCP |
+| `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` | Slack MCP (write to `#my-daily-update`) |
+| `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN` | `unify-enterprise` clone & `git log` |
+| `DAILY_UPDATE_AUTOSEND=1` | Skip the chat confirm and post straight to Slack |
+
+**4. Prompt:**
+
+```
+/daily-work-update
+
+Run my daily work digest now for the previous IST calendar day (00:00–23:59 IST).
+Follow .cursor/skill-library/daily-work-update.md exactly:
+- Yesterday §1: only items I worked on; exclude anything currently in RFT / In Test.
+- Today §2: my In-Progress Jira + threads I'm driving.
+- Pending §3: only items assigned to me OR a question waiting on my reply.
+- Follow-ups §4: RFT / In Test (QA-driven) and threads where someone else owes me.
+Every Jira line must show UD-XXXX + title + what I did.
+Post to #my-daily-update (channel id C0B0CBW8G03). DAILY_UPDATE_AUTOSEND=1 is set,
+so skip the confirm step and post directly. If anything fails, list it in
+"Sources skipped" and still post the heartbeat.
+```
+
+**5. Verify:**
+
+After saving, click **Run now once** in the Cursor Dashboard. Expected behavior:
+
+- Cloud Agent boots, reads `.cursor/skill-library/daily-work-update.md`.
+- Runs the Jira / Slack / Bitbucket / GitHub queries described above (see *Data sources & queries*).
+- Posts a single message to `#my-daily-update` (channel id `C0B0CBW8G03`).
+- Records nothing in `.cursor/`, `src/`, or any tracked path. Scratch goes under `local/ephemeral/daily-work-update/<YYYY-MM-DD>/` (gitignored).
+
+If you ever need to trigger ad-hoc, just type **`/daily-work-update`** in any Cursor chat — without `DAILY_UPDATE_AUTOSEND=1` it will preview in chat and ask "Post to #my-daily-update? (yes / no / DM only)".
 
 ---
 
@@ -314,20 +386,20 @@ Do **not** commit a new GitHub Actions workflow as part of adding this agent —
 
 When Krishna runs `/daily-work-update` directly in chat, the agent must:
 
-1. Detect "now" in IST and compute the window.
+1. Detect "now" in IST and compute the window (`yesterday 00:00 → 23:59 IST`).
 2. Run sources A–D in parallel.
 3. Render the digest in chat **first**.
-4. Ask one confirm: *"Post to `#my-daily-work-update`? (yes / no / DM only)"*.
-5. On `yes` → post via Slack MCP. On `DM only` → DM Krishna. On `no` → leave it in chat. (When invoked by the **scheduler**, skip the confirm and post directly — the scheduler injects an env var `DAILY_UPDATE_AUTOSEND=1` to mark autonomy.)
+4. Ask one confirm: *"Post to `#my-daily-update`? (yes / no / DM only)"*.
+5. On `yes` → post via `slack_send_message` to channel `C0B0CBW8G03`. On `DM only` → DM Krishna (`U08FTS2SRAP`). On `no` → leave it in chat. (When invoked by the **scheduler**, skip the confirm and post directly — the scheduler injects an env var `DAILY_UPDATE_AUTOSEND=1` to mark autonomy.)
 
 ---
 
 ## Failure / fallback behavior
 
 - **Slack MCP missing** → render in chat; print one-liner `Slack MCP not connected — see slack-integration.md`.
-- **Jira MCP missing** → skip Jira sections, render placeholders, footer note.
+- **Jira MCP / REST failing** → skip Jira sections, render placeholders, footer note.
 - **Bitbucket auth failing** → skip §1.4 commit lines, list `git fetch` error in footer.
-- **No items in any source** → still post a digest with three `_(nothing)_` sections; Krishna wants the heartbeat.
+- **No items in any source** → still post a digest with all-`_(nothing)_` sections; Krishna wants the heartbeat.
 - **Partial errors** are listed in the *Sources skipped* footer (see template).
 
 ---
@@ -336,8 +408,33 @@ When Krishna runs `/daily-work-update` directly in chat, the agent must:
 
 - Never include raw HubSpot ticket bodies, customer PII, account numbers, or build artifacts.
 - Mask all secrets / URLs containing tokens as `***`.
-- Do **not** create / modify Jira issues, post Jira comments, transition issues, push code, or send Slack messages to other channels — this agent is **read-only** for Jira / Bitbucket / GitHub and **write-only** for the single Slack channel `#my-daily-work-update` (or DM Krishna).
-- For any "RFT" or §7 QA-testing follow-up the agent finds, just **link** to it — let `/jira-automation` actually file the comment.
+- Do **not** create / modify Jira issues, post Jira comments, transition issues, push code, or send Slack messages to other channels — this agent is **read-only** for Jira / Bitbucket / GitHub and **write-only** for the single Slack channel `#my-daily-update` (or DM Krishna).
+- For any "RFT" or §7 QA-testing follow-up the agent finds, just **link** to it under §4 — let `/jira-automation` actually file the comment.
+
+---
+
+## Learnings locked in (do not re-discover)
+
+The first live runs surfaced these gotchas. Future invocations **must skip re-discovery** and use the stated value directly:
+
+| Topic | Locked-in answer |
+|-------|------------------|
+| Slack delivery channel | **`#my-daily-update`** (NOT `#my-daily-work-update`) — id **`C0B0CBW8G03`**; Cursor bot already invited. |
+| Slack write tool | **`slack_send_message`** with parameter **`message`** (not `text`). `slack_post_message` does not exist in this MCP. |
+| Slack channel listing | **`slack_search_channels`** (no `slack_list_channels`). |
+| Slack user lookup | **`slack_search_users`** (no `slack_get_users`). |
+| Krishna's Slack id | **`U08FTS2SRAP`** |
+| Jira search REST | **`POST /rest/api/3/search/jql`** (legacy `GET /rest/api/3/search` was removed). Pagination = `nextPageToken` / `isLast`. |
+| Jira issue detail | `GET /rest/api/3/issue/{key}?expand=changelog,renderedFields` for comments + status history. |
+| Jira me account id | `712020:cb0bd6e5-b436-49f9-a0f5-6211a8cc8799` |
+| Jira Atish account id | `5af1e74db80fc222f236b257` |
+| Bitbucket REST | Returns **401** for the HTTP access token at `api.bitbucket.org`. Use **git only** — do not retry REST. |
+| Bitbucket commit author | **`krishna.bankar`** (lowercase, dotted). Match with `--regexp-ignore-case --author="krishna"`. |
+| `git clone --depth N` scope | Only fetches the **default branch** (`master`). For Krishna's feature branches, `ls-remote | grep krishna` then `git fetch --depth 50 origin <branch>`. |
+| `gh` identity in Cloud Agent | Runs as bot **`cursor`** — `--author=@me` is wrong. Use `--author=krishnabankar-webgility`. |
+| `gh search prs --state` values | Only `{open|closed}`. Either query each separately or omit. |
+
+When **anything** new becomes a "I had to figure this out" moment during a run, append a row to this table (or update an existing one) **before** ending the session. The Cursor agent at `.cursor/agents/daily-work-update.md` is also responsible for this and points back here.
 
 ---
 
