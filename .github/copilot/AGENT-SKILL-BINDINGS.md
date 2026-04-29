@@ -32,6 +32,7 @@
 | `slack-automation` | `slack-integration.md` |
 | `dev-customization` | `dev-customization-expertise.md`, `dev-customization-workflow.md` |
 | `confluence-automation` | `confluence-workflow.md` |
+| `daily-work-update` | `daily-work-update.md`, `slack-integration.md`, `jira-workflow.md` (§3, §7, §7.6 only), `bitbucket-unify-enterprise.md`, `git-sync.md`, `krishnaaigen-ephemeral-output.md` |
 
 ## Deprecated
 
