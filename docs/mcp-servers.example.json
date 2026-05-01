@@ -1,4 +1,5 @@
 {
+  "_comment": "Merge into .cursor/mcp.json. Never commit real OAuth secrets. Install uv (https://docs.astral.sh/uv/) for google-workspace. Same GOOGLE_* names in Cursor Cloud Secrets + Windows User env.",
   "mcpServers": {
     "jira": {
       "command": "npx",

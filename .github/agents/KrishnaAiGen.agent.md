@@ -10,7 +10,7 @@ description: >
 model: inherit
 ---
 
-# KrishnaAiGen (master) — GitHub Copilot
+# KrishnaAiGen (master) — VS Code / GitHub Agents
 
 Same behavior as **Cursor** `.cursor/agents/KrishnaAiGen.agent.md`. **Canonical skills** are always under **`.cursor/skill-library/*.skill.md`** (single source of truth).
 
@@ -27,6 +27,19 @@ The user works in the **`Agentic_Unify-Enterprise`** workspace, which contains p
 | `Unify-Enterprise/` | Product codebase (C#/.NET WinForms) | Submodule / subfolder |
 
 **Default branch:** The user is normally on branch **`Krishna_Dev`** in the `Agentic_Unify-Enterprise` repo.
+
+### IDE locality (default — do not cross-IDEs unless asked)
+
+Infer **which product this chat runs in** (GitHub Copilot vs VS Code Agents vs Cursor vs Claude Desktop / other). **Load only that surface’s agent files** as primary routing; **canonical skills** remain **`AskAI/.cursor/skill-library/*.skill.md`** everywhere.
+
+| Runtime | Primary agents | Do not merge unprompted |
+|---------|----------------|-------------------------|
+| **GitHub Copilot** | `.github/copilot/agents/*.agent.md` | Cursor `.cursor/rules/` stubs unless @-attached |
+| **VS Code / GitHub Agents** | `.github/agents/*.agent.md` | Same |
+| **Cursor** | `.cursor/agents/*.agent.md` · `.cursor/rules/` | Copilot/VS Code mirrors under `.github/` are parity-only |
+| **Other** | User-attached docs + **`AskAI/docs/mcp-integration-roadmap.md`** | Do not assume Cursor `mcp.json` |
+
+If the user **@mentions** files from another IDE folder, treat as **explicit** cross-context.
 
 ### Modification scope (non-negotiable)
 
@@ -65,7 +78,7 @@ Using your file-reading tool, read **in order**:
 | Slack / channel / xoxb | `.cursor/agents/slack-automation.agent.md` · `.github/copilot/agents/slack-automation.agent.md` | `slack-integration.skill.md` |
 | Customer customization / SYNC_ / profile gate | `.cursor/agents/dev-customization.agent.md` · `.github/copilot/agents/dev-customization.agent.md` | `dev-customization-expertise.skill.md`, `dev-customization-workflow.skill.md` |
 | Confluence / pages / HubSpot handoff | `.cursor/agents/confluence-automation.agent.md` · `.github/copilot/agents/confluence-automation.agent.md` | `confluence-workflow.skill.md` |
-| Morning digest / `#my-daily-work-update` | `.cursor/agents/daily-work-update.agent.md` · `.github/copilot/agents/daily-work-update.agent.md` | `daily-work-update.skill.md` + slices per that agent |
+| Morning digest / `#my-daily-update` | `.cursor/agents/daily-work-update.agent.md` · `.github/copilot/agents/daily-work-update.agent.md` · `.github/agents/daily-work-update.agent.md` | `daily-work-update.skill.md` (Bitbucket-only code; §A8 Atish + `%HubSpot Note%` + Krishna in-scope) + slices per that agent |
 | Skill/agent doc edits only | `.cursor/agents/agent-learning.agent.md` · `.github/copilot/agents/agent-learning.agent.md` | `krishnaaigen-skill-evolution.skill.md` + target skill(s) |
 | Windows / VPN / SMB / UNC / Jenkins / RDP / MTU / profile | `.cursor/agents/sys-troubleshoot.agent.md` · `.github/copilot/agents/sys-troubleshoot.agent.md` | `vpn-smb-access.skill.md`, `network-profile-fix.skill.md` |
 
@@ -109,7 +122,7 @@ Do **not** force this sweep for narrow single-domain asks — prefer section B.
 | `/agent-learning` | Update skills/agents from feedback |
 | `/dev-customization` | Customer customizations |
 | `/confluence-automation` | Confluence pages, search, content |
-| `/daily-work-update` | Krishna's morning digest → Slack `#my-daily-work-update` |
+| `/daily-work-update` | Morning digest → Slack `#my-daily-update` — `daily-work-update.skill.md` (§A8 strict HubSpot filter; Bitbucket-only repos) |
 | `/sys-troubleshoot` | Windows / VPN / SMB / network diagnostics (PowerShell) |
 
 ## Output

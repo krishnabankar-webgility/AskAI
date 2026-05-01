@@ -33,6 +33,33 @@ The user works in the **`Agentic_Unify-Enterprise`** workspace, which contains t
 1. **First** — read AskAI agents and skills (this file + the mandatory list below).
 2. **Then** — read `eng-master` (`.github/agents/eng-master.agent.md`) and any relevant `eng-wd-*` agents **for reference only**.
 
+### IDE locality (default — do not cross-IDEs unless asked)
+
+Infer **which product this chat runs in** from context (Cursor Agent chat vs GitHub Copilot vs VS Code GitHub Agents picker vs Claude Desktop / other). **Load only that product’s agent front-matter and routing:**
+
+| Runtime | Primary agent + skill paths | Secondary mirrors (do not merge prompts unprompted) |
+|---------|-----------------------------|-----------------------------------------------------|
+| **Cursor** | `.cursor/agents/*.agent.md` · `.cursor/skill-library/*.skill.md` · `.cursor/rules/` | Copilot/VS Code copies under `.github/` are for parity only |
+| **GitHub Copilot** | `.github/copilot/agents/*.agent.md` — skills still **`AskAI/.cursor/skill-library/*.skill.md`** | Do not pull Cursor-only rule stubs unless user @-files them |
+| **VS Code / GitHub Agents** | `.github/agents/*.agent.md` — skills still **`AskAI/.cursor/skill-library/*.skill.md`** | Same as Copilot row |
+| **Other (Claude Desktop, etc.)** | User-supplied MCP + **`docs/mcp-integration-roadmap.md`** — map procedures from canonical skills by path user attaches | Never assume Cursor `.cursor/mcp.json` exists unless user opened AskAI in Cursor |
+
+If the user **@mentions** or attaches files from another IDE’s folder (e.g. Copilot agent while in Cursor), treat those as **explicit** cross-context — otherwise **one IDE surface per session** to avoid conflicting instructions.
+
+### MCP — Google Workspace (`google-workspace` server)
+
+OAuth values for **`workspace-mcp`** must **never** be committed. Store them only as **Windows User** environment variables (same names Cursor substitutes into `.cursor/mcp.json`):
+
+| Variable | Purpose |
+|----------|---------|
+| `GOOGLE_OAUTH_CLIENT_ID` | GCP OAuth client ID |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | GCP OAuth client secret |
+| `USER_GOOGLE_EMAIL` | Default Workspace account (e.g. Krishna’s work email) |
+
+`.cursor/mcp.json` references **`${GOOGLE_OAUTH_CLIENT_ID}`**, **`${GOOGLE_OAUTH_CLIENT_SECRET}`**, **`${USER_GOOGLE_EMAIL}`** — literals belong **only** in the OS user env (or Cursor Cloud Secrets for cloud agents), not in repo files or agent markdown.
+
+Requires **`uv`** on PATH so **`uvx workspace-mcp`** can start. See **`AskAI/docs/mcp-integration-roadmap.md`**.
+
 ### Modification scope (non-negotiable)
 
 - **Modify only** files under `AskAI/` — agents (`.cursor/agents/*.agent.md`), skills (`.cursor/skill-library/*.skill.md`), bindings, and `AGENTS.md` in the AskAI project.
@@ -75,7 +102,7 @@ Using your file-reading tool, read **in order**:
 | Slack / channel / xoxb | `.cursor/agents/slack-automation.agent.md` | `slack-integration.skill.md` |
 | Customer customization / SYNC_ / profile gate | `.cursor/agents/dev-customization.agent.md` | `dev-customization-expertise.skill.md`, `dev-customization-workflow.skill.md` |
 | Confluence / pages / HubSpot handoff | `.cursor/agents/confluence-automation.agent.md` | `confluence-workflow.skill.md` |
-| Morning digest / `#my-daily-work-update` | `.cursor/agents/daily-work-update.agent.md` | `daily-work-update.skill.md` + read-only slices per that agent |
+| Morning digest / `#my-daily-update` | `.cursor/agents/daily-work-update.agent.md` | `daily-work-update.skill.md` (Bitbucket-only code; §A8 Atish + `%HubSpot Note%` + Krishna in-scope) + read-only slices per that agent |
 | Skill/agent doc edits only | `.cursor/agents/agent-learning.agent.md` | `krishnaaigen-skill-evolution.skill.md` + target skill(s) |
 | Windows / VPN / SMB / UNC / Jenkins / RDP / MTU / profile | `.cursor/agents/sys-troubleshoot.agent.md` | `vpn-smb-access.skill.md`, `network-profile-fix.skill.md` |
 
@@ -125,7 +152,7 @@ Do **not** force this sweep for narrow single-domain asks — prefer section B.
 | `/agent-learning` | Update skills/agents from feedback |
 | `/dev-customization` | Customer customizations: minimal change, profile gating, sync reuse |
 | `/confluence-automation` | Confluence pages, search, content management |
-| `/daily-work-update` | Krishna's morning digest (Jira + Slack + Bitbucket + GitHub + HubSpot via Atish-Sinha bridge) → posts to Slack `#my-daily-work-update` |
+| `/daily-work-update` | Morning digest → Slack `#my-daily-update` — `daily-work-update.skill.md` (§A8 strict HubSpot filter; Bitbucket-only repos) |
 | `/sys-troubleshoot` | Windows / VPN / SMB / network diagnostics and fixes (PowerShell) |
 
 Human-readable registry: `.cursor/agent-skill-bindings.md`.  

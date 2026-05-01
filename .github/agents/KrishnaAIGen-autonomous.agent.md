@@ -53,7 +53,7 @@ Prefer **`.cursor/agent-skill-bindings.md`** and **`.github/copilot/AGENT-SKILL-
 | **dev-customization** | `.github/copilot/agents/dev-customization.agent.md` | `dev-customization-expertise.skill.md` + `dev-customization-workflow.skill.md` | customization, `SYNC_`, profile gate, WooCommerce CIS |
 | **confluence-automation** | `.github/copilot/agents/confluence-automation.agent.md` | `.cursor/skill-library/confluence-workflow.skill.md` | `confluence`, page, template, HubSpot handoff |
 | **agent-learning** | `.github/copilot/agents/agent-learning.agent.md` | `krishnaaigen-skill-evolution.skill.md` | update skill, persist correction, `/agent-learning` |
-| **daily-work-update** | `.github/prompts/daily-work-update.prompt.md` · `.github/copilot/agents/daily-work-update.agent.md` | `daily-work-update.skill.md` (+ slack/jira/bitbucket/git skills, read-only) | `daily update`, `morning digest`, `yesterday work`, `#my-daily-work-update`, `/daily-work-update` |
+| **daily-work-update** | `.github/prompts/daily-work-update.prompt.md` · `.github/copilot/agents/daily-work-update.agent.md` | `daily-work-update.skill.md` (+ slack/jira/bitbucket/git skills, read-only) | `daily update`, `morning digest`, `yesterday work`, `#my-daily-update`, `/daily-work-update` |
 | **sys-troubleshoot** | `.github/prompts/sys-troubleshoot.prompt.md` · `.github/copilot/agents/sys-troubleshoot.agent.md` | `vpn-smb-access.skill.md`, `network-profile-fix.skill.md` | `VPN`, `SMB`, `UNC`, `net use`, Jenkins, RDP, MTU, `Public network`, firewall |
 
 ---

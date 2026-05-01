@@ -86,6 +86,12 @@ git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket
 | Run tests | `dotnet test` |
 | Lint (warnings as errors) | `dotnet build /p:TreatWarningsAsErrors=true` |
 
+### MCP (Cursor, Claude Desktop, other agents)
+
+**Google (Gmail + Calendar + Drive/Docs for Meet notes):** follow **`docs/mcp-integration-roadmap.md`** — recommended stack is **`workspace-mcp`** via **`uvx`** (install **`uv`**); OAuth client ID/secret use env names **`GOOGLE_OAUTH_CLIENT_ID`** / **`GOOGLE_OAUTH_CLIENT_SECRET`** in both **Cursor Cloud Secrets** and **local Windows User env**. Merge template: **`docs/mcp-servers.example.json`** → your `.cursor/mcp.json`.
+
+HubSpot MCP stays deferred until Private App access exists (same doc).
+
 ### Notes
 - `dotnet restore` is implicitly run by `dotnet build` and `dotnet run`, but can be run explicitly after adding new NuGet packages.
 - The `.gitignore` is the standard Visual Studio/.NET template — build outputs (`bin/`, `obj/`) are already excluded.
@@ -109,7 +115,7 @@ To **scope** the model to a single workflow (smaller context), invoke by name:
 - **`/slack-automation`** — Slack MCP (`slack-integration.skill.md`).
 - **`/dev-customization`** — Customer-driven customizations: reuse architecture, profile + customization node gating, logging (`dev-customization-expertise.skill.md`, `dev-customization-workflow.skill.md`).
 - **`/confluence-automation`** — Confluence page management, search, content creation, and evolving knowledge base of workspace documentation (`confluence-workflow.skill.md`).
-- **`/daily-work-update`** — Generates Krishna's morning digest (Yesterday / Today / Pending) by reading Jira (UD), Slack mentions and threads, Bitbucket `unify-enterprise` commits and PRs, GitHub PRs/commits, and HubSpot updates that come in via the Atish-Sinha Customer-Issue comment bridge. Posts to Slack `#my-daily-work-update` (or DMs Krishna). Read-only on Jira/Bitbucket/GitHub/HubSpot, write-only on the single Slack channel. Canonical skill: `daily-work-update.skill.md`. Schedule: weekdays 09:00 IST via Cursor scheduled cloud agent / GitHub Actions cron / local cron — opt-in (skill documents the cron lines, not committed).
+- **`/daily-work-update`** — Generates Krishna's morning digest (Yesterday / Today / Pending) by reading Jira (UD), Slack mentions and threads, Bitbucket `unify-enterprise` commits and PRs, GitHub PRs/commits, and HubSpot updates that come in via the Atish-Sinha Customer-Issue comment bridge. Posts to Slack **`#my-daily-update`** (or DMs Krishna). Digest layout: Yesterday → Today → Pending → Blockers → TL;DR; **§A8** pulls HubSpot-bridged Customer Issue comments (omit zero-count sections). Read-only on Jira/Bitbucket/GitHub/HubSpot; write-only on that Slack channel. Canonical skill: `daily-work-update.skill.md`. Schedule: weekdays 09:00 IST via Cursor scheduled cloud agent / GitHub Actions cron / local cron — opt-in (skill documents the cron lines, not committed).
 - **`/sys-troubleshoot`** — Windows / VPN / SMB / network diagnostics and fixes (`vpn-smb-access.skill.md`, `network-profile-fix.skill.md`).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for UD-31982.*
