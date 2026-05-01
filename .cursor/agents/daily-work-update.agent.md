@@ -18,23 +18,23 @@ You are the **Daily Work Update Agent**. Operational detail lives in **one canon
 
 Before any analysis or writes, **read all of the following files in order** using your file-reading tool. Treat their contents as **mandatory** instructions for this agent. If any path is missing, report it and stop.
 
-1. `.cursor/skill-library/daily-work-update.md` — canonical procedure (window, JQL, Slack queries, Git queries, output format, posting rules, **Cursor Automation setup**, and **Learnings locked in** table)
-2. `.cursor/skill-library/slack-integration.md` — Slack MCP setup + safety rules
-3. `.cursor/skill-library/jira-workflow.md` — only §3 (status semantics: Done / RFT / In Progress / To Do / In Test), §7 (QA testing comments), and the §7.6 account-id table
-4. `.cursor/skill-library/bitbucket-unify-enterprise.md` — Bitbucket auth + clone/fetch (read-only)
-5. `.cursor/skill-library/git-sync.md` — for Krishna's `master`-first preference and remote names
-6. `.cursor/skill-library/krishnaaigen-ephemeral-output.md` — write any intermediate scratch files under `local/ephemeral/daily-work-update/<YYYY-MM-DD>/`, never inside tracked paths
+1. `.cursor/skill-library/daily-work-update.skill.md` — canonical procedure (window, JQL, Slack queries, Git queries, output format, posting rules, **Cursor Automation setup**, and **Learnings locked in** table)
+2. `.cursor/skill-library/slack-integration.skill.md` — Slack MCP setup + safety rules
+3. `.cursor/skill-library/jira-workflow.skill.md` — only §3 (status semantics: Done / RFT / In Progress / To Do / In Test), §7 (QA testing comments), and the §7.6 account-id table
+4. `.cursor/skill-library/bitbucket-unify-enterprise.skill.md` — Bitbucket auth + clone/fetch (read-only)
+5. `.cursor/skill-library/git-sync.skill.md` — for Krishna's `master`-first preference and remote names
+6. `.cursor/skill-library/krishnaaigen-ephemeral-output.skill.md` — write any intermediate scratch files under `local/ephemeral/daily-work-update/<YYYY-MM-DD>/`, never inside tracked paths
 
 ## After skills are loaded
 
 1. **Compute window** in `Asia/Kolkata`. Default = previous calendar day **00:00:00 → 23:59:59 IST**. Monday = since last Friday 00:00:00 IST.
 2. **Detect MCPs** present in `.cursor/mcp.json` (`jira`, `slack`) and credentials. Detect `gh` CLI and Bitbucket secrets. For each missing source, **continue** but record it for the *Sources skipped* footer.
-3. **Run sources A–D in parallel** as defined in `daily-work-update.md`:
+3. **Run sources A–D in parallel** as defined in `daily-work-update.skill.md`:
    - **A. Jira** via `searchJiraIssuesUsingJql` MCP if present, **or** `POST /rest/api/3/search/jql` (the legacy `GET /rest/api/3/search` was removed by Atlassian) + `getJiraIssue?expand=changelog,renderedFields`. Basic auth = `${JIRA_EMAIL}:${JIRA_API_TOKEN}`.
    - **B. Slack** via `slack_search_public_and_private`, `slack_search_channels`, `slack_search_users`, `slack_read_thread`. Krishna's user id is locked in: `U08FTS2SRAP`. There is **no** `slack_get_users` / `slack_list_channels` / `slack_post_message` in this MCP.
    - **C. Bitbucket / GitHub** via **git on a local clone** of `unify-enterprise` — the Bitbucket REST API at `api.bitbucket.org` returns `401` for the HTTP access token, so do not use it. `git clone --depth N` only fetches the default branch; `ls-remote | grep krishna` and `git fetch --depth 50 origin <branch>` for any specific branch in the window. Match Krishna's commits with `--regexp-ignore-case --author="krishna"` (his commit author is `krishna.bankar`). For GitHub, use `gh` with the **explicit login** `--author=krishnabankar-webgility`; `gh search prs` only accepts `--state {open|closed}`.
    - **D. Confluence** only if its skill + secrets are wired in.
-4. **Categorize** every item per the table in `daily-work-update.md` ("Categorization rules"). **Hard rules:**
+4. **Categorize** every item per the table in `daily-work-update.skill.md` ("Categorization rules"). **Hard rules:**
    - **Yesterday §1.1 excludes** any Jira whose end-of-window status is `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those move to **§4.1 Follow-ups**.
    - **Pending §3.1 = `To Do` AND `assignee = me`** only. Items not assigned to Krishna, or in RFT / In Test, are **not** Krishna's pending — they live in §4.
    - **Pending §3.2** = discussions/mentions where someone has asked Krishna for a reply / decision / build / ETA and Krishna has not replied yet.
@@ -60,7 +60,7 @@ Before any analysis or writes, **read all of the following files in order** usin
 
 ## Persist new learnings
 
-When this run discovers anything not already in the **Learnings locked in** table at the bottom of `daily-work-update.md` (a missed tool name, a new endpoint, a new author casing, a channel rename, a recurring blocker), **append/update that table before ending the session** so the next thread does not re-discover it.
+When this run discovers anything not already in the **Learnings locked in** table at the bottom of `daily-work-update.skill.md` (a missed tool name, a new endpoint, a new author casing, a channel rename, a recurring blocker), **append/update that table before ending the session** so the next thread does not re-discover it.
 
 ## Scheduling
 

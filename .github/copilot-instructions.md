@@ -2,24 +2,26 @@
 
 ## Canonical source
 
-- **Skills:** **`.cursor/skill-library/*.md`** — single source of truth for Jira, Git, DB, Bitbucket, Slack, dev customization, Confluence, and meta (`krishnaaigen-*.md`).
-- **Cursor agents:** **`.cursor/agents/*.md`** — full behavioral specs; **mandatory read lists** drive what each specialist loads.
-- **GitHub Copilot agents:** **`.github/copilot/agents/*.agent.md`** — must mirror **`.cursor/agents/*.md`** (same names, same skill paths, same routing). When you change behavior, update **`.cursor/skill-library/`** first, then Copilot wrappers per **`.cursor/skill-library/krishnaaigen-skill-evolution.md`**.
-- **VS Code agent picker:** **`.github/agents/KrishnaAiGen.agent.md`** — master summary; specialists are listed in **`.cursor/agent-skill-bindings.md`** and **`.github/copilot/AGENT-SKILL-BINDINGS.md`** (keep both registries aligned).
+- **Skills:** **`.cursor/skill-library/*.skill.md`** — single source of truth for Jira, Git, DB, Bitbucket, Slack, dev customization, Confluence, meta (`krishnaaigen-*.skill.md`), VPN/SMB, and network profile packs.
+- **Cursor agents:** **`.cursor/agents/*.agent.md`** — full behavioral specs; **mandatory read lists** drive what each specialist loads.
+- **GitHub Copilot agents:** **`.github/copilot/agents/*.agent.md`** — must mirror **`.cursor/agents/*.agent.md`** (same names, same skill paths, same routing). When you change behavior, update **`.cursor/skill-library/`** first, then Copilot wrappers per **`.cursor/skill-library/krishnaaigen-skill-evolution.skill.md`**.
+- **VS Code agent picker:** **`.github/agents/*.agent.md`** — sync from Copilot agents for AskAI specialists; see **`.cursor/agent-skill-bindings.md`** and **`.github/copilot/AGENT-SKILL-BINDINGS.md`** (keep both registries aligned).
 
 ## Specialist agents (parity)
 
 | Agent | Canonical skills (`.cursor/skill-library/`) |
 |-------|--------------------------------|
-| `KrishnaAiGen` | All core skills (see `.cursor/agents/KrishnaAiGen.md` ordered list) |
-| `agent-learning` | `krishnaaigen-skill-evolution.md` + targets being edited |
-| `jira-automation` | `jira-workflow.md` |
-| `git-automation` | `git-sync.md` |
-| `db-automation` | `db-restore.md` |
-| `bitbucket-automation` | `git-sync.md`, `bitbucket-unify-enterprise.md` |
-| `slack-automation` | `slack-integration.md` |
-| `dev-customization` | `dev-customization-expertise.md`, `dev-customization-workflow.md` |
-| `confluence-automation` | `confluence-workflow.md` |
+| `KrishnaAiGen` | Routed packs per `.cursor/agents/KrishnaAiGen.agent.md` (§B); optional full sweep of core `.skill.md` files |
+| `agent-learning` | `krishnaaigen-skill-evolution.skill.md` + targets being edited |
+| `jira-automation` | `jira-workflow.skill.md` |
+| `git-automation` | `git-sync.skill.md` |
+| `db-automation` | `db-restore.skill.md` |
+| `bitbucket-automation` | `git-sync.skill.md`, `bitbucket-unify-enterprise.skill.md` |
+| `slack-automation` | `slack-integration.skill.md` |
+| `dev-customization` | `dev-customization-expertise.skill.md`, `dev-customization-workflow.skill.md` |
+| `confluence-automation` | `confluence-workflow.skill.md` |
+| `daily-work-update` | See agent mandatory list (several `.skill.md` files) |
+| `sys-troubleshoot` | `vpn-smb-access.skill.md`, `network-profile-fix.skill.md` |
 
 ## Project rules
 
@@ -32,4 +34,4 @@
 
 ## Legacy
 
-The folder **`.github/copilot/skills/jira-automation/`** is **deprecated** in favor of **`.cursor/skill-library/jira-workflow.md`**.
+The folder **`.github/copilot/skills/jira-automation/`** is **deprecated** in favor of **`.cursor/skill-library/jira-workflow.skill.md`**.

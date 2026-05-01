@@ -4,18 +4,18 @@ Use this prompt to generate **Krishna's daily work digest** (yesterday / today /
 
 **Load first**
 
-1. `.cursor/skill-library/daily-work-update.md` — canonical procedure (window, JQL, Slack queries, Git queries, output format, posting rules)
-2. `.cursor/skill-library/slack-integration.md`
-3. `.cursor/skill-library/jira-workflow.md` (only §3 status semantics, §7 QA testing comment cross-links, §7.6 account-id table)
-4. `.cursor/skill-library/bitbucket-unify-enterprise.md`
-5. `.cursor/skill-library/git-sync.md`
-6. `.cursor/skill-library/krishnaaigen-ephemeral-output.md`
+1. `.cursor/skill-library/daily-work-update.skill.md` — canonical procedure (window, JQL, Slack queries, Git queries, output format, posting rules)
+2. `.cursor/skill-library/slack-integration.skill.md`
+3. `.cursor/skill-library/jira-workflow.skill.md` (only §3 status semantics, §7 QA testing comment cross-links, §7.6 account-id table)
+4. `.cursor/skill-library/bitbucket-unify-enterprise.skill.md`
+5. `.cursor/skill-library/git-sync.skill.md`
+6. `.cursor/skill-library/krishnaaigen-ephemeral-output.skill.md`
 
 **Behavior summary**
 
 - Compute window in `Asia/Kolkata` — previous calendar day **00:00:00 → 23:59:59 IST** (Monday → since last Friday).
 - Run Jira / Slack / Bitbucket+GitHub / Confluence sources in parallel; skip any missing source and record it in the *Sources skipped* footer.
-- Categorize per the table in `daily-work-update.md`. Hard rules:
+- Categorize per the table in `daily-work-update.skill.md`. Hard rules:
   - **§1.1 Yesterday** excludes Jiras currently in `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those move to **§4.1 Follow-ups**.
   - **§3.1 Pending** = `To Do` AND `assignee = me` only.
   - **§3.2 Pending** = mentions/DMs awaiting Krishna's reply.
@@ -34,4 +34,4 @@ Use this prompt to generate **Krishna's daily work digest** (yesterday / today /
 - Mask credentials as `***`. No customer PII / full ticket bodies / source code.
 - Never commit anything; scratch goes under `local/ephemeral/daily-work-update/`.
 
-**Agent files:** `.cursor/agents/daily-work-update.md`, `.github/copilot/agents/daily-work-update.agent.md`.
+**Agent files:** `.cursor/agents/daily-work-update.agent.md`, `.github/copilot/agents/daily-work-update.agent.md`, `.github/agents/daily-work-update.agent.md`.

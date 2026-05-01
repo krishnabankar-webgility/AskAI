@@ -41,7 +41,7 @@
         "UD Jira workflows: create Story/Bug/Task, subtasks, OE from SP, Done/RFT, QA comments, sprint helpers."
       ],
       "weaknesses": [
-        "Rule density in `jira-workflow.md` requires careful section navigation (§ references).",
+        "Rule density in `jira-workflow.skill.md` requires careful section navigation (§ references).",
         "MCP/Jira availability and permissions must be correct or actions fail mid-flow."
       ],
       "performance": "Dominated by Jira REST latency and number of follow-up queries for verification steps.",

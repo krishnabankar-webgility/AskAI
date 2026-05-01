@@ -280,7 +280,7 @@ Use when the user asks for a **HubSpot note**, **CS installation handoff**, or *
 **Agent output rules (mandatory):**
 
 1. Start from the Confluence template **structure** (same section titles and order). **Replace** all `[FILL …]` / `[INSERT …]` lines with content from the **active** Jira Customer Issue (and installer URL from release). Output **only** that filled note — no preamble, no “here is your note”, no Jira URLs unless the user asks.
-2. **Installer URL:** from release / build owner — **never invent** (`jira-workflow.md` §7.4). If unknown, keep the `[INSERT INSTALLER URL …]` line and ask **only** for that link.
+2. **Installer URL:** from release / build owner — **never invent** (`jira-workflow.skill.md` §7.4). If unknown, keep the `[INSERT INSTALLER URL …]` line and ask **only** for that link.
 3. **Do not** paste a previous customization’s Details, Limitations, or Note into a new ticket — always pull fresh from the **current** issue.
 4. **CC:** add @mentions only when specified by the user or issue; otherwise leave `CC:` empty or as given.
 
@@ -344,7 +344,7 @@ Let us know if any further assistance is needed!
 CC:
 ```
 
-**Jira coordination:** Customer Issue is often linked from the dev Story via **Relates** — for QA handoff wording see `jira-workflow.md` §7 and Confluence §8 (page `3021209607`).
+**Jira coordination:** Customer Issue is often linked from the dev Story via **Relates** — for QA handoff wording see `jira-workflow.skill.md` §7 and Confluence §8 (page `3021209607`).
 
 ### 8. Comment for QA Testing (RFT Jira comment template)
 
@@ -352,7 +352,7 @@ Use when the user asks for a **Comment for QA Testing**, **RFT**, or **Ready For
 
 **Source of truth (preferred):** `getConfluencePage` with `pageId` **`3021209607`** (tiny **`BwAUt`**). Canonical URL: [Comment for QA Testing](https://webgility.atlassian.net/wiki/spaces/~712020cb0bd6e5b43649f9a0f56211a8cc8799/pages/3021209607/Comment+for+QA+Testing).
 
-**Repo skill (must stay aligned):** `jira-workflow.md` **§7**, **§7.8** (minimal “mark UD-xxxx RFT” + branch pattern **UD-xxxx** + **krishna**), **§7.9** (when the node is unknown: **`CustomizationConstant.cs`** + usages → full `PREFIX_<ProfileID>` and, if `GetCustomizationNodeValue(…, ':')`, the **full WD line** `KEY:VALUE` e.g. `QBTXN_CUSTOMNUMBERING_14:ABC-1234`; **Impacted Area** = QB **single** vs **consolidation** + **RefNumber** + **QBD txn types** from code e.g. **Invoice / Sales Order / Sales Receipt**; **Test Cases** = full line, how to enable, steps, expected QBE outcome, short how-it-works), and **§3.7**. Default post target is the **Customer Issue**; **Bug-Fix** Stories with only a linked **Bug** → default **Bug** per §3.7 / §7.1. Draft in chat, ADF mentions, post after confirmation per §7.5 / §7.8.
+**Repo skill (must stay aligned):** `jira-workflow.skill.md` **§7**, **§7.8** (minimal “mark UD-xxxx RFT” + branch pattern **UD-xxxx** + **krishna**), **§7.9** (when the node is unknown: **`CustomizationConstant.cs`** + usages → full `PREFIX_<ProfileID>` and, if `GetCustomizationNodeValue(…, ':')`, the **full WD line** `KEY:VALUE` e.g. `QBTXN_CUSTOMNUMBERING_14:ABC-1234`; **Impacted Area** = QB **single** vs **consolidation** + **RefNumber** + **QBD txn types** from code e.g. **Invoice / Sales Order / Sales Receipt**; **Test Cases** = full line, how to enable, steps, expected QBE outcome, short how-it-works), and **§3.7**. Default post target is the **Customer Issue**; **Bug-Fix** Stories with only a linked **Bug** → default **Bug** per §3.7 / §7.1. Draft in chat, ADF mentions, post after confirmation per §7.5 / §7.8.
 
 **Exemplar in Jira:** [UD-31982?focusedCommentId=236780](https://webgility.atlassian.net/browse/UD-31982?focusedCommentId=236780).
 
@@ -387,7 +387,7 @@ Desktop customizations declare their **customization node** in source. For every
 4. **On the Confluence page**, set **Customization node:** to something like: **`AMZF_EF_SETTLEMENT_CUSTJOB` → `AMZF_EF_SETTLEMENT_CUSTJOB_<ProfileID>`** (adjust to match the literal — show the prefix pattern QA/dev use).
 5. If **no** matching comment/constant is found, **`grep`** / search the branch or `git diff` for `UD-xxxx` in that file or related changes; only if still absent, leave **Customization node:** blank and add a one-line **Notes** hint that no entry was found in `CustomizationConstant.cs` for this UD (do **not** guess names).
 
-This aligns with **`jira-workflow.md` §7.9** (Jira RFT) so Jira QA comments and Confluence Customization Notes stay consistent.
+This aligns with **`jira-workflow.skill.md` §7.9** (Jira RFT) so Jira QA comments and Confluence Customization Notes stay consistent.
 
 **Jira links in notes (mandatory for §9 work).** Base URL: `https://webgility.atlassian.net/browse/<KEY>`. For **every** Jira key **you put on the page** (Customer Issue, Story, CFC, Bug — **not** sub-tasks unless the user asked for sub-tasks), write the **full browse URL** and the **current status** from `getJiraIssue` (e.g. `https://webgility.atlassian.net/browse/UD-32242 — To Do`). One issue per line unless the user asks to compress several keys onto one line.
 

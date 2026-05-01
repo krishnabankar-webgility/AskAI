@@ -66,7 +66,7 @@ public sealed class AgentHelpBotService
 
         if (topAgents.Count == 0 && topSkills.Count == 0)
         {
-            sb.AppendLine("I did not find strong keyword matches. Try naming an agent (`jira-automation`), a skill file (`jira-workflow.md`), or a topic like **Bitbucket**, **Slack**, or **Confluence**.");
+            sb.AppendLine("I did not find strong keyword matches. Try naming an agent (`jira-automation`), a skill file (`jira-workflow.skill.md`), or a topic like **Bitbucket**, **Slack**, or **Confluence**.");
             sb.AppendLine();
             sb.AppendLine("### Browse");
             sb.AppendLine("- Open the **Agents** tab and filter by **Cursor / Copilot / VS Code**.");

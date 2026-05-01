@@ -121,7 +121,7 @@ For comparison, Cursor uses `.cursor/mcp.json` with the same structure. This pro
 
 2. **Add Bot Token Scopes** (OAuth & Permissions → Bot Token Scopes):
    - `channels:read`, `channels:history`, `chat:write`, `users:read`
-   - Add more scopes as needed (see `slack-integration.md` for full list)
+   - Add more scopes as needed (see `slack-integration.skill.md` for full list)
 
 3. **Install App to Workspace** and copy the **Bot User OAuth Token** (`xoxb-…`)
 

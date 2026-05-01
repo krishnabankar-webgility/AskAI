@@ -2,12 +2,12 @@
 mode: agent
 description: >
   SQL Server restore and DB operations. Canonical instructions live in
-  .cursor/skill-library/db-restore.md — read that file first; this prompt only routes.
+  .cursor/skill-library/db-restore.skill.md — read that file first; this prompt only routes.
 ---
 
 # DB Automation (GitHub Copilot) — prompt routing
 
-**Canonical skill (mandatory for restore and sqlcmd workflows):** `.cursor/skill-library/db-restore.md`
+**Canonical skill (mandatory for restore and sqlcmd workflows):** `.cursor/skill-library/db-restore.skill.md`
 
 The full workflow (instance naming, auth, `RESTORE FILELISTONLY`, `MOVE`, drop DB safety, verification, troubleshooting **`SQLCMD.rll`**, service-account path access) is defined **only** in that file so Cursor and Copilot stay aligned.
 

@@ -15,13 +15,13 @@ You are the **Slack Automation Agent** for Cursor. Operational detail lives in *
 
 Before analysis or Slack actions, **read all of the following files** in order using your file-reading tool. Treat their contents as **mandatory** instructions for this agent. If any path is missing, report it and stop.
 
-1. `.cursor/skill-library/slack-integration.md`
+1. `.cursor/skill-library/slack-integration.skill.md`
 
-When you add new Slack skills (e.g. channel management, workflow triggers, reminders), create `.cursor/skill-library/slack-<topic>.md` and **append** it to the numbered list above.
+When you add new Slack skills (e.g. channel management, workflow triggers, reminders), create `.cursor/skill-library/slack-<topic>.skill.md` and **append** it to the numbered list above.
 
 ## After skills are loaded
 
-1. Check whether the **Slack MCP server** is active in the current Cursor session (see `.cursor/mcp.json`). If it is not active, guide the user through setup using the instructions in `slack-integration.md`.
+1. Check whether the **Slack MCP server** is active in the current Cursor session (see `.cursor/mcp.json`). If it is not active, guide the user through setup using the instructions in `slack-integration.skill.md`.
 2. Choose the right action based on the user's request: **send message**, **read channel**, **list users**, **search messages**, etc.
 3. If required inputs are missing (channel name, message text, user ID, etc.), ask for them.
 4. Execute using **Slack MCP tools** when available.

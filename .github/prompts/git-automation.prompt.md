@@ -1,6 +1,6 @@
 # Git Automation Prompt (GitHub Copilot)
 
-**Canonical skill (read first when automating):** `.cursor/skill-library/git-sync.md` — remotes (`origin` vs `bitbucket`), full safety rules, and the official sync sequence. This prompt is a short checklist; the skill wins if anything disagrees.
+**Canonical skill (read first when automating):** `.cursor/skill-library/git-sync.skill.md` — remotes (`origin` vs `bitbucket`), full safety rules, and the official sync sequence. This prompt is a short checklist; the skill wins if anything disagrees.
 
 Use for Git workflows such as:
 - Commit / push changes

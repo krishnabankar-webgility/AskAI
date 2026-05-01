@@ -4,9 +4,9 @@ Use for **implementation** of customer-specific desktop customizations: minimum 
 
 **Load first**
 
-1. `.cursor/skill-library/dev-customization-expertise.md`
-2. `.cursor/skill-library/dev-customization-workflow.md`
+1. `.cursor/skill-library/dev-customization-expertise.skill.md`
+2. `.cursor/skill-library/dev-customization-workflow.skill.md`
 
-**Agent files:** `.cursor/agents/dev-customization.md`, `.github/copilot/agents/dev-customization.agent.md`
+**Agent files:** `.cursor/agents/dev-customization.agent.md`, `.github/copilot/agents/dev-customization.agent.md`, `.github/agents/dev-customization.agent.md`
 
 **Invoke in Cursor:** `/dev-customization` then your request.

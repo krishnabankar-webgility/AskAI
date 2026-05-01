@@ -3,7 +3,7 @@ name: agent-learning
 description: >
   Updates agent prompts and skill-library docs when the user gives corrections,
   feedback, or when sessions reveal gaps. Keeps Cursor, Copilot, and VS Code
-  agent definitions in sync per krishnaaigen-skill-evolution.md.
+  agent definitions in sync per krishnaaigen-skill-evolution.skill.md.
 model: inherit
 ---
 
@@ -19,7 +19,7 @@ You apply **feedback and corrections** to **repository instructions** so future 
 
 ## Mandatory first step (every invocation)
 
-1. `.cursor/skill-library/krishnaaigen-skill-evolution.md`
+1. `.cursor/skill-library/krishnaaigen-skill-evolution.skill.md`
 2. `.cursor/agent-skill-bindings.md`
 
 Then read the **specific skill or agent file** the user names (or infer from context).
@@ -29,7 +29,7 @@ Then read the **specific skill or agent file** the user names (or infer from con
 When the user invokes **any** specialist agent (`jira-automation`, `git-automation`, etc.) or asks for work **through** an agent, and that work **completes in the thread**, treat **`agent-learning`** as the **default follow-up** unless the user opts out:
 
 1. **Capture** what changed vs what skills said (one-line delta).
-2. If the delta should be persisted (correction, new field id, template fix), **edit** the canonical skill under `.cursor/skill-library/` and sync **`.github/copilot/agents/`** per `krishnaaigen-skill-evolution.md`.
+2. If the delta should be persisted (correction, new field id, template fix), **edit** the canonical skill under `.cursor/skill-library/` and sync **`.github/copilot/agents/`** per `krishnaaigen-skill-evolution.skill.md`.
 3. Summarize what was updated in-repo (file paths only).
 
 This keeps agents and skills aligned with real Jira/UI behavior without waiting for a separate `/agent-learning` invocation.

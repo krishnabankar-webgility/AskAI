@@ -31,8 +31,8 @@ Read **both** files **in order** using your file-reading tool. Treat them as **m
 
 Paths are relative to the **AskAI** project root (this repo’s `AskAI/` folder):
 
-1. `AskAI/.cursor/skill-library/dev-customization-expertise.md`
-2. `AskAI/.cursor/skill-library/dev-customization-workflow.md`
+1. `AskAI/.cursor/skill-library/dev-customization-expertise.skill.md`
+2. `AskAI/.cursor/skill-library/dev-customization-workflow.skill.md`
 
 If the workspace root is `Agentic_Unify-Enterprise` and `AskAI` is nested, resolve `AskAI/.cursor/skill-library/...` under that folder.
 

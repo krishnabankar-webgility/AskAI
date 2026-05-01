@@ -33,7 +33,7 @@ In **Cursor Dashboard → Cloud Agents → Secrets**, define at least:
 | Bitbucket username | `BITBUCKET_USERNAME` | Account **slug** (e.g. `krishnabankar`), not an email address. |
 | Bitbucket token | `BITBUCKET_TOKEN` | **Bitbucket HTTP access token** with repo **Read** (and **Write** to push). |
 
-**Agent skill pack:** `.cursor/skill-library/bitbucket-unify-enterprise.md` (clone, authenticated remote URL, push, PR workflow vs MCP). **Subagent:** type **`/bitbucket-automation`** in Agent mode to load Git safety rules + that skill.
+**Agent skill pack:** `.cursor/skill-library/bitbucket-unify-enterprise.skill.md` (clone, authenticated remote URL, push, PR workflow vs MCP). **Subagent:** type **`/bitbucket-automation`** in Agent mode to load Git safety rules + that skill.
 
 ### Cloud Agent secrets (Slack)
 
@@ -44,7 +44,7 @@ In **Cursor Dashboard → Cloud Agents → Secrets** (for cloud) or as system en
 | Slack bot token | `SLACK_BOT_TOKEN` | OAuth Bot Token (`xoxb-…`) from your Slack App → OAuth & Permissions |
 | Slack team ID | `SLACK_TEAM_ID` | Workspace (team) ID (e.g. `T01ABCDE123`) from workspace settings |
 
-**Agent skill pack:** `.cursor/skill-library/slack-integration.md`. **Subagent:** type **`/slack-automation`** in Agent mode.
+**Agent skill pack:** `.cursor/skill-library/slack-integration.skill.md`. **Subagent:** type **`/slack-automation`** in Agent mode.
 
 To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>` after setting an authenticated remote URL (see skill file). If you prefer not to store a username secret, Bitbucket accepts the `x-token-auth` scheme with **only** `BITBUCKET_TOKEN` (below). When `BITBUCKET_USERNAME` is present, use:
 
@@ -92,7 +92,7 @@ git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket
 
 ### Master agent: KrishnaAiGen (`KrishnaAiGen`)
 
-- **Full context:** The **`KrishnaAiGen`** agent loads the skill registry plus **all** canonical skills under `.cursor/skill-library/` (see `.cursor/agents/KrishnaAiGen.md`). Use when work spans multiple domains or you want one agent to see Jira + Git + DB + Bitbucket + Slack rules together.
+- **Orchestration:** The **`KrishnaAiGen`** agent reads the registry plus meta skills, **infers which specialists apply**, then loads **only** those `.cursor/agents/<name>.agent.md` files and their `.skill.md` packs (see `.cursor/agents/KrishnaAiGen.agent.md` §B). Use it when you do **not** want to attach every subagent manually.
 - **VS Code / GitHub Copilot:** Same role in `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`.
 - **Autonomous VS Code variant:** `.github/agents/KrishnaAIGen-autonomous.agent.md` (heavy tooling — not the same as the KrishnaAiGen master).
 
@@ -100,32 +100,33 @@ git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket
 
 To **scope** the model to a single workflow (smaller context), invoke by name:
 
-- **`/KrishnaAiGen`** — master (same as choosing full orchestration).
+- **`/KrishnaAiGen`** — master router + orchestration (see master agent).
 - **`/agent-learning`** — update skills/agents from corrections or feedback (meta; edits repo docs).
-- **`/db-automation`** — SQL Server (`db-restore.md`; extend with more `db-*.md` in the agent file).
-- **`/git-automation`** — commit, push, merge, sync `develop` with `master` (`git-sync.md`).
-- **`/bitbucket-automation`** — `unify-enterprise` on Bitbucket (`bitbucket-unify-enterprise.md` + `git-sync.md`).
-- **`/jira-automation`** — Jira UD workflows (`jira-workflow.md`).
-- **`/slack-automation`** — Slack MCP (`slack-integration.md`).
-- **`/dev-customization`** — Customer-driven customizations: reuse architecture, profile + customization node gating, logging (`dev-customization-expertise.md`, `dev-customization-workflow.md`).
-- **`/confluence-automation`** — Confluence page management, search, content creation, and evolving knowledge base of workspace documentation (`confluence-workflow.md`).
-- **`/daily-work-update`** — Generates Krishna's morning digest (Yesterday / Today / Pending) by reading Jira (UD), Slack mentions and threads, Bitbucket `unify-enterprise` commits and PRs, GitHub PRs/commits, and HubSpot updates that come in via the Atish-Sinha Customer-Issue comment bridge. Posts to Slack `#my-daily-work-update` (or DMs Krishna). Read-only on Jira/Bitbucket/GitHub/HubSpot, write-only on the single Slack channel. Canonical skill: `daily-work-update.md`. Schedule: weekdays 09:00 IST via Cursor scheduled cloud agent / GitHub Actions cron / local cron — opt-in (skill documents the cron lines, not committed).
+- **`/db-automation`** — SQL Server (`db-restore.skill.md`; extend with more `db-*.skill.md` in the agent file).
+- **`/git-automation`** — commit, push, merge, sync `develop` with `master` (`git-sync.skill.md`).
+- **`/bitbucket-automation`** — `unify-enterprise` on Bitbucket (`bitbucket-unify-enterprise.skill.md` + `git-sync.skill.md`).
+- **`/jira-automation`** — Jira UD workflows (`jira-workflow.skill.md`).
+- **`/slack-automation`** — Slack MCP (`slack-integration.skill.md`).
+- **`/dev-customization`** — Customer-driven customizations: reuse architecture, profile + customization node gating, logging (`dev-customization-expertise.skill.md`, `dev-customization-workflow.skill.md`).
+- **`/confluence-automation`** — Confluence page management, search, content creation, and evolving knowledge base of workspace documentation (`confluence-workflow.skill.md`).
+- **`/daily-work-update`** — Generates Krishna's morning digest (Yesterday / Today / Pending) by reading Jira (UD), Slack mentions and threads, Bitbucket `unify-enterprise` commits and PRs, GitHub PRs/commits, and HubSpot updates that come in via the Atish-Sinha Customer-Issue comment bridge. Posts to Slack `#my-daily-work-update` (or DMs Krishna). Read-only on Jira/Bitbucket/GitHub/HubSpot, write-only on the single Slack channel. Canonical skill: `daily-work-update.skill.md`. Schedule: weekdays 09:00 IST via Cursor scheduled cloud agent / GitHub Actions cron / local cron — opt-in (skill documents the cron lines, not committed).
+- **`/sys-troubleshoot`** — Windows / VPN / SMB / network diagnostics and fixes (`vpn-smb-access.skill.md`, `network-profile-fix.skill.md`).
 
 You can also ask in plain language, for example: *Delegate to the jira-automation subagent for UD-31982.*
 
 ### Ephemeral output (not committed)
 
-One-time reports, formatted dumps, or scratch files that must **not** be pushed: write under **`local/ephemeral/`** (gitignored) or `logs/`. See `.cursor/skill-library/krishnaaigen-ephemeral-output.md`. Session scratch can also use `.cursor/agent-session-notes.log`.
+One-time reports, formatted dumps, or scratch files that must **not** be pushed: write under **`local/ephemeral/`** (gitignored) or `logs/`. See `.cursor/skill-library/krishnaaigen-ephemeral-output.skill.md`. Session scratch can also use `.cursor/agent-session-notes.log`.
 
 ### Skill evolution (corrections → repo learning)
 
-When a session fixes wrong or incomplete instructions, follow **`.cursor/skill-library/krishnaaigen-skill-evolution.md`**. Use **`/agent-learning`** when the task is specifically to persist that fix into skills and keep **Cursor + Copilot + VS Code** agent files in sync. After specialist agent work completes in a thread, **`agent-learning`** is the **default close-out** (see `.cursor/agents/agent-learning.md`) unless you opt out.
+When a session fixes wrong or incomplete instructions, follow **`.cursor/skill-library/krishnaaigen-skill-evolution.skill.md`**. Use **`/agent-learning`** when the task is specifically to persist that fix into skills and keep **Cursor + Copilot + VS Code** agent files in sync. After specialist agent work completes in a thread, **`agent-learning`** is the **default close-out** (see `.cursor/agents/agent-learning.agent.md`) unless you opt out.
 
 ### Cursor subagents (`.cursor/agents/`)
 
 **Workspace root:** Cursor loads **project** subagents only from **`<workspace_folder>/.cursor/agents/`** (see [Subagents — file locations](https://cursor.com/docs/subagents)). In this monorepo, open **`Agentic_Unify-Enterprise`** as the workspace folder and keep **`.cursor/` at that repository root** — not under `AskAI/.cursor/` only — otherwise custom subagents do not appear for `@` / Task delegation after nesting AskAI inside a larger repo.
 
-The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, model picker, ∞) is **not** populated from `.cursor/agents/*.md`. That control is for **chat mode and model**, not a catalog of custom subagents. Cursor documents custom subagents as tools the main Agent delegates to; the canonical way to see what exists is the `.cursor/agents/` folder on disk.
+The **dropdown next to the Agent chat** (modes like Ask / Agent / Plan / Debug, model picker, ∞) is **not** populated from `.cursor/agents/*.agent.md`. That control is for **chat mode and model**, not a catalog of custom subagents. Cursor documents custom subagents as tools the main Agent delegates to; the canonical way to see what exists is the `.cursor/agents/` folder on disk.
 
 See [Subagents](https://cursor.com/docs/subagents) in the Cursor docs.
 
@@ -133,8 +134,8 @@ See [Subagents](https://cursor.com/docs/subagents) in the Cursor docs.
 
 | Location | Role |
 |----------|------|
-| `.cursor/agents/*.md` | Cursor subagent definitions |
-| `.cursor/skill-library/*.md` | **Canonical** skills (single source of truth) |
+| `.cursor/agents/*.agent.md` | Cursor subagent definitions |
+| `.cursor/skill-library/*.skill.md` | **Canonical** skills (single source of truth) |
 | `.github/copilot/agents/*.agent.md` | Copilot agents (reference `.cursor/skill-library/` paths) |
 | `.github/agents/*.agent.md` | VS Code / GitHub agent picker (e.g. `KrishnaAiGen.agent.md`) |
 | `.github/copilot/AGENT-SKILL-BINDINGS.md` | Copilot registry (keep aligned with `.cursor/agent-skill-bindings.md`) |
@@ -145,10 +146,10 @@ Adding or changing an agent: update **both** bindings files and **both** agent f
 
 Cursor does **not** support a built-in “this subagent may only load skills A, B, C” manifest in YAML. To keep **one agent = a specific set of small markdown files** (and avoid one giant agent prompt):
 
-1. Put **atomic instructions** in `.cursor/skill-library/*.md` (plain markdown, not `SKILL.md` trees—those are for [globally discoverable skills](https://cursor.com/docs/skills)).
-2. Keep each **subagent** in `.cursor/agents/<name>.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
+1. Put **atomic instructions** in `.cursor/skill-library/*.skill.md` (plain markdown, not `SKILL.md` trees—those are for [globally discoverable skills](https://cursor.com/docs/skills)).
+2. Keep each **subagent** in `.cursor/agents/<name>.agent.md` **thin**: `name`, `description`, `model`, plus a **mandatory first step** listing the exact skill paths to read in order.
 3. Maintain the human map in **`.cursor/agent-skill-bindings.md`** when you add agents or change assignments.
 
-**Example:** `/jira-automation` loads **`jira-workflow.md`** only (consolidated Jira rules). **`/db-automation`** loads `db-restore.md` today; add paths to `db-automation.md` when you introduce more `db-*.md` skills. **`/git-automation`** loads `git-sync.md`; add more `git-*.md` paths to `git-automation.md` as needed. **`/bitbucket-automation`** loads `git-sync.md` then `bitbucket-unify-enterprise.md`. **`/slack-automation`** loads `slack-integration.md`; add more `slack-*.md` paths to `slack-automation.md` as needed. **`/dev-customization`** loads `dev-customization-expertise.md` then `dev-customization-workflow.md`. **`/confluence-automation`** loads **`confluence-workflow.md`**. **`/daily-work-update`** loads **`daily-work-update.md`** plus the read-only slices it needs from `slack-integration.md`, `jira-workflow.md` (§3, §7, §7.6), `bitbucket-unify-enterprise.md`, `git-sync.md`, and `krishnaaigen-ephemeral-output.md`. **`/KrishnaAiGen`** loads the registry plus **all** canonical skills when full cross-domain context is needed (see `.cursor/agents/KrishnaAiGen.md` — same ordered list in `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`).
+**Example:** `/jira-automation` loads **`jira-workflow.skill.md`** only (consolidated Jira rules). **`/db-automation`** loads `db-restore.skill.md` today; add paths to `db-automation.agent.md` when you introduce more `db-*.skill.md` skills. **`/git-automation`** loads `git-sync.skill.md`; add more `git-*.skill.md` paths to `git-automation.agent.md` as needed. **`/bitbucket-automation`** loads `git-sync.skill.md` then `bitbucket-unify-enterprise.skill.md`. **`/slack-automation`** loads `slack-integration.skill.md`; add more `slack-*.skill.md` paths to `slack-automation.agent.md` as needed. **`/dev-customization`** loads `dev-customization-expertise.skill.md` then `dev-customization-workflow.skill.md`. **`/confluence-automation`** loads **`confluence-workflow.skill.md`**. **`/daily-work-update`** loads **`daily-work-update.skill.md`** plus the read-only slices it needs from `slack-integration.skill.md`, `jira-workflow.skill.md` (§3, §7, §7.6), `bitbucket-unify-enterprise.skill.md`, `git-sync.skill.md`, and `krishnaaigen-ephemeral-output.skill.md`. **`/sys-troubleshoot`** loads **`vpn-smb-access.skill.md`** and **`network-profile-fix.skill.md`** as symptoms dictate. **`/KrishnaAiGen`** loads the registry + meta skills, **routes** to specialists, and pulls **only** the `.agent.md` + `.skill.md` packs needed for the task (optional full sweep — see `.cursor/agents/KrishnaAiGen.agent.md` §C — same behavior in `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`).
 
 The model loads those files at runtime via its read tool, so context stays **scoped to what that agent declares**, not every skill in the repo.

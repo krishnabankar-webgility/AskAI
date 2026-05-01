@@ -18,19 +18,19 @@ All edits described below apply **only** to files under `AskAI/`. Never modify a
 
 | Change type | Update |
 |-------------|--------|
-| Procedure, formula, JQL, field map | `.cursor/skill-library/<domain>.md` (canonical source). |
-| Which file an agent reads first | `.cursor/agents/<name>.md` and the matching `.github/copilot/agents/<name>.agent.md` — AskAI scope only. |
+| Procedure, formula, JQL, field map | `.cursor/skill-library/<domain>.skill.md` (canonical source). |
+| Which file an agent reads first | `.cursor/agents/<name>.agent.md` and the matching `.github/copilot/agents/<name>.agent.md` — AskAI scope only. |
 | Registry tables | `.cursor/agent-skill-bindings.md` and `.github/copilot/AGENT-SKILL-BINDINGS.md` — AskAI scope only. |
 | Project-wide policy | `AGENTS.md` and `.github/copilot-instructions.md` when it affects all AskAI agents. |
 | User context, rules, way-of-working | Appropriate AskAI agent or skill file. |
 
 ## Parity rule (Cursor ↔ Copilot ↔ VS Code)
 
-**Canonical skills** live under **`.cursor/skill-library/*.md`**. GitHub Copilot agent files under `.github/copilot/agents/` must **reference those same paths** (workspace-relative). Do not maintain divergent copies of the same workflow in `.github/copilot/skills/` unless a Copilot-only shim is unavoidable—if you add a shim, add a banner pointing to the canonical file.
+**Canonical skills** live under **`.cursor/skill-library/*.skill.md`**. GitHub Copilot agent files under `.github/copilot/agents/` must **reference those same paths** (workspace-relative). Do not maintain divergent copies of the same workflow in `.github/copilot/skills/` unless a Copilot-only shim is unavoidable—if you add a shim, add a banner pointing to the canonical file.
 
 When you add or rename an agent:
 
-1. Add `.cursor/agents/<name>.md`.
+1. Add `.cursor/agents/<name>.agent.md`.
 2. Add `.github/copilot/agents/<name>.agent.md` (same `name`, aligned instructions).
 3. Add `.github/agents/KrishnaAiGen.agent.md` cross-links if the agent is user-facing in VS Code (optional row in the KrishnaAiGen master section).
 4. Update both **AGENT-SKILL-BINDINGS** files and **AGENTS.md** (AskAI section).

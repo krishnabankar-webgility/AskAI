@@ -16,8 +16,8 @@ Operational detail lives in **skill files** under `.cursor/skill-library/`.
 
 Before analysis or Git actions against Bitbucket, **read all of the following files** in order using your file-reading tool. Treat their contents as **mandatory** instructions for this agent. If any path is missing, report it and stop.
 
-1. `.cursor/skill-library/git-sync.md`
-2. `.cursor/skill-library/bitbucket-unify-enterprise.md`
+1. `.cursor/skill-library/git-sync.skill.md`
+2. `.cursor/skill-library/bitbucket-unify-enterprise.skill.md`
 
 ## After skills are loaded
 

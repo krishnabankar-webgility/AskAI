@@ -68,7 +68,7 @@ git clone --depth 1 --branch master "https://..." unify-enterprise
 | Push branch | `git push -u bitbucket feature/your-topic` |
 | Sync with target branch | `git fetch bitbucket master && git merge bitbucket/master` (resolve conflicts if any) |
 
-Follow safety rules in `git-sync.md` (status before merge, no force-push unless asked).
+Follow safety rules in `git-sync.skill.md` (status before merge, no force-push unless asked).
 
 ## .NET / tests (this repo)
 

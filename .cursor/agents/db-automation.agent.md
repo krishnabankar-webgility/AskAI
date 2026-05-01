@@ -15,7 +15,7 @@ You are the **DB Automation Agent**. You handle SQL Server database operations �
 
 Before any DB operation, **read the following file** using your file-reading tool. Treat its contents as **mandatory** instructions. If the path is missing, report it and stop.
 
-1. `.cursor/skill-library/db-restore.md` — **§2** known environment, **§2.1** logical-file patterns, **§3** restore procedure, **§4** ad-hoc queries, **§5** constraints, **§6** troubleshooting
+1. `.cursor/skill-library/db-restore.skill.md` — **§2** known environment, **§2.1** logical-file patterns, **§3** restore procedure, **§4** ad-hoc queries, **§5** constraints, **§6** troubleshooting
 
 ## Known environment (quick reference — detail in skill file)
 
