@@ -3,7 +3,8 @@ name: daily-work-update
 description: >
   Generates Krishna's daily work digest (Yesterday / Today / Pending / Follow-ups) by
   reading Jira (UD), Slack mentions and threads (incl. §A8 HubSpot bridge comments),
-  Bitbucket unify-enterprise commits and PRs only (no GitHub activity in digest).
+  Bitbucket unify-enterprise commits and PRs only (no GitHub activity in digest),
+  and Google Workspace (Calendar + Gmail + Drive via google-workspace MCP, §E).
   Posts the digest to Slack #my-daily-update (id C0B0CBW8G03; Cursor bot
   already invited) at 09:00 IST or renders it in Cursor chat. Read-only on all source
   systems; write-only on the single Slack delivery channel.
@@ -28,12 +29,13 @@ Before any analysis or writes, **read all of the following files in order** usin
 ## After skills are loaded
 
 1. **Compute window** in `Asia/Kolkata`. Default = previous calendar day **00:00:00 → 23:59:59 IST**. Monday = since last Friday 00:00:00 IST.
-2. **Detect MCPs** present in `.cursor/mcp.json` (`jira`, `slack`) and credentials. Detect Bitbucket secrets for git clone. **Do not** query GitHub/`gh` for this digest. For each missing source, **continue** but record it for the *Sources skipped* footer.
-3. **Run sources A–D in parallel** as defined in `daily-work-update.skill.md`:
+2. **Detect MCPs** present in `.cursor/mcp.json` (`jira`, `slack`, `google-workspace`) and credentials. Detect Bitbucket secrets for git clone. **Do not** query GitHub/`gh` for this digest. For each missing source, **continue** but record it for the *Sources skipped* footer.
+3. **Run sources A–E in parallel** as defined in `daily-work-update.skill.md`:
    - **A. Jira** via `searchJiraIssuesUsingJql` MCP if present, **or** `POST /rest/api/3/search/jql` (the legacy `GET /rest/api/3/search` was removed by Atlassian) + `getJiraIssue?expand=changelog,renderedFields`. Basic auth = `${JIRA_EMAIL}:${JIRA_API_TOKEN}`.
    - **B. Slack** via `slack_search_public_and_private`, `slack_search_channels`, `slack_search_users`, `slack_read_thread`. Krishna's user id is locked in: `U08FTS2SRAP`. There is **no** `slack_get_users` / `slack_list_channels` / `slack_post_message` in this MCP.
    - **C. Bitbucket only** via **git on a local clone** of `unify-enterprise` — no GitHub commits or PRs in the posted digest. Bitbucket REST returns `401` for the HTTP access token; use git (+ Bitbucket MCP for PRs if available). `git clone --depth N` only fetches the default branch; `ls-remote | grep krishna` and `git fetch --depth 50 origin <branch>` for branches in the window. Match Krishna's commits with `--regexp-ignore-case --author="krishna"` (author `krishna.bankar`).
    - **D. Confluence** only if its skill + secrets are wired in — **new pages created in the window only** (see skill §D).
+   - **E. Google Workspace** via `google-workspace` MCP (`uvx workspace-mcp`, read-only) — **§E1** Calendar events in window (meetings under 💬), **§E2** Gmail meeting recaps / Gemini summaries, **§E3** Drive meeting-note docs created in window. Secrets: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`. If MCP not connected or OAuth incomplete, skip source E and note in *Sources skipped*.
 4. **Categorize** every item per the table in `daily-work-update.skill.md` ("Categorization rules"). **Hard rules:**
    - **Yesterday §1.1 excludes** any Jira whose end-of-window status is `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those move to **§4.1 Follow-ups**.
    - **Pending §3.1 = `To Do` AND `assignee = me`** only. Items not assigned to Krishna, or in RFT / In Test, are **not** Krishna's pending — they live in §4.
@@ -50,7 +52,7 @@ Before any analysis or writes, **read all of the following files in order** usin
 
 ## Hard safety rules (always enforced)
 
-- **Read-only** on Jira, Bitbucket, Confluence (when used). Never transition issues, post Jira comments, push branches, or open PRs from this agent. Cross-link, don't act.
+- **Read-only** on Jira, Bitbucket, Confluence, Google Workspace (when used). Never transition issues, post Jira comments, push branches, open PRs, or send emails from this agent. Cross-link, don't act.
 - **Write-only** target on Slack: `#my-daily-update` (or DM Krishna if channel missing). Never post the digest to any other channel.
 - Mask any token, password, or URL containing credentials as `***` before sending it anywhere — including chat output.
 - Never include customer PII, full HubSpot ticket bodies, full QA testing comments, source code, or build artifacts. Snippets ≤ 280 chars + a link only.
