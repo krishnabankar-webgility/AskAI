@@ -1,5 +1,5 @@
 {
-  "_comment": "Merge into .cursor/mcp.json. Never commit real OAuth secrets. Install uv (https://docs.astral.sh/uv/) for google-workspace. Same GOOGLE_* names in Cursor Cloud Secrets + Windows User env.",
+  "_comment": "Merge into .cursor/mcp.json. Never commit real OAuth secrets. Install uv (https://docs.astral.sh/uv/) for google-workspace. Same GOOGLE_* names in Cursor Cloud Secrets + Windows User env. Do not set OAUTHLIB_INSECURE_TRANSPORT here — see docs/mcp-integration-roadmap.md (OAuth security).",
   "mcpServers": {
     "jira": {
       "command": "npx",
@@ -37,8 +37,7 @@
         "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
         "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
         "USER_GOOGLE_EMAIL": "${USER_GOOGLE_EMAIL}",
-        "WORKSPACE_MCP_READ_ONLY": "true",
-        "OAUTHLIB_INSECURE_TRANSPORT": "1"
+        "WORKSPACE_MCP_READ_ONLY": "true"
       }
     }
   }

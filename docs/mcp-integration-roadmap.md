@@ -98,6 +98,15 @@ Committed template: **`docs/mcp-servers.example.json`** (`google-workspace` serv
 - **Args:** `workspace-mcp`, `--transport`, `stdio`, `--tool-tier`, `core`, `--read-only`, `--tools`, `gmail`, `drive`, `calendar`
 - **Env:** `${GOOGLE_OAUTH_CLIENT_ID}`, `${GOOGLE_OAUTH_CLIENT_SECRET}`, plus optional `USER_GOOGLE_EMAIL`, `WORKSPACE_MCP_READ_ONLY`
 
+### OAuth and `OAUTHLIB_INSECURE_TRANSPORT` (security)
+
+Do **not** put `OAUTHLIB_INSECURE_TRANSPORT=1` in committed `mcp.json`, in **`docs/mcp-servers.example.json`**, or in **Cursor Cloud Agent Secrets**. That flag tells oauthlib to allow non-HTTPS OAuth flows and is [documented](https://oauthlib.readthedocs.io/en/latest/oauth2/security.html) as unsafe for production.
+
+| Environment | Guidance |
+|-------------|----------|
+| **Cursor Cloud Agents** | Omit the flag. Use HTTPS OAuth as designed; persist tokens on the agent or prefer **service account + domain-wide delegation** (`GOOGLE_SERVICE_ACCOUNT_KEY_JSON` + `USER_GOOGLE_EMAIL`) for scheduled runs without interactive localhost callbacks. |
+| **Local Cursor (desktop)** | If OAuth redirect is `http://localhost:8000/...` and the stack refuses HTTP loopback without the flag, set `OAUTHLIB_INSECURE_TRANSPORT=1` only in your **Windows User** environment (or a gitignored launcher), **not** in repo JSON — so cloud schedules never inherit it. |
+
 First connection (local **or** cloud): the server starts a **local OAuth callback** on your machine or agent VM — complete the browser consent once; tokens are cached under the user profile ([`GOOGLE_MCP_CREDENTIALS_DIR` / defaults](https://github.com/taylorwilsdon/google_workspace_mcp)). For **repeat Cloud runs**, cached credentials must live on persistent agent storage; if Cursor wipes disks each run, use **[service account + domain-wide delegation](https://github.com/taylorwilsdon/google_workspace_mcp)** (`GOOGLE_SERVICE_ACCOUNT_KEY_JSON` + `USER_GOOGLE_EMAIL`) — requires Workspace **admin**.
 
 ### Meet / Gemini notes — queries to try after connect
