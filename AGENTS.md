@@ -17,6 +17,9 @@ export DOTNET_ROOT=$HOME/.dotnet
 export PATH=$DOTNET_ROOT:$PATH
 ```
 
+### Python tooling (`uv` / `uvx`)
+`uv` (Astral) is installed via `pip install uv`. Both `uv` and `uvx` are on PATH. This is required for the Google Workspace MCP server (`uvx workspace-mcp`) used by the `daily-work-update` agent.
+
 ### Git Remotes
 
 | Alias | URL | Purpose |
