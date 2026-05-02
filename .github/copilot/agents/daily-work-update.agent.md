@@ -34,7 +34,7 @@ Read, in order:
    - Slack: this MCP exposes `slack_search_public_and_private`, `slack_search_channels`, `slack_search_users`, `slack_send_message` (parameter `message`, not `text`), `slack_read_thread`. There is **no** `slack_list_channels` / `slack_get_users` / `slack_post_message`. Krishna's user id is `U08FTS2SRAP`.
    - Bitbucket: use `git` only (REST returns 401 for HTTP access tokens). `git clone --depth N` only fetches default branch; fetch Krishna's branches by name. Match commits with `--regexp-ignore-case --author="krishna"` (commit author = `krishna.bankar`). Bitbucket MCP optional for PR lists.
    - Confluence: **new pages in window only** when wired (skill §D).
-   - Google Workspace: via `google-workspace` MCP (`uvx workspace-mcp`, read-only). §E1 Calendar events → 💬, §E2 Gmail meeting recaps / Gemini summaries → 💬, §E3 Drive meeting-note docs → 💬. Secrets: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`. Skip if MCP not connected or OAuth incomplete.
+   - Google Workspace: via `google-workspace` MCP (`uvx workspace-mcp`, read-only). §E1 Calendar (`get_events` yesterday → 💬; §E1b today → 📅), §E2 Gmail meeting recaps / Gemini summaries → 💬, §E3 Drive meeting-note docs → 💬. Secrets: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`. Skip if MCP not connected or OAuth incomplete.
 3. Categorize per the table in `daily-work-update.skill.md`. **Hard rules:**
    - **§1.1 Yesterday** excludes any Jira whose end-of-window status is `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those move to **§4.1 Follow-ups**.
    - **§3.1 Pending** = `To Do` AND `assignee = me` only (RFT / In Test / not-assigned-to-me are **not** Krishna's pending).

@@ -1,4 +1,4 @@
-# Skill: Daily Work Update (Krishna)
+﻿# Skill: Daily Work Update (Krishna)
 
 ## Purpose
 
@@ -8,8 +8,8 @@ Produce a single **daily work update** for Krishna Bankar.
 
 The agent **internally computes** four buckets so counts, names, blockers, and TL;DR stay accurate:
 
-1. **Yesterday — my work** — Jira where Krishna acted (status change, comment, worklog), excluding items whose **end-of-window** status is `Ready For Testing` / `In Test` (those go to Follow-ups). Plus meetings, updates, git activity, QA/installer lines, and **📌 HubSpot / Customer Issue bridge** comments (§A8).
-2. **Today / In progress** — `In Progress` ∧ assignee = Krishna; threads Krishna is driving.
+1. **Yesterday — my work** — Jira where Krishna acted (status change, comment, worklog), excluding items whose **end-of-window** status is `Ready For Testing` / `In Test` (those go to Follow-ups). Plus **Google Calendar meetings** (§E), updates, git activity, QA/installer lines, and **📌 HubSpot / Customer Issue bridge** comments (§A8).
+2. **Today / In progress** — `In Progress` ∧ assignee = Krishna; threads Krishna is driving; **today's scheduled Google Calendar meetings** (§E).
 3. **Pending** — `To Do` ∧ assignee = Krishna; Slack/DM/customer-issue threads **waiting on Krishna’s reply**.
 4. **Follow-ups** — RFT / In Test / etc.; threads where **someone else** is the next actor.
 
@@ -35,7 +35,7 @@ Send **one** Slack `mrkdwn` message. **Always use this order** — section **1 �
 |-------|---------|
 | ✅ | Done (yesterday — Krishna closed/moved to Done or equivalent per §1.1 rules) |
 | 🔄 | In Progress Started (yesterday — advanced but not landing in RFT/In Test per §1.1) |
-| 💬 | Meetings / Updates |
+| 💬 | Meetings / Updates (includes 📅 Google Calendar meetings from §E1) |
 | 🔀 | Commits *(N)* |
 | 📬 | PRs / Installers / QA Comments |
 | 📌 | Customer Issue / **HubSpot bridge** — Atish Sinha comments containing **`%HubSpot Note%`** only when Krishna is in-scope per §A8 |
@@ -98,7 +98,7 @@ All timestamps in the rendered digest use **IST** (`Asia/Kolkata`, `+05:30`). In
 
 ## Data sources & queries
 
-For every section below, run all queries in **parallel where possible** and **fail soft** — if one source errors, log the error in the footer and continue.
+For every section below (A–E), run all queries in **parallel where possible** and **fail soft** — if one source errors, log the error in the footer and continue.
 
 ### A. Jira — issues Krishna touched
 
@@ -266,23 +266,45 @@ Optional: if Krishna personally **created** a new page in that window, one bulle
 
 ### E. Google Workspace — Calendar + Gmail + Drive (meetings, recaps, notes)
 
-Uses the **`google-workspace`** MCP server (`uvx workspace-mcp`, read-only) configured in `.cursor/mcp.json`. Requires **`GOOGLE_OAUTH_CLIENT_ID`**, **`GOOGLE_OAUTH_CLIENT_SECRET`**, and optionally **`USER_GOOGLE_EMAIL`** (`krishna.bankar@webgility.com`). OAuth consent must have been completed at least once for the environment (tokens cached). See `docs/mcp-integration-roadmap.md` for setup.
+Uses the **`google-workspace`** MCP server (`uvx workspace-mcp`, read-only) configured in `.cursor/mcp.json`. Requires **`GOOGLE_OAUTH_CLIENT_ID`**, **`GOOGLE_OAUTH_CLIENT_SECRET`**, and optionally **`USER_GOOGLE_EMAIL`** (`krishna.bankar@webgility.com`). OAuth consent must have been completed at least once for the environment (tokens cached). For the browser OAuth client (Web application type), register redirect URI **`http://localhost:8000/oauth2callback`** in Google Cloud Console. See `docs/mcp-integration-roadmap.md` for setup.
 
 If the `google-workspace` MCP is **not connected** or OAuth is **not completed**, skip source E entirely, note `Google Workspace (Calendar/Gmail/Drive) — MCP not connected` in *Sources skipped*, and continue with sources A–D.
 
-**E1. Google Calendar — meetings in the window**
+**E1. Google Calendar — yesterday's meetings**
 
-Query yesterday's calendar events (same IST window as §Time window). Use the MCP's calendar tools (e.g. `list_calendar_events`, `search_calendar_events`, or equivalent — tool names vary by `workspace-mcp` version; discover via MCP tool listing at runtime).
+Use the MCP **`get_events`** tool:
 
-- **Filter:** events where Krishna is an attendee or organizer, within the Yesterday IST window (convert to RFC 3339 / UTC for the API: `timeMin`, `timeMax`).
-- **Capture:** event title, start/end time (IST), attendees count, meeting link (Google Meet URL if present).
-- **Categorize:** each event → **§1.2 Meetings & discussions** → rendered under **Yesterday 💬**.
-- **Today's meetings (optional):** also query today's calendar for upcoming meetings → mention under **Today** or **TL;DR** if relevant (e.g. "3 meetings scheduled today").
-- **Format:** one bullet per meeting: `• <HH:MM–HH:MM IST> — <title> (N attendees)`.
+```
+get_events(
+  user_google_email: "krishna.bankar@webgility.com",
+  calendar_id: "primary",
+  time_min: "<yesterday 00:00:00 IST in RFC3339>",
+  time_max: "<today 00:00:00 IST in RFC3339>",
+  detailed: true
+)
+```
+
+- **Include** if Krishna's response status is `accepted`, `tentative`, or `needsAction`. **Exclude** events Krishna explicitly `declined`.
+- **Capture:** title, time (`HH:MM – HH:MM IST`), Google Meet link, attendee count, organizer.
+- **Categorize:** → **§1.2** → **Yesterday 💬**. List Calendar bullets **first** in 💬. Format: `• 📅 <title> — <HH:MM–HH:MM> · <N attendees> · Meet: <link>`
+
+**E1b. Google Calendar — today's meetings (§2.3)**
+
+```
+get_events(
+  user_google_email: "krishna.bankar@webgility.com",
+  calendar_id: "primary",
+  time_min: "<today 00:00:00 IST in RFC3339>",
+  time_max: "<tomorrow 00:00:00 IST in RFC3339>",
+  detailed: true
+)
+```
+
+Same inclusion/exclusion as E1. **Categorize:** → **§2.3** → **`📅 *Meetings today (N):*`**. Omit subsection if zero meetings.
 
 **E2. Gmail — meeting recaps, Gemini summaries, actionable emails**
 
-Search Krishna's Gmail for meeting-related emails in the window. Use Gmail search tools (e.g. `search_gmail`, `list_emails`, or equivalent).
+Search Krishna's Gmail for meeting-related emails in the window. Use Gmail search tools (e.g. `search_gmail_messages`, `get_gmail_message_content`, or equivalent exposed by the MCP).
 
 ```
 subject:(recap OR summary OR "meeting notes" OR "action items" OR "Gemini") newer_than:2d
@@ -322,11 +344,12 @@ For every raw item from sources A–E:
 | Bucket | Rule |
 |--------|------|
 | **§1.1 Yesterday — Jira (my work)** | Status changed in window by Krishna **OR** comment authored by Krishna in window **OR** worklog by Krishna. **Excludes** issues whose end-of-window status is `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those go to **§4 Follow-ups**. Sub-buckets: `Done` / `In Progress (advanced)` / `Commented / Worklogged`. **Every line:** `` `UD-XXXX` `` + title + verb-clause describing the action. |
-| **§1.2 Meetings & discussions** | Slack message in window with keywords `meeting`, `huddle`, `call`, `discussion`, `notes`, `MOM`, `discord`, `gmeet`, `zoom`; OR **Google Calendar** events from **§E1** (when `google-workspace` MCP is connected); OR Gmail meeting recaps / Gemini summaries from **§E2**; OR **Confluence:** Krishna **created** a new page in the window (§D). **Do not** duplicate §A8 HubSpot bridge lines here — those stay under **📌** only. |
+| **§1.2 Meetings & discussions** | **Google Calendar** events from **§E1** (listed first in 💬); Gmail meeting recaps / Gemini summaries from **§E2**; Slack messages in window with keywords `meeting`, `huddle`, `call`, `discussion`, `notes`, `MOM`, `discord`, `gmeet`, `zoom`; OR **Confluence:** Krishna **created** a new page in the window (§D). **Do not** duplicate §A8 HubSpot bridge lines here — those stay under **📌** only. |
 | **§1.3 Status updates / fixes / resolutions shared by me** | Krishna-authored Slack message OR Krishna-authored Jira comment containing `update`, `fix`, `resolution`, `RFT`, `posted`, `released`, `deployed`, `installer`, `build`, `share`. |
 | **§1.4 Git activity (mine)** | Source C, plus any §7 QA-testing comment posted in the window. |
 | **§2.1 Today — In Progress (mine)** | Jira `In Progress` AND `assignee = me`. |
 | **§2.2 Today — Open threads I'm driving** | Slack threads where Krishna posted last but the topic is unresolved (no ✅ / `done` / `resolved` reaction) **and** the next action is Krishna's (e.g. agreed to investigate, share update, deliver build). |
+| **§2.3 Today — Upcoming meetings** | **Google Calendar events** from **§E1b** (today's meetings where Krishna is invited and has not declined). Listed under `📅 *Meetings today (N):*`. **Omit if no meetings.** |
 | **§3.1 Pending — Jira queue (mine)** | `To Do` AND `assignee = me`, priority-sorted. |
 | **§3.2 Pending — Discussions on me** | Slack mentions / DMs / customer-issue comments where someone has asked Krishna a question / for a decision / for help / for a build / for an ETA, and Krishna has not yet replied. |
 | **§4.1 Follow-ups — Jira (QA / others)** | Status `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test`, **regardless of assignee**. Line names **who** is driving (current assignee = QA), the QA reviewer (if known from the §7 comment CC), days since RFT, and whether QA has commented since handoff. |
@@ -337,7 +360,9 @@ For every raw item from sources A–E:
 | **Posted — Yesterday 🔀 Commits** | §1.4 commits; header line includes count: *🔀 Commits (N):*. |
 | **Posted — Yesterday 📬 PRs / Installers / QA Comments** | PRs, installer lines, Krishna QA-testing comments from §1.4 / §7 handoffs. |
 | **Posted — Yesterday 📌 HubSpot / Customer Issue** | **§A8** bridge comments only (mandatory comment-level scan). |
-| **Posted — Today 🔄 In Progress** | §2.1 + §2.2 under *Today (<MMM DD>)*. **Omit entire Today block if empty.** |
+| **Posted — Today 🔄 In Progress** | §2.1 + §2.2 under *Today (<MMM DD>)*. |
+| **Posted — Today 📅 Meetings today** | §2.3 calendar events. Format: `📅 *Meetings today (N):*` + one bullet per meeting. |
+| **Posted — Today (omit rule)** | **Omit entire Today block** only if **all** of §2.1 + §2.2 + §2.3 are empty. |
 | **Posted — Pending** | 🟣 *Action on me:* show `N Jira` if `N>0`; append `· N discussions` **only if** discussions `N>0`. 👀 *Follow-ups:* show `N Jira (RFT/In Test)` if `N>0`; append `· N threads` **only if** `N>0`. **If there is nothing to show for both lines (all zero), omit the entire Pending section.** |
 | **Posted — 🚨 Blockers** | Same derivation as former §5.2 (RFT idle ≥24h, stalled threads, explicit waits). **Include only when ≥1 blocker.** Use **fenced code block** table `Jira | Description | Idle Since | Status`. Then *Next action:* line. |
 | **Posted — TL;DR** | 2–4 prose sentences; summarize only dimensions that **actually appeared** above. Match Krishna’s reference (“Yesterday — … Today — …”). |
@@ -372,7 +397,9 @@ The agent produces **one** `slack_send_message` in **`mrkdwn`**. Follow **§Purp
 🔄 *In Progress Started:*
 • ...
 
-💬 *Meetings / Updates:*
+💬 *Meetings / Updates (4):*
+• 📅 WD Team - Standup — 10:30–10:45 · 15 attendees · Meet: <link>
+• 📅 Customization and Feature discussion — 11:00–11:30 · 5 attendees · Meet: <link>
 • ...
 
 🔀 *Commits (1):*
@@ -390,6 +417,11 @@ The agent produces **one** `slack_send_message` in **`mrkdwn`**. Follow **§Purp
 
 🔄 *In Progress (1):*
 • `<UD-32367>` — <title>
+
+📅 *Meetings today (3):*
+• WD Team - Standup — 10:30–10:45 · Meet: <link>
+• WD Customization/FR Standup — 12:00–12:15 · Meet: <link>
+• Customization evening sync up — 17:00–17:30 · Meet: <link>
 
 ────────────────────────
 
@@ -437,7 +469,7 @@ If `focusedCommentId` is unknown but issue key + rough date are known, still emi
 
 | Surface | Access status | Details |
 |---------|---------------|---------|
-| **Google Calendar** | **Configured** | Via `google-workspace` MCP (`uvx workspace-mcp`, read-only). Secrets `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL` set in Cloud Agent Secrets. Requires one-time OAuth consent per environment. Used in **§E1**. |
+| **Google Calendar** | **Configured** | Via `google-workspace` MCP (`uvx workspace-mcp`, read-only). Tool **`get_events`** for **§E1** (yesterday) and **§E1b** (today). Web app OAuth: redirect **`http://localhost:8000/oauth2callback`**. Secrets `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL` in Cloud Agent Secrets / local env. |
 | **Gmail / Google Mail** | **Configured** | Same `google-workspace` MCP. Gmail search for meeting recaps, Gemini summaries. Used in **§E2**. |
 | **Google Drive** | **Configured** | Same `google-workspace` MCP. Drive search for meeting-note documents. Used in **§E3**. |
 | **Gemini meeting notes / NotebookLM** | **Via Gmail/Drive** | No dedicated MCP — Gemini meeting summaries arrive as **Gmail** (automated from Google Meet) or **Drive docs**; ingest via §E2/§E3. |
@@ -522,14 +554,16 @@ SOURCES: Run A (Jira), B (Slack), C (Bitbucket unify-enterprise — no GitHub), 
 
 POSTED SLACK MESSAGE — single layout in order:
 1) Title + separator
-2) Yesterday (<date>) with emoji subsections (✅ 🔄 💬 🔀 📬 📌) — **omit any subsection with 0 items**; 💬 includes Google Calendar meetings from §E1 and Gmail recaps from §E2
-3) Separator + Today (<date>) 🔄 In Progress — **omit entire Today if empty**; may mention today's calendar meetings from §E1
+2) Yesterday (<date>) with emoji subsections (✅ 🔄 💬 🔀 📬 📌) — **omit any subsection with 0 items**; 💬 lists Google Calendar first (**§E1**), then Gmail recaps (**§E2**), then Slack-sourced items
+3) Separator + Today (<date>) 🔄 In Progress + 📅 Meetings today (**§E1b**) — **omit entire Today if all empty**
 4) Separator + Pending (🟣 / 👀) — **omit whole Pending if all counts 0**
 5) Separator + 🚨 Blockers — **only if ≥1 blocker**; table in fenced code block + Next action
 6) Separator + TL;DR prose (2–4 sentences)
-7) Footer (Sources used / skipped — include Google Workspace ✅/❌)
+7) Footer (Sources used / skipped — include Google Workspace ✅ or ⚠️)
 
 MANDATORY: Run §A8 Customer Issue **comment** fetch. Under Yesterday 📌 include **only** comments where **Atish Sinha** authored **`%HubSpot Note%`** (fallback: plain `HubSpot Note` if `%` stripped) **and** Krishna is in-scope per §A8 step 4 (mention / CC / prior Krishna comment / assignee / reporter). Omit GitHub entirely — Bitbucket `unify-enterprise` only for 🔀/📬.
+
+GOOGLE CALENDAR: Use `get_events` from `google-workspace` MCP for yesterday (**§E1**) and today (**§E1b**). Exclude declined events. Yesterday meetings go under 💬; today meetings under 📅.
 
 Post ONE slack_send_message to #my-daily-update (C0B0CBW8G03). DAILY_UPDATE_AUTOSEND=1 — skip confirm.
 
@@ -602,8 +636,11 @@ The first live runs surfaced these gotchas. Future invocations **must skip re-di
 | `gh` CLI | **Not used** for the daily digest — product + repo signal is **Bitbucket `unify-enterprise` only**. Other agents may still use `gh` with `--author=krishnabankar-webgility` (Cloud Agent runs as bot `cursor`, so `--author=@me` is wrong there). |
 | Single-message rule | The Slack message **must** ship as ONE `slack_send_message` call — never split into "v2 / addendum" follow-ups. |
 | Posted-content rule | The Slack message follows **§Purpose → Posted message — layout** (Yesterday → Today → Pending → Blockers → TL;DR). **Omit subsections with count 0.** Run **§A8** every time; 📌 lines **only** for Atish + **`%HubSpot Note%`** + Krishna in-scope per §A8. |
-| Google Workspace MCP | **`google-workspace`** server in `.cursor/mcp.json` via `uvx workspace-mcp` (read-only). Secrets: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`. Requires one-time OAuth consent. Source **§E** (Calendar §E1, Gmail §E2, Drive §E3). Fail soft if not connected. |
+| Google Workspace MCP | **`google-workspace`** server in `.cursor/mcp.json` via `uvx workspace-mcp` (read-only). Secrets: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`. Requires one-time OAuth consent. Source **§E** (Calendar **§E1** / **§E1b**, Gmail §E2, Drive §E3). Fail soft if not connected. |
 | `USER_GOOGLE_EMAIL` | **`krishna.bankar@webgility.com`** — default account for Google Workspace MCP. |
+| Google Calendar `get_events` | Tool **`get_events`**. Parameters: `user_google_email` = `krishna.bankar@webgility.com`, `calendar_id` = `primary`, `time_min`/`time_max` in RFC3339 with `+05:30`, `detailed` = `true`. |
+| Google Calendar OAuth | OAuth client type **Web application** (not Desktop). Redirect URI **`http://localhost:8000/oauth2callback`** registered in GCP. Tokens cached after first browser consent. |
+| Google Calendar routing | **§E1** yesterday → 💬; **§E1b** today → 📅. Exclude **declined**; include `accepted`, `tentative`, `needsAction`. |
 
 When **anything** new becomes a "I had to figure this out" moment during a run, append a row to this table (or update an existing one) **before** ending the session. The Cursor agent at `.cursor/agents/daily-work-update.agent.md` is also responsible for this and points back here.
 
