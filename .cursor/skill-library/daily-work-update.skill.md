@@ -77,6 +77,7 @@ If `JIRA_EMAIL` (set in `.cursor/mcp.json`) is present, prefer Jira's own `curre
 | Slack MCP | `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` | See `slack-integration.skill.md`. Bot is already in `#my-daily-update`. |
 | Jira MCP **or** REST | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL` | See `.cursor/mcp.json` `jira` server. REST works without the MCP. |
 | Bitbucket | `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN` | See `bitbucket-unify-enterprise.skill.md`. **Only** source for repo commits/PRs in the digest (`unify-enterprise`). **REST returns 401 — use git (+ BB MCP if configured).** |
+| Google Workspace MCP | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL` | **`google-workspace`** server in `.cursor/mcp.json` via `uvx workspace-mcp` — Calendar + Gmail + Drive (read-only). Requires **one-time OAuth consent** (browser flow) per environment; cached credentials persist. See `docs/mcp-integration-roadmap.md`. If MCP is not connected or OAuth incomplete, **skip** and note in *Sources skipped*. |
 | Confluence (optional) | `CONFLUENCE_*` per `confluence-workflow.skill.md` | **New pages only** in the Yesterday window (§D). Do **not** report edits to existing pages. |
 
 If any required secret is missing, **skip that source**, mention the gap in a small "Sources skipped" footer of the digest, and **do not block** the rest of the report.
@@ -263,16 +264,65 @@ space = "<SPACE_KEY>" AND type = page AND created >= "2026-04-28" AND created <=
 
 Optional: if Krishna personally **created** a new page in that window, one bullet under **Yesterday 💬** is enough; still apply the **created-in-window** rule only.
 
+### E. Google Workspace — Calendar + Gmail + Drive (meetings, recaps, notes)
+
+Uses the **`google-workspace`** MCP server (`uvx workspace-mcp`, read-only) configured in `.cursor/mcp.json`. Requires **`GOOGLE_OAUTH_CLIENT_ID`**, **`GOOGLE_OAUTH_CLIENT_SECRET`**, and optionally **`USER_GOOGLE_EMAIL`** (`krishna.bankar@webgility.com`). OAuth consent must have been completed at least once for the environment (tokens cached). See `docs/mcp-integration-roadmap.md` for setup.
+
+If the `google-workspace` MCP is **not connected** or OAuth is **not completed**, skip source E entirely, note `Google Workspace (Calendar/Gmail/Drive) — MCP not connected` in *Sources skipped*, and continue with sources A–D.
+
+**E1. Google Calendar — meetings in the window**
+
+Query yesterday's calendar events (same IST window as §Time window). Use the MCP's calendar tools (e.g. `list_calendar_events`, `search_calendar_events`, or equivalent — tool names vary by `workspace-mcp` version; discover via MCP tool listing at runtime).
+
+- **Filter:** events where Krishna is an attendee or organizer, within the Yesterday IST window (convert to RFC 3339 / UTC for the API: `timeMin`, `timeMax`).
+- **Capture:** event title, start/end time (IST), attendees count, meeting link (Google Meet URL if present).
+- **Categorize:** each event → **§1.2 Meetings & discussions** → rendered under **Yesterday 💬**.
+- **Today's meetings (optional):** also query today's calendar for upcoming meetings → mention under **Today** or **TL;DR** if relevant (e.g. "3 meetings scheduled today").
+- **Format:** one bullet per meeting: `• <HH:MM–HH:MM IST> — <title> (N attendees)`.
+
+**E2. Gmail — meeting recaps, Gemini summaries, actionable emails**
+
+Search Krishna's Gmail for meeting-related emails in the window. Use Gmail search tools (e.g. `search_gmail`, `list_emails`, or equivalent).
+
+```
+subject:(recap OR summary OR "meeting notes" OR "action items" OR "Gemini") newer_than:2d
+```
+
+Also search for Google Meet automated summaries:
+
+```
+from:(messages-noreply@google.com OR meet) newer_than:2d
+```
+
+- **Filter:** emails received in the Yesterday IST window.
+- **Capture:** subject, sender, snippet (≤120 chars), date.
+- **Categorize:** meeting recap emails → **§1.2 Meetings & discussions** under **💬** (deduplicate with Calendar events by matching title/time). Actionable emails where Krishna is asked for a reply → **§3.2 Pending discussions**.
+- **Do not** include full email bodies — snippet only. No PII or customer data from email content.
+
+**E3. Google Drive — new meeting-note documents (optional)**
+
+If Drive tools are available, search for documents created in the window with meeting-related titles:
+
+```
+title contains "Meet" OR title contains "Notes" OR title contains "Recap" modifiedTime > "YYYY-MM-DDT00:00:00+05:30"
+```
+
+- **Filter:** only documents **created** (not just edited) in the Yesterday IST window.
+- **Capture:** document title, created date, link.
+- **Categorize:** → **§1.2 Meetings & discussions** under **💬**. Deduplicate with Calendar events and Gmail recaps.
+
+**Fail-soft:** if any E sub-source errors (e.g. OAuth expired, tool not found), log the error in the footer and continue. Google Workspace is an **enhancement** — the digest must still post even if all E queries fail.
+
 ---
 
 ## Categorization rules (where each item lands)
 
-For every raw item from sources A–D:
+For every raw item from sources A–E:
 
 | Bucket | Rule |
 |--------|------|
 | **§1.1 Yesterday — Jira (my work)** | Status changed in window by Krishna **OR** comment authored by Krishna in window **OR** worklog by Krishna. **Excludes** issues whose end-of-window status is `RFT` / `Ready For Testing` / `Ready For Verification` / `In Test` — those go to **§4 Follow-ups**. Sub-buckets: `Done` / `In Progress (advanced)` / `Commented / Worklogged`. **Every line:** `` `UD-XXXX` `` + title + verb-clause describing the action. |
-| **§1.2 Meetings & discussions** | Slack message in window with keywords `meeting`, `huddle`, `call`, `discussion`, `notes`, `MOM`, `discord`, `gmeet`, `zoom`; OR any Google Calendar entry (if a calendar source is wired in later); OR **Confluence:** Krishna **created** a new page in the window (§D). **Do not** duplicate §A8 HubSpot bridge lines here — those stay under **📌** only. |
+| **§1.2 Meetings & discussions** | Slack message in window with keywords `meeting`, `huddle`, `call`, `discussion`, `notes`, `MOM`, `discord`, `gmeet`, `zoom`; OR **Google Calendar** events from **§E1** (when `google-workspace` MCP is connected); OR Gmail meeting recaps / Gemini summaries from **§E2**; OR **Confluence:** Krishna **created** a new page in the window (§D). **Do not** duplicate §A8 HubSpot bridge lines here — those stay under **📌** only. |
 | **§1.3 Status updates / fixes / resolutions shared by me** | Krishna-authored Slack message OR Krishna-authored Jira comment containing `update`, `fix`, `resolution`, `RFT`, `posted`, `released`, `deployed`, `installer`, `build`, `share`. |
 | **§1.4 Git activity (mine)** | Source C, plus any §7 QA-testing comment posted in the window. |
 | **§2.1 Today — In Progress (mine)** | Jira `In Progress` AND `assignee = me`. |
@@ -370,7 +420,7 @@ After TL;DR, append footer:
 
 ```
 ────────────────────────
-_Sources used: Jira ✅ · Slack ✅ · Bitbucket ✅ · HubSpot (via Customer Issue comments / §A8) ✅ · Confluence (optional; new pages only) ✅_
+_Sources used: Jira ✅ · Slack ✅ · Bitbucket ✅ · Google Workspace (Calendar/Gmail/Drive) ✅ · HubSpot (via Customer Issue comments / §A8) ✅ · Confluence (optional; new pages only) ✅_
 _Sources skipped: …_
 _Generated by `daily-work-update` · `.cursor/skill-library/daily-work-update.skill.md`_
 ```
@@ -383,19 +433,19 @@ If `focusedCommentId` is unknown but issue key + rough date are known, still emi
 
 ---
 
-## Access boundaries (what this agent does **not** see by default)
+## Access boundaries
 
-Unless you wire integrations yourself, **Cursor / this repo skill has no automatic access** to:
-
-| Surface | Default access | How to enable (high level) |
-|---------|----------------|----------------------------|
-| **Google Calendar** | None | Google Calendar API + OAuth **or** an MCP server that authenticates to Google Workspace; store refresh token in **Cursor Cloud Agent Secrets** or local env; extend this skill with a “Calendar source” query block. |
-| **Gmail / Google Mail** | None | Gmail API + OAuth + restricted scopes; or MCP (e.g. community “Google” MCP) with least privilege; secrets in Cursor. |
-| **Google Drive** | None | Drive API + OAuth; share specific folders to a service account **or** user OAuth; MCP optional. |
-| **Gemini meeting notes / NotebookLM** | None | No standard MCP — export notes to **Drive** / **Docs** / **email** and ingest via Gmail/Drive integration, **or** paste into Slack for Slack search to pick up. |
+| Surface | Access status | Details |
+|---------|---------------|---------|
+| **Google Calendar** | **Configured** | Via `google-workspace` MCP (`uvx workspace-mcp`, read-only). Secrets `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL` set in Cloud Agent Secrets. Requires one-time OAuth consent per environment. Used in **§E1**. |
+| **Gmail / Google Mail** | **Configured** | Same `google-workspace` MCP. Gmail search for meeting recaps, Gemini summaries. Used in **§E2**. |
+| **Google Drive** | **Configured** | Same `google-workspace` MCP. Drive search for meeting-note documents. Used in **§E3**. |
+| **Gemini meeting notes / NotebookLM** | **Via Gmail/Drive** | No dedicated MCP — Gemini meeting summaries arrive as **Gmail** (automated from Google Meet) or **Drive docs**; ingest via §E2/§E3. |
 | **Microsoft 365** | None | Graph API app registration + secrets; MCP if available. |
 
-**This chat agent** only reaches what **you configure**: Jira / Slack / Bitbucket (+ optional Confluence) per §Required secrets and **`docs/mcp-integration-roadmap.md`**, plus whatever MCP servers appear in your IDE `.cursor/mcp.json`. There is no magic Cursor plugin that grants Calendar/Drive without OAuth/API setup.
+**Note on OAuth consent:** The `google-workspace` MCP requires a one-time browser-based OAuth consent flow per environment. For **local Cursor**, this happens automatically (browser popup). For **Cloud Agent** scheduled runs, either: (a) complete OAuth once in a manual Cloud Agent session so tokens are cached, or (b) use **service account + domain-wide delegation** (`GOOGLE_SERVICE_ACCOUNT_KEY_JSON` + `USER_GOOGLE_EMAIL`) — requires Workspace admin. If OAuth is not completed, source E fails soft and the digest still posts with A–D.
+
+**This chat agent** reaches: Jira / Slack / Bitbucket / Google Workspace (Calendar + Gmail + Drive) + optional Confluence per §Required secrets and **`docs/mcp-integration-roadmap.md`**, plus whatever MCP servers appear in `.cursor/mcp.json`.
 
 ---
 
@@ -454,6 +504,8 @@ Krishna runs this from **Cursor Dashboard → Cloud Agents → New Schedule** (o
 | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL` | Jira REST/MCP |
 | `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` | Slack MCP (write to `#my-daily-update`) |
 | `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN` | `unify-enterprise` clone & `git log` |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Google Workspace MCP (Calendar + Gmail + Drive, §E) |
+| `USER_GOOGLE_EMAIL` | Default Google account for `workspace-mcp` (optional but recommended) |
 | `DAILY_UPDATE_AUTOSEND=1` | Skip the chat confirm and post straight to Slack |
 
 **4. Prompt:**
@@ -466,14 +518,16 @@ Follow .cursor/skill-library/daily-work-update.skill.md exactly:
 
 INTERNAL (derive counts & blockers): §1 Yesterday / §2 Today / §3 Pending / §4 Follow-ups — same rules as before.
 
+SOURCES: Run A (Jira), B (Slack), C (Bitbucket unify-enterprise — no GitHub), D (Confluence if wired), E (Google Workspace — Calendar + Gmail + Drive via google-workspace MCP, §E1–E3) in parallel. If google-workspace MCP is not connected or OAuth incomplete, skip source E and note in Sources skipped.
+
 POSTED SLACK MESSAGE — single layout in order:
 1) Title + separator
-2) Yesterday (<date>) with emoji subsections (✅ 🔄 💬 🔀 📬 📌) — **omit any subsection with 0 items**
-3) Separator + Today (<date>) 🔄 In Progress — **omit entire Today if empty**
+2) Yesterday (<date>) with emoji subsections (✅ 🔄 💬 🔀 📬 📌) — **omit any subsection with 0 items**; 💬 includes Google Calendar meetings from §E1 and Gmail recaps from §E2
+3) Separator + Today (<date>) 🔄 In Progress — **omit entire Today if empty**; may mention today's calendar meetings from §E1
 4) Separator + Pending (🟣 / 👀) — **omit whole Pending if all counts 0**
 5) Separator + 🚨 Blockers — **only if ≥1 blocker**; table in fenced code block + Next action
 6) Separator + TL;DR prose (2–4 sentences)
-7) Footer (Sources used / skipped)
+7) Footer (Sources used / skipped — include Google Workspace ✅/❌)
 
 MANDATORY: Run §A8 Customer Issue **comment** fetch. Under Yesterday 📌 include **only** comments where **Atish Sinha** authored **`%HubSpot Note%`** (fallback: plain `HubSpot Note` if `%` stripped) **and** Krishna is in-scope per §A8 step 4 (mention / CC / prior Krishna comment / assignee / reporter). Omit GitHub entirely — Bitbucket `unify-enterprise` only for 🔀/📬.
 
@@ -487,7 +541,7 @@ If sources fail, still post heartbeat per skill §Failure / footer.
 After saving, click **Run now once** in the Cursor Dashboard. Expected behavior:
 
 - Cloud Agent boots, reads `.cursor/skill-library/daily-work-update.skill.md`.
-- Runs the Jira / Slack / Bitbucket (+ optional Confluence new-pages) queries described above (see *Data sources & queries*). **No** GitHub `gh` queries for this digest.
+- Runs the Jira / Slack / Bitbucket / Google Workspace (+ optional Confluence new-pages) queries described above (see *Data sources & queries* §A–§E). **No** GitHub `gh` queries for this digest. If `google-workspace` MCP is not connected (OAuth incomplete), skips source E and notes it in footer.
 - Posts a single message to `#my-daily-update` (channel id `C0B0CBW8G03`).
 - Records nothing in `.cursor/`, `src/`, or any tracked path. Scratch goes under `local/ephemeral/daily-work-update/<YYYY-MM-DD>/` (gitignored).
 
@@ -500,7 +554,7 @@ If you ever need to trigger ad-hoc, just type **`/daily-work-update`** in any Cu
 When Krishna runs `/daily-work-update` directly in chat, the agent must:
 
 1. Detect "now" in IST and compute the window (`yesterday 00:00 → 23:59 IST`).
-2. Run sources A–D in parallel.
+2. Run sources A–E in parallel (skip any whose MCP/secret is missing).
 3. Render the digest in chat **first**.
 4. Ask one confirm: *"Post to `#my-daily-update`? (yes / no / DM only)"*.
 5. On `yes` → post via `slack_send_message` to channel `C0B0CBW8G03`. On `DM only` → DM Krishna (`U08FTS2SRAP`). On `no` → leave it in chat. (When invoked by the **scheduler**, skip the confirm and post directly — the scheduler injects an env var `DAILY_UPDATE_AUTOSEND=1` to mark autonomy.)
@@ -512,6 +566,7 @@ When Krishna runs `/daily-work-update` directly in chat, the agent must:
 - **Slack MCP missing** → render in chat; print one-liner `Slack MCP not connected — see slack-integration.skill.md`.
 - **Jira MCP / REST failing** → skip Jira sections, render placeholders, footer note.
 - **Bitbucket auth failing** → skip §1.4 commit lines, list `git fetch` error in footer.
+- **Google Workspace MCP not connected / OAuth incomplete** → skip source E (Calendar / Gmail / Drive), note `Google Workspace — MCP not connected or OAuth incomplete` in *Sources skipped*. The digest still posts with A–D.
 - **No items in any source** → still post a minimal heartbeat: title + separator + *TL;DR* one sentence (“Nothing recorded in sources for yesterday’s window — check Sources skipped.”) + footer. **Do not** fill fake Yesterday emoji sections.
 - **Partial errors** are listed in the *Sources skipped* footer (see template).
 
@@ -521,7 +576,7 @@ When Krishna runs `/daily-work-update` directly in chat, the agent must:
 
 - Never include raw HubSpot ticket bodies, customer PII, account numbers, or build artifacts.
 - Mask all secrets / URLs containing tokens as `***`.
-- Do **not** create / modify Jira issues, post Jira comments, transition issues, push code, or send Slack messages to other channels — this agent is **read-only** for Jira / Bitbucket / Confluence and **write-only** for the single Slack channel `#my-daily-update` (or DM Krishna).
+- Do **not** create / modify Jira issues, post Jira comments, transition issues, push code, send emails, or send Slack messages to other channels — this agent is **read-only** for Jira / Bitbucket / Confluence / Google Workspace and **write-only** for the single Slack channel `#my-daily-update` (or DM Krishna).
 - For any "RFT" or §7 QA-testing follow-up the agent finds, just **link** to it under §4 — let `/jira-automation` actually file the comment.
 
 ---
@@ -547,6 +602,8 @@ The first live runs surfaced these gotchas. Future invocations **must skip re-di
 | `gh` CLI | **Not used** for the daily digest — product + repo signal is **Bitbucket `unify-enterprise` only**. Other agents may still use `gh` with `--author=krishnabankar-webgility` (Cloud Agent runs as bot `cursor`, so `--author=@me` is wrong there). |
 | Single-message rule | The Slack message **must** ship as ONE `slack_send_message` call — never split into "v2 / addendum" follow-ups. |
 | Posted-content rule | The Slack message follows **§Purpose → Posted message — layout** (Yesterday → Today → Pending → Blockers → TL;DR). **Omit subsections with count 0.** Run **§A8** every time; 📌 lines **only** for Atish + **`%HubSpot Note%`** + Krishna in-scope per §A8. |
+| Google Workspace MCP | **`google-workspace`** server in `.cursor/mcp.json` via `uvx workspace-mcp` (read-only). Secrets: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`. Requires one-time OAuth consent. Source **§E** (Calendar §E1, Gmail §E2, Drive §E3). Fail soft if not connected. |
+| `USER_GOOGLE_EMAIL` | **`krishna.bankar@webgility.com`** — default account for Google Workspace MCP. |
 
 When **anything** new becomes a "I had to figure this out" moment during a run, append a row to this table (or update an existing one) **before** ending the session. The Cursor agent at `.cursor/agents/daily-work-update.agent.md` is also responsible for this and points back here.
 
@@ -554,10 +611,12 @@ When **anything** new becomes a "I had to figure this out" moment during a run, 
 
 ## Future extensions (not built yet)
 
-- **Google Calendar / Gmail / HubSpot MCP** — setup checklist and secret names: **`docs/mcp-integration-roadmap.md`**; example merge base: **`docs/mcp-servers.example.json`**.
-- **Google Calendar** — meeting list for yesterday + today (requires OAuth + MCP); see roadmap.
-- **HubSpot direct API** — complement §A8 once HubSpot read token + MCP exist.
-- **Gemini / Meet notes** — ingest via Drive/Gmail/Slack per roadmap (no dedicated Gemini MCP required).
+- **HubSpot direct API** — complement §A8 once HubSpot read token + Private App exist. Deferred per `docs/mcp-integration-roadmap.md`.
 - **Weekly digest** — same agent, different window (`since = -7d`), posted Monday 09:00 IST.
 
 When any of these is wired in, append the source/query to this file and the categorization table.
+
+### Recently activated (formerly future)
+
+- **Google Calendar / Gmail / Drive** — `google-workspace` MCP configured in `.cursor/mcp.json` (secrets: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`). Now source **§E** in data queries. Requires one-time OAuth consent. See `docs/mcp-integration-roadmap.md`.
+- **Gemini / Meet notes** — ingested via Gmail (§E2) and Drive (§E3); no dedicated MCP needed.
