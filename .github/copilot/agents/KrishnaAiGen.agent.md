@@ -125,6 +125,12 @@ Do **not** force this sweep for narrow single-domain asks — prefer section B.
 | `/daily-work-update` | Morning digest → Slack `#my-daily-update` — `daily-work-update.skill.md` (§A8 strict HubSpot filter; Bitbucket-only repos) |
 | `/sys-troubleshoot` | Windows / VPN / SMB / network diagnostics (PowerShell) |
 
+### Cursor Cloud Agent schedule (`daily-work-update`)
+
+**Refresh the Dashboard automation prompt** when `daily-work-update.skill.md` changes. Prompts referencing **`daily-work-update.md`** or only legacy §1–§4 buckets are **obsolete**.
+
+Copy **verbatim** from **`AskAI/.cursor/skill-library/daily-work-update.skill.md` → § Cursor Automation setup → “4. Prompt”**.
+
 ## Output
 
 - Follow each skill's output section when that domain applies.

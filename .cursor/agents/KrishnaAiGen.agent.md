@@ -155,5 +155,11 @@ Do **not** force this sweep for narrow single-domain asks — prefer section B.
 | `/daily-work-update` | Morning digest → Slack `#my-daily-update` — `daily-work-update.skill.md` (§A8 strict HubSpot filter; Bitbucket-only repos) |
 | `/sys-troubleshoot` | Windows / VPN / SMB / network diagnostics and fixes (PowerShell) |
 
+### Cursor Cloud Agent schedule (`daily-work-update`)
+
+**Yes — refresh the Dashboard automation prompt** whenever `daily-work-update.skill.md` changes. Older prompts that point at **`daily-work-update.md`** (removed name) or only describe legacy §1–§4 buckets are **obsolete**.
+
+**Single source of truth:** copy the prompt **verbatim** from **`daily-work-update.skill.md` → § Cursor Automation setup → “4. Prompt”** (posted layout **Yesterday → Today → Pending → Blockers → TL;DR**, §A8 HubSpot rules, Bitbucket-only 🔀/📬, optional Confluence **new pages only**, `DAILY_UPDATE_AUTOSEND=1`, channel `C0B0CBW8G03`). Do not invent a shorter parallel instruction set in the Dashboard.
+
 Human-readable registry: `.cursor/agent-skill-bindings.md`.  
 GitHub Copilot / VS Code master mirror: `.github/copilot/agents/KrishnaAiGen.agent.md` and `.github/agents/KrishnaAiGen.agent.md`.
