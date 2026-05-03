@@ -121,7 +121,7 @@ Do **not** put `OAUTHLIB_INSECURE_TRANSPORT=1` in committed `mcp.json`, in **`do
 2. **Add the refresh token** as a Cursor Cloud Secret:
    - Go to [Cursor Dashboard → Cloud Agents → Secrets](https://cursor.com/dashboard?tab=cloud-agents)
    - Add secret: **`GOOGLE_REFRESH_TOKEN`** = (the value from step 1)
-3. **Bootstrap runs automatically:** The `scripts/bootstrap-google-credentials.py` script exchanges the refresh token for a fresh access token and pre-seeds the credential file before `workspace-mcp` starts. The `.cursor/mcp.json` passes `GOOGLE_REFRESH_TOKEN` as an env var so the bootstrap can run.
+3. **Bootstrap before first use:** On a Cloud Agent, run `python scripts/bootstrap-google-credentials.py` before using Google tools. The script reads `GOOGLE_REFRESH_TOKEN` from the injected Cloud Secret env var, exchanges it for a fresh access token, and writes the credential file that `workspace-mcp` expects. No changes to `.cursor/mcp.json` are needed — local desktop usage is unaffected.
 
 The bootstrap script is idempotent and exits gracefully when `GOOGLE_REFRESH_TOKEN` is not set (local desktop use case).
 

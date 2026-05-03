@@ -69,7 +69,7 @@ Google Workspace MCP (`workspace-mcp` via `uvx`) requires an interactive browser
 | Google Refresh Token | `GOOGLE_REFRESH_TOKEN` | Refresh token from local OAuth flow (**required for Cloud**) |
 | Google Email | `USER_GOOGLE_EMAIL` | Default account (`krishna.bankar@webgility.com`) |
 
-**How it works:** The `scripts/bootstrap-google-credentials.py` script (called automatically by the MCP wrapper or manually by agents) exchanges the refresh token for a fresh access token and writes the credential file to `~/.google_workspace_mcp/credentials/`. The `workspace-mcp` server then finds existing credentials and skips the interactive OAuth flow.
+**How it works on Cloud:** Before using Google tools, run `python scripts/bootstrap-google-credentials.py`. It reads `GOOGLE_REFRESH_TOKEN` from the injected Cloud Secret, exchanges it for a fresh access token, and writes the credential file to `~/.google_workspace_mcp/credentials/`. The `workspace-mcp` server then finds existing credentials and skips the interactive OAuth flow. No changes to `.cursor/mcp.json` are needed — local desktop usage is completely unaffected.
 
 **Token rotation:** If Cloud authentication stops working, re-run `extract-google-refresh-token.py` locally and update the `GOOGLE_REFRESH_TOKEN` secret.
 
