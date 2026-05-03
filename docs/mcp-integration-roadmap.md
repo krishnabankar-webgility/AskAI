@@ -83,7 +83,8 @@ In [Google Cloud Console](https://console.cloud.google.com/) (same project throu
 |-------------------|--------|
 | `GOOGLE_OAUTH_CLIENT_ID` | From GCP OAuth client |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | From GCP OAuth client |
-| `USER_GOOGLE_EMAIL` | Optional default: `krishna.bankar@webgility.com` |
+| `GOOGLE_REFRESH_TOKEN` | From local OAuth flow (run `scripts/extract-google-refresh-token.py`) — **required for Cloud Agents** |
+| `USER_GOOGLE_EMAIL` | Default account: `krishna.bankar@webgility.com` |
 | `WORKSPACE_MCP_READ_ONLY` | `true` — ask for readonly Gmail/Drive/Calendar scopes and disable write tools ([upstream](https://github.com/taylorwilsdon/google_workspace_mcp)) |
 
 **Cursor Cloud:** [Dashboard → Cloud Agents → Secrets](https://cursor.com/dashboard?tab=cloud-agents) — add each row above.
@@ -107,7 +108,26 @@ Do **not** put `OAUTHLIB_INSECURE_TRANSPORT=1` in committed `mcp.json`, in **`do
 | **Cursor Cloud Agents** | Omit the flag. Use HTTPS OAuth as designed; persist tokens on the agent or prefer **service account + domain-wide delegation** (`GOOGLE_SERVICE_ACCOUNT_KEY_JSON` + `USER_GOOGLE_EMAIL`) for scheduled runs without interactive localhost callbacks. |
 | **Local Cursor (desktop)** | If OAuth redirect is `http://localhost:8000/...` and the stack refuses HTTP loopback without the flag, set `OAUTHLIB_INSECURE_TRANSPORT=1` only in your **Windows User** environment (or a gitignored launcher), **not** in repo JSON — so cloud schedules never inherit it. |
 
-First connection (local **or** cloud): the server starts a **local OAuth callback** on your machine or agent VM — complete the browser consent once; tokens are cached under the user profile ([`GOOGLE_MCP_CREDENTIALS_DIR` / defaults](https://github.com/taylorwilsdon/google_workspace_mcp)). For **repeat Cloud runs**, cached credentials must live on persistent agent storage; if Cursor wipes disks each run, use **[service account + domain-wide delegation](https://github.com/taylorwilsdon/google_workspace_mcp)** (`GOOGLE_SERVICE_ACCOUNT_KEY_JSON` + `USER_GOOGLE_EMAIL`) — requires Workspace **admin**.
+### Authentication: local vs. Cloud
+
+**Local desktop:** The server starts a **local OAuth callback** on `http://localhost:8000/oauth2callback` — complete the browser consent once; tokens are cached under `~/.google_workspace_mcp/credentials/`.
+
+**Cursor Cloud Agents:** Cloud VMs cannot complete interactive browser OAuth flows. Use the **refresh-token bootstrap** approach:
+
+1. **Extract your refresh token** from your local machine (after completing OAuth locally at least once):
+   ```bash
+   python scripts/extract-google-refresh-token.py
+   ```
+2. **Add the refresh token** as a Cursor Cloud Secret:
+   - Go to [Cursor Dashboard → Cloud Agents → Secrets](https://cursor.com/dashboard?tab=cloud-agents)
+   - Add secret: **`GOOGLE_REFRESH_TOKEN`** = (the value from step 1)
+3. **Bootstrap before first use:** On a Cloud Agent, run `python scripts/bootstrap-google-credentials.py` before using Google tools. The script reads `GOOGLE_REFRESH_TOKEN` from the injected Cloud Secret env var, exchanges it for a fresh access token, and writes the credential file that `workspace-mcp` expects. No changes to `.cursor/mcp.json` are needed — local desktop usage is unaffected.
+
+The bootstrap script is idempotent and exits gracefully when `GOOGLE_REFRESH_TOKEN` is not set (local desktop use case).
+
+**Token rotation:** Google may rotate the refresh token during a token refresh. The bootstrap script always uses the latest value from the `GOOGLE_REFRESH_TOKEN` secret. If token rotation causes failures, re-run `extract-google-refresh-token.py` locally and update the Cloud Secret.
+
+**Alternative (requires Workspace admin):** Use **[service account + domain-wide delegation](https://github.com/taylorwilsdon/google_workspace_mcp)** (`GOOGLE_SERVICE_ACCOUNT_KEY_JSON` + `USER_GOOGLE_EMAIL`) for fully autonomous access.
 
 ### Meet / Gemini notes — queries to try after connect
 
@@ -134,7 +154,8 @@ Use one **stable name** per credential everywhere; only the **storage** differs 
 |----------|-----------|
 | `GOOGLE_OAUTH_CLIENT_ID` | OAuth client ID (Workspace MCP / recommended stack) |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth client secret |
-| `USER_GOOGLE_EMAIL` | Optional default account e.g. `krishna.bankar@webgility.com` |
+| `GOOGLE_REFRESH_TOKEN` | Refresh token from local OAuth flow — needed for Cloud Agents (run `scripts/extract-google-refresh-token.py`) |
+| `USER_GOOGLE_EMAIL` | Default account e.g. `krishna.bankar@webgility.com` |
 | `WORKSPACE_MCP_READ_ONLY` | Set `true` for read-only OAuth scopes + no write tools (recommended for digest agents) |
 | **HubSpot** | **Not in use** until Private App access exists (`HUBSPOT_PRIVATE_APP_TOKEN` reserved). |
 | `JIRA_*`, `SLACK_*`, `BITBUCKET_*` | Existing AskAI workflows |
