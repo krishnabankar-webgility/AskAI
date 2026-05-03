@@ -49,6 +49,30 @@ In **Cursor Dashboard → Cloud Agents → Secrets** (for cloud) or as system en
 
 **Agent skill pack:** `.cursor/skill-library/slack-integration.skill.md`. **Subagent:** type **`/slack-automation`** in Agent mode.
 
+### Cloud Agent secrets (Google Workspace MCP)
+
+Google Workspace MCP (`workspace-mcp` via `uvx`) requires an interactive browser OAuth flow on first use. On **local desktop Cursor**, this happens automatically. On **Cloud Agents**, the VM cannot open a browser, so a **refresh token** must be pre-seeded.
+
+**Setup (one-time):**
+
+1. Complete the Google OAuth flow **locally** (open Cursor desktop, enable the `google-workspace` MCP, authenticate in browser).
+2. Run the extraction script on your local machine:
+   ```bash
+   python scripts/extract-google-refresh-token.py
+   ```
+3. Add the extracted refresh token as a Cloud Secret.
+
+| Secret | Injected as | Purpose |
+|--------|-------------|---------|
+| Google OAuth Client ID | `GOOGLE_OAUTH_CLIENT_ID` | OAuth client ID from GCP Console |
+| Google OAuth Client Secret | `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth client secret from GCP Console |
+| Google Refresh Token | `GOOGLE_REFRESH_TOKEN` | Refresh token from local OAuth flow (**required for Cloud**) |
+| Google Email | `USER_GOOGLE_EMAIL` | Default account (`krishna.bankar@webgility.com`) |
+
+**How it works:** The `scripts/bootstrap-google-credentials.py` script (called automatically by the MCP wrapper or manually by agents) exchanges the refresh token for a fresh access token and writes the credential file to `~/.google_workspace_mcp/credentials/`. The `workspace-mcp` server then finds existing credentials and skips the interactive OAuth flow.
+
+**Token rotation:** If Cloud authentication stops working, re-run `extract-google-refresh-token.py` locally and update the `GOOGLE_REFRESH_TOKEN` secret.
+
 To fetch from or push to Bitbucket, use `git fetch bitbucket` / `git push bitbucket <branch>` after setting an authenticated remote URL (see skill file). If you prefer not to store a username secret, Bitbucket accepts the `x-token-auth` scheme with **only** `BITBUCKET_TOKEN` (below). When `BITBUCKET_USERNAME` is present, use:
 
 ```
@@ -91,7 +115,7 @@ git remote set-url bitbucket "https://krishnabankar:${BITBUCKET_TOKEN}@bitbucket
 
 ### MCP (Cursor, Claude Desktop, other agents)
 
-**Google (Gmail + Calendar + Drive/Docs for Meet notes):** follow **`docs/mcp-integration-roadmap.md`** — recommended stack is **`workspace-mcp`** via **`uvx`** (install **`uv`**); OAuth client ID/secret use env names **`GOOGLE_OAUTH_CLIENT_ID`** / **`GOOGLE_OAUTH_CLIENT_SECRET`** in both **Cursor Cloud Secrets** and **local Windows User env**. Merge template: **`docs/mcp-servers.example.json`** → your `.cursor/mcp.json`.
+**Google (Gmail + Calendar + Drive/Docs for Meet notes):** follow **`docs/mcp-integration-roadmap.md`** — recommended stack is **`workspace-mcp`** via **`uvx`** (install **`uv`**); OAuth client ID/secret use env names **`GOOGLE_OAUTH_CLIENT_ID`** / **`GOOGLE_OAUTH_CLIENT_SECRET`** in both **Cursor Cloud Secrets** and **local Windows User env**. **Cloud Agents** also need **`GOOGLE_REFRESH_TOKEN`** (see "Cloud Agent secrets (Google Workspace MCP)" above and `scripts/bootstrap-google-credentials.py`). Merge template: **`docs/mcp-servers.example.json`** → your `.cursor/mcp.json`.
 
 HubSpot MCP stays deferred until Private App access exists (same doc).
 
