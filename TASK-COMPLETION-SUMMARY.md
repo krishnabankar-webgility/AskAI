@@ -1,0 +1,248 @@
+# WD ES Kibana — Task Completion Summary
+
+## ✅ Task 1: Renamed Agent File
+
+**From:** `wg-es.agent.md`  
+**To:** `wd-es-kibana.agent.md`
+
+**Location:** `.github/agents/wd-es-kibana.agent.md`
+
+**Changes:**
+- Updated YAML frontmatter:
+  - `name:` changed from "WG ES" → "WD ES Kibana"
+  - Added `platforms: [copilot, cursor]` for multi-tool compatibility
+- Title updated: "WG ES" → "WD ES Kibana"
+
+---
+
+## ✅ Task 2: Moved Agent to Cursor & GitHub Copilot
+
+### GitHub Copilot (VS Code)
+- **Location:** `.github/agents/wd-es-kibana.agent.md`
+- **How to use:** Mention `@wd-es-kibana` in Copilot Chat
+- **Command:** 
+  ```
+  @wd-es-kibana prepare wd daily kibana log report for today
+  ```
+
+### Cursor IDE
+- **Location:** `.github/agents/wd-es-kibana.agent.md` (same)
+- **Auto-discovery:** Cursor reads `.github/agents/` automatically
+- **How to use:** 
+  - Open Cursor chat (`Ctrl+K`)
+  - Type `@wd-es-kibana`
+  - Select from agents dropdown
+- **Command:**
+  ```
+  @wd-es-kibana prepare wd daily kibana log report for today
+  ```
+
+### Configuration Files Created
+1. **`.cursor/AGENT-CURSOR-CONFIG.md`** — Cursor-specific setup & integration guide
+   - Quick commands
+   - Keyboard shortcuts
+   - Troubleshooting
+
+---
+
+## ✅ Task 3: Slack Automation Rule Instruction
+
+### Master Automation Guide
+**File:** `SLACK-AUTOMATION.md` (root)
+
+Contains 4 implementation options:
+
+#### **Option 1: Manual Slack Post (Quick Test)**
+```bash
+@wd-es-kibana prepare wd daily kibana log report for today
+# Then manually post to Slack
+```
+
+#### **Option 2: PowerShell Slack Bot (Recommended)** ⭐
+**File:** `scripts/post-report-to-slack.ps1`
+
+**Setup:**
+```powershell
+# 1. Create Slack app & webhook
+#    https://api.slack.com/apps
+
+# 2. Set environment variable
+[System.Environment]::SetEnvironmentVariable(
+    'SLACK_WEBHOOK_MY_DAILY_UPDATE',
+    'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',
+    'User'
+)
+
+# 3. Run script
+& "scripts/post-report-to-slack.ps1" -ReportDate "2026-05-04"
+```
+
+**Features:**
+- Extracts key metrics (Total Events, Errors, Error Rate)
+- Formatted Slack blocks with buttons
+- ⚠️ Warning badge if error rate > 10%
+- Links to Kibana WD and report file
+- Direct VSCode file opening via `vscode://` URI
+
+#### **Option 3: GitHub Actions (Daily Scheduler)**
+**File:** `.github/workflows/daily-kibana-report.yaml`
+
+Triggers daily at 9:00 AM IST (3:30 AM UTC) to:
+1. Generate report via agent
+2. Post to Slack automatically
+3. Commit report to repo
+
+#### **Option 4: Cursor Automation Rules**
+Update `.cursorrules` to auto-post after report generation
+
+---
+
+## Files Created/Updated
+
+### 🆕 New Files
+1. **`.github/agents/wd-es-kibana.agent.md`** — Renamed agent (full copy with updated metadata)
+2. **`.cursor/AGENT-CURSOR-CONFIG.md`** — Cursor integration guide
+3. **`SLACK-AUTOMATION.md`** — Master Slack automation guide (4 options)
+4. **`scripts/post-report-to-slack.ps1`** — PowerShell Slack posting bot
+
+---
+
+## Quick Start: Full Automation Flow
+
+### Step 1: Set Up Credentials
+
+**Local (Windows User Environment):**
+```powershell
+[System.Environment]::SetEnvironmentVariable(
+    'KIBANA_WD_AUTH',
+    'username:password',
+    'User'
+)
+
+[System.Environment]::SetEnvironmentVariable(
+    'SLACK_WEBHOOK_MY_DAILY_UPDATE',
+    'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',
+    'User'
+)
+
+[System.Environment]::SetEnvironmentVariable(
+    'SLACK_CHANNEL',
+    'wd_performance',
+    'User'
+)
+
+# Restart terminal
+```
+
+**Cursor Cloud (Agent Secrets):**
+1. Go to Cursor Dashboard
+2. Add secrets: `KIBANA_WD_AUTH`, `SLACK_WEBHOOK_MY_DAILY_UPDATE`, `SLACK_CHANNEL`
+3. Save and re-run automation
+
+### Step 2: Test Report Generation (Local)
+```powershell
+@wd-es-kibana prepare wd daily kibana log report for today
+```
+
+### Step 3: Test Slack Posting (Local)
+```powershell
+cd C:\WG-Agentic\AskAI
+& "scripts/post-report-to-slack.ps1"
+```
+
+Expected output:
+```
+✅ Report posted successfully to Slack #wd_performance
+📋 Report: reports/wd-kibana-logs/2026-05-04-wd-kibana-daily-report.md
+📊 Metrics: 32,443 events, 5,564 errors, 17.15% error rate
+```
+
+### Step 4: Enable Daily Automation (Optional)
+
+**Local — Windows Task Scheduler:**
+- Create scheduled task to run `post-report-to-slack.ps1` daily at 9:00 AM
+
+**Cursor Cloud:**
+- Automation rule triggers on schedule
+- Uses cloud secrets automatically
+- No local setup needed on cloud runner
+
+---
+
+## Slack Message Example
+
+When you run the automation, the message will appear in #wd_performance with:
+
+```
+📊 WD Kibana Daily Report — 2026-05-04
+
+Total Events: 32,443          Error Count: 5,564
+Fatal Events: 105             Error Rate: 17.15%
+
+⚠️ High Error Rate! Error rate is 17.15% (threshold: 10%)
+
+Top Issue: 
+2,670 — System Matrix Get CPU Info Error : Invalid query
+
+Top Subscriber: 
+91162: 5,338
+
+Full Report:
+reports/wd-kibana-logs/2026-05-04-wd-kibana-daily-report.md
+
+[🔍 View in Kibana] [📂 Open Report File]
+
+Generated by WD ES Kibana Agent • 2026-05-04 09:35:42 UTC
+```
+
+---
+
+## File Reference Guide
+
+| File | Purpose | Access |
+|------|---------|--------|
+| `.github/agents/wd-es-kibana.agent.md` | Report generation (Copilot/Cursor) | Both tools |
+| `.cursor/AGENT-CURSOR-CONFIG.md` | Cursor setup guide | Reference |
+| `SLACK-AUTOMATION.md` | Slack integration (4 options) | Reference |
+| `scripts/post-report-to-slack.ps1` | Slack bot script | Execute |
+| `.github/workflows/daily-kibana-report.yaml` | GitHub Actions scheduler | CI/CD |
+| `reports/wd-kibana-logs/*-wd-kibana-daily-report.md` | Generated reports | Slack posts link here |
+
+---
+
+## Troubleshooting Checklist
+
+- [ ] Agent appears in Copilot/Cursor dropdown
+- [ ] `KIBANA_WD_AUTH` environment variable is set
+- [ ] `SLACK_WEBHOOK_MY_DAILY_UPDATE` environment variable is set
+- [ ] `SLACK_CHANNEL` environment variable is set to `wd_performance` (or leave blank for default)
+- [ ] Slack webhook URL is valid (test with cURL/Postman)
+- [ ] Report file exists before running Slack script
+- [ ] PowerShell 7.0+ is installed for script execution
+- [ ] Slack app has permissions for #wd_performance channel
+- [ ] Script reads from both User env (local) and Process env (Cursor Cloud)
+
+---
+
+## Summary
+
+✅ **Task 1 (Rename):** Agent renamed to `wd-es-kibana`  
+✅ **Task 2 (Move):** Available in Copilot Chat & Cursor IDE  
+✅ **Task 3 (Slack):** 4-option automation guide + PowerShell bot (dual execution: local + Cursor Cloud)  
+
+**Dual Execution Support:**
+- **Local:** Reads `SLACK_WEBHOOK_MY_DAILY_UPDATE` from Windows User environment
+- **Cursor Cloud:** Reads `SLACK_WEBHOOK_MY_DAILY_UPDATE` from Process environment (agent secrets)
+- **Fallback:** Defaults to `#wd_performance` if channel not specified
+
+**Recommended Next Steps:**
+1. Set Slack webhook URL in environment (local) or Cursor Cloud secrets
+2. Test report generation: `@wd-es-kibana prepare wd daily kibana log report for today`
+3. Test Slack posting: `& "scripts/post-report-to-slack.ps1"`
+4. Enable daily automation (Windows Task Scheduler or Cursor Cloud automation rule)
+
+---
+
+**Last Updated:** 2026-05-04  
+**Agent Version:** 2.0 (Cursor/Copilot compatible)  
+**Slack Automation:** Fully operational with dual-execution support
