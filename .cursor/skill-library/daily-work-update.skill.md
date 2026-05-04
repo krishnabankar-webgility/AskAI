@@ -77,8 +77,8 @@ If `JIRA_EMAIL` (set in `.cursor/mcp.json`) is present, prefer Jira's own `curre
 | Slack MCP | `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` | See `slack-integration.skill.md`. Bot is already in `#my-daily-update`. |
 | Jira MCP **or** REST | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL` | See `.cursor/mcp.json` `jira` server. REST works without the MCP. |
 | Bitbucket | `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN` | See `bitbucket-unify-enterprise.skill.md`. **Only** source for repo commits/PRs in the digest (`unify-enterprise`). **REST returns 401 — use git (+ BB MCP if configured).** |
-| Google Workspace MCP | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL` | **`google-workspace`** server in `.cursor/mcp.json` via `uvx workspace-mcp` — Calendar + Gmail + Drive (read-only). Requires **one-time OAuth consent** (browser flow) per environment; cached credentials persist. See `docs/mcp-integration-roadmap.md`. If MCP is not connected or OAuth incomplete, **skip** and note in *Sources skipped*. |
-| Confluence (optional) | `CONFLUENCE_*` per `confluence-workflow.skill.md` | **New pages only** in the Yesterday window (§D). Do **not** report edits to existing pages. |
+| Google Workspace MCP **or** direct API | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL`, `GOOGLE_REFRESH_TOKEN` | **`google-workspace`** MCP via `uvx workspace-mcp` (Calendar + Gmail + Drive, read-only). On **Cloud Agents** where MCP is unavailable, `GOOGLE_REFRESH_TOKEN` enables the **direct API fallback** via `scripts/google-calendar-fallback.py` and `scripts/google-gmail-fallback.py`. Run `scripts/bootstrap-google-credentials.py` first. |
+| Confluence (optional) MCP **or** REST | `JIRA_EMAIL`, `JIRA_API_TOKEN` (shared with Jira) | **New pages only** in the Yesterday window (§D). Uses Atlassian MCP (`plugin-atlassian-atlassian`) when connected; otherwise falls back to `scripts/confluence-fallback.py` using the same Jira credentials (Atlassian API tokens work for both Jira and Confluence REST). Do **not** report edits to existing pages. |
 
 If any required secret is missing, **skip that source**, mention the gap in a small "Sources skipped" footer of the digest, and **do not block** the rest of the report.
 
@@ -264,11 +264,47 @@ space = "<SPACE_KEY>" AND type = page AND created >= "2026-04-28" AND created <=
 
 Optional: if Krishna personally **created** a new page in that window, one bullet under **Yesterday 💬** is enough; still apply the **created-in-window** rule only.
 
+**Cloud Agent fallback (Atlassian MCP not available):** When the `plugin-atlassian-atlassian` MCP is **not connected** (e.g. Cloud Agent scheduled runs), use the **direct Confluence REST API fallback script** instead of skipping source D:
+
+```bash
+python scripts/confluence-fallback.py --json
+```
+
+This uses `JIRA_EMAIL` + `JIRA_API_TOKEN` + `JIRA_BASE_URL` (same credentials as Jira — the Atlassian API token works for both Jira and Confluence REST). The script searches for pages **created by Krishna** in the Yesterday IST window. No additional secrets are needed.
+
+**Decision tree for source D:**
+- Atlassian MCP (`plugin-atlassian-atlassian`) connected → use `searchConfluenceUsingCql` MCP tool.
+- MCP **not** connected **but** `JIRA_EMAIL` + `JIRA_API_TOKEN` are set → run `scripts/confluence-fallback.py --json`. Mark source as `Confluence ✅ (REST API)` in footer.
+- Neither MCP nor Jira credentials → skip source D, note `Confluence (not configured)` in *Sources skipped*.
+
 ### E. Google Workspace — Calendar + Gmail + Drive (meetings, recaps, notes)
 
 Uses the **`google-workspace`** MCP server (`uvx workspace-mcp`, read-only) configured in `.cursor/mcp.json`. Requires **`GOOGLE_OAUTH_CLIENT_ID`**, **`GOOGLE_OAUTH_CLIENT_SECRET`**, and optionally **`USER_GOOGLE_EMAIL`** (`krishna.bankar@webgility.com`). OAuth consent must have been completed at least once for the environment (tokens cached). For the browser OAuth client (Web application type), register redirect URI **`http://localhost:8000/oauth2callback`** in Google Cloud Console. See `docs/mcp-integration-roadmap.md` for setup.
 
-If the `google-workspace` MCP is **not connected** or OAuth is **not completed**, skip source E entirely, note `Google Workspace (Calendar/Gmail/Drive) — MCP not connected` in *Sources skipped*, and continue with sources A–D.
+**Cloud Agent fallback (MCP not available):** When the `google-workspace` MCP is **not connected** (e.g. Cloud Agent scheduled runs where only Slack/Braintrust MCP servers are active), use the **direct REST API fallback scripts** instead of skipping source E:
+
+1. **Bootstrap credentials first** (if not already done):
+   ```bash
+   python scripts/bootstrap-google-credentials.py
+   ```
+   This requires `GOOGLE_REFRESH_TOKEN`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `USER_GOOGLE_EMAIL` in Cloud Agent Secrets.
+
+2. **Calendar fallback** (replaces `get_events` MCP tool):
+   ```bash
+   python scripts/google-calendar-fallback.py --yesterday --today --json
+   ```
+   Returns JSON with `yesterday.events[]` and `today.events[]` — each event has `summary`, `start`, `end`, `hangoutLink`, `meetLink`, `attendees_count`, `organizer`, `response_status`. Declined events are already excluded.
+
+3. **Gmail fallback** (replaces Gmail search MCP tools):
+   ```bash
+   python scripts/google-gmail-fallback.py --json
+   ```
+   Searches for meeting recaps, Gemini summaries, and actionable emails from the last 2 days.
+
+**Decision tree for source E:**
+- `google-workspace` MCP connected → use MCP tools (`get_events`, Gmail search, Drive search) as described in §E1–E3 below.
+- MCP **not** connected **but** `GOOGLE_REFRESH_TOKEN` env var is set → run `bootstrap-google-credentials.py` then use the fallback scripts above. Mark source as `Google Workspace (Calendar/Gmail/Drive) ✅ (direct API)` in footer.
+- MCP not connected **and** `GOOGLE_REFRESH_TOKEN` not set → skip source E, note `Google Workspace (Calendar/Gmail/Drive) — no credentials` in *Sources skipped*.
 
 **E1. Google Calendar — yesterday's meetings**
 
@@ -537,6 +573,7 @@ Krishna runs this from **Cursor Dashboard → Cloud Agents → New Schedule** (o
 | `SLACK_BOT_TOKEN`, `SLACK_TEAM_ID` | Slack MCP (write to `#my-daily-update`) |
 | `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN` | `unify-enterprise` clone & `git log` |
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Google Workspace MCP (Calendar + Gmail + Drive, §E) |
+| `GOOGLE_REFRESH_TOKEN` | **Required for Cloud Agents** — enables direct API fallback when `google-workspace` MCP is not connected. Obtain via `scripts/extract-google-refresh-token.py` locally. |
 | `USER_GOOGLE_EMAIL` | Default Google account for `workspace-mcp` (optional but recommended) |
 | `DAILY_UPDATE_AUTOSEND=1` | Skip the chat confirm and post straight to Slack |
 
@@ -575,7 +612,7 @@ If sources fail, still post heartbeat per skill §Failure / footer.
 After saving, click **Run now once** in the Cursor Dashboard. Expected behavior:
 
 - Cloud Agent boots, reads `.cursor/skill-library/daily-work-update.skill.md`.
-- Runs the Jira / Slack / Bitbucket / Google Workspace (+ optional Confluence new-pages) queries described above (see *Data sources & queries* §A–§E). **No** GitHub `gh` queries for this digest. If `google-workspace` MCP is not connected (OAuth incomplete), skips source E and notes it in footer.
+- Runs the Jira / Slack / Bitbucket / Google Workspace (+ optional Confluence new-pages) queries described above (see *Data sources & queries* §A–§E). **No** GitHub `gh` queries for this digest. If `google-workspace` MCP is not connected, tries the **direct API fallback** via `scripts/google-calendar-fallback.py` and `scripts/google-gmail-fallback.py` (requires `GOOGLE_REFRESH_TOKEN`). Similarly for Confluence: if Atlassian MCP is not connected, tries `scripts/confluence-fallback.py` (uses Jira credentials).
 - Posts a single message to `#my-daily-update` (channel id `C0B0CBW8G03`).
 - Records nothing in `.cursor/`, `src/`, or any tracked path. Scratch goes under `local/ephemeral/daily-work-update/<YYYY-MM-DD>/` (gitignored).
 
@@ -600,7 +637,8 @@ When Krishna runs `/daily-work-update` directly in chat, the agent must:
 - **Slack MCP missing** → render in chat; print one-liner `Slack MCP not connected — see slack-integration.skill.md`.
 - **Jira MCP / REST failing** → skip Jira sections, render placeholders, footer note.
 - **Bitbucket auth failing** → skip §1.4 commit lines, list `git fetch` error in footer.
-- **Google Workspace MCP not connected / OAuth incomplete** → skip source E (Calendar / Gmail / Drive), note `Google Workspace — MCP not connected or OAuth incomplete` in *Sources skipped*. The digest still posts with A–D.
+- **Google Workspace MCP not connected** → try the **direct API fallback** (see §E decision tree): run `python scripts/bootstrap-google-credentials.py` then `python scripts/google-calendar-fallback.py --yesterday --today --json` and `python scripts/google-gmail-fallback.py --json`. If `GOOGLE_REFRESH_TOKEN` is set and the scripts succeed, source E is available via direct API — mark `Google Workspace ✅ (direct API)` in footer. If `GOOGLE_REFRESH_TOKEN` is not set or scripts fail, note `Google Workspace — no credentials` in *Sources skipped*. The digest still posts with A–D.
+- **Confluence MCP not connected** → try the **direct REST fallback** (see §D decision tree): run `python scripts/confluence-fallback.py --json` using `JIRA_EMAIL` + `JIRA_API_TOKEN`. If credentials are set and the script succeeds, mark `Confluence ✅ (REST API)` in footer. If credentials missing or script fails, note `Confluence (not configured)` in *Sources skipped*.
 - **No items in any source** → still post a minimal heartbeat: title + separator + *TL;DR* one sentence (“Nothing recorded in sources for yesterday’s window — check Sources skipped.”) + footer. **Do not** fill fake Yesterday emoji sections.
 - **Partial errors** are listed in the *Sources skipped* footer (see template).
 
@@ -641,6 +679,9 @@ The first live runs surfaced these gotchas. Future invocations **must skip re-di
 | Google Calendar `get_events` | Tool **`get_events`**. Parameters: `user_google_email` = `krishna.bankar@webgility.com`, `calendar_id` = `primary`, `time_min`/`time_max` in RFC3339 with `+05:30`, `detailed` = `true`. |
 | Google Calendar OAuth | OAuth client type **Web application** (not Desktop). Redirect URI **`http://localhost:8000/oauth2callback`** registered in GCP. Tokens cached after first browser consent. |
 | Google Calendar routing | **§E1** yesterday → 💬; **§E1b** today → 📅. Exclude **declined**; include `accepted`, `tentative`, `needsAction`. |
+| Google Cloud Agent fallback | When `google-workspace` MCP is not connected on Cloud Agents: (1) run `python scripts/bootstrap-google-credentials.py` to seed credentials from `GOOGLE_REFRESH_TOKEN`, (2) run `python scripts/google-calendar-fallback.py --yesterday --today --json` for Calendar, (3) run `python scripts/google-gmail-fallback.py --json` for Gmail. Mark footer `Google Workspace ✅ (direct API)`. Verified working 2026-05-04. |
+| Confluence Cloud Agent fallback | When `plugin-atlassian-atlassian` MCP is not connected on Cloud Agents: run `python scripts/confluence-fallback.py --json` using `JIRA_EMAIL` + `JIRA_API_TOKEN` (same Atlassian credentials). Mark footer `Confluence ✅ (REST API)`. Added 2026-05-04. |
+| `GOOGLE_REFRESH_TOKEN` | **Required** Cloud Agent Secret for Google direct API fallback. Obtain locally via `python scripts/extract-google-refresh-token.py`, store in Cursor Dashboard → Cloud Agents → Secrets. Confirmed working 2026-05-03. |
 
 When **anything** new becomes a "I had to figure this out" moment during a run, append a row to this table (or update an existing one) **before** ending the session. The Cursor agent at `.cursor/agents/daily-work-update.agent.md` is also responsible for this and points back here.
 
