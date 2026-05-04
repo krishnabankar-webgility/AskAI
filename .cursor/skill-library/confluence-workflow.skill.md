@@ -131,6 +131,7 @@ These pages are in the personal space (space ID `2590998546`). The agent should 
 | `2993487893` | Amazon Inventory Report Help Doc | `2590998867` | 2026-03-13 |
 | `3014885382` | ToDo Items & Questions | `3014819843` (Personal folder) | 2026-04-03 |
 | `3021045763` | template (CS template container page) | `3014361116` (Public folder) | 2026-04-10 |
+| `3045425160` | Daily Work Update agent — team guide (Cursor / Copilot / VS Code) | `3014361116` (Public folder) | 2026-05-04 |
 | `3021275138` | Customization Delivery | `3021045763` | 2026-04-10 |
 | `3021209607` | Comment for QA Testing | `3021045763` | 2026-04-10 |
 | `3029205012` | Customization Notes Template | `3021045763` | 2026-04-17 |
@@ -148,6 +149,7 @@ Krishna Bankar Personal Space (2590998546)
 │   └── ToDo Items & Questions (3014885382)
 │
 ├── [folder] Public (3014361116)
+│   ├── Daily Work Update agent — team guide… (3045425160) — AskAI daily-work-update doc
 │   └── [page] template (3021045763)
 │       ├── Customization Delivery (3021275138)         — §7 HubSpot / CS handoff
 │       ├── Comment for QA Testing (3021209607)         — §8 RFT Jira comment
