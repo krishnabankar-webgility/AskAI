@@ -1,0 +1,317 @@
+diff --git a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Clover/CloverCISOrder.cs b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Clover/CloverCISOrder.cs
+index fab5c57..e841330 100644
+--- a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Clover/CloverCISOrder.cs
++++ b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Clover/CloverCISOrder.cs
+@@ -140,6 +140,8 @@ namespace wg.eCC.OnlineStoreFactory.CloudIntegrationService
+                         }
+                     }
+                 }
++                // UD-32242 — per capture: subtract each balance-transaction fee from the matching payment line
++                PaymentProcessorFeeHelper.AdjustPaymentAmountByProcessorFee(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData);
+             }
+             catch (Exception ex)
+             {
+diff --git a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Etsy/EtsyCISOrder.cs b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Etsy/EtsyCISOrder.cs
+index d223bc4..f4986a5 100644
+--- a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Etsy/EtsyCISOrder.cs
++++ b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Etsy/EtsyCISOrder.cs
+@@ -880,6 +880,9 @@ namespace wg.eCC.OnlineStoreFactory.CloudIntegrationService
+                 {
+                     objServiceOrderDTO.Charges.Total = objServiceOrderDTO.Charges.Total - objServiceOrderDTO.PaymentProcessorFees;
+                 }
++
++                // UD-32242 — per capture: subtract each balance-transaction fee from the matching payment line
++                PaymentProcessorFeeHelper.AdjustPaymentAmountByProcessorFee(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData);
+                 #endregion
+ 
+             }
+diff --git a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/PaymentProcessorFeeHelper.cs b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/PaymentProcessorFeeHelper.cs
+new file mode 100644
+index 0000000..a323f43
+--- /dev/null
++++ b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/PaymentProcessorFeeHelper.cs
+@@ -0,0 +1,116 @@
++using System;
++using System.Collections.Generic;
++using System.Linq;
++using wg.eCC.DTO;
++using wg.eCC.DTO.StoreService;
++using wg.Unify.DTO;
++using wg.Unify.DTO.Shared;
++using wg.Unify.OnlineStoreFactory.CloudIntegrationService.DTO;
++using WgUtility;
++using WgUtility.Logging;
++
++namespace wg.eCC.OnlineStoreFactory.CloudIntegrationService
++{
++    /// <summary>
++    /// UD-32242: Shared helper for adjusting per-payment-line processor fees when fees
++    /// are recorded as line items. Originally implemented in ShopifyCloudIntegrationService_Parsing,
++    /// extracted here so Square, Clover, Etsy, Uniform, and any future CIS parsers
++    /// can reuse the same logic.
++    /// </summary>
++    internal static class PaymentProcessorFeeHelper
++    {
++        /// <summary>
++        /// When ADJUST_PAYPROFEES_IF_RECORDASLINE_&lt;ProfileID&gt; is active and fees are recorded as line items,
++        /// subtract processor fees per payment line (per capture): match each PaymentDetailDTO to OrderPaymentTransaction
++        /// by PaymentTransactionID / TransactionNumber, or to OrderPayment by PaymentTransactionId when balance rows are absent.
++        /// </summary>
++        internal static void AdjustPaymentAmountByProcessorFee(ProfileAdminDTO objprofileAdminDTO, ServiceOrderDTO objServiceOrderDTO, MarshalledData objMarshalledData)
++        {
++            try
++            {
++                if (!(CommonUtility.CustomizationNode.Contains(CustomizationConstant.ADJUST_PAYPROFEES_IF_RECORDASLINE + UtilityFunctions.ToStr(objprofileAdminDTO.ProfileID))
++                    && objprofileAdminDTO.ISPaymentProcessorApplicable
++                    && objprofileAdminDTO.StorePaymentProcessor != null
++                    && UtilityFunctions.ToEqual(objprofileAdminDTO.StorePaymentProcessor.AccountingTransactionType, "Line Item")))
++                    return;
++
++                if (objServiceOrderDTO.PaymentProcessorFees <= 0 || objServiceOrderDTO.PaymentDetails == null || !objServiceOrderDTO.PaymentDetails.Any())
++                    return;
++
++                bool anyAdjusted = false;
++                foreach (PaymentDetailDTO detail in objServiceOrderDTO.PaymentDetails)
++                {
++                    double feeForLine = GetProcessorFeeForPaymentLine(objprofileAdminDTO, detail, objMarshalledData);
++                    if (feeForLine <= 0)
++                        continue;
++
++                    if (detail.Amount < feeForLine)
++                    {
++                        LogManager.GetLogger().Warning(string.Format("ADJUST_PAYPROFEES_IF_RECORDASLINE skipped for a line — payment amount ({0}) is less than line processor fee ({1}). ProfileID={2}, OrderId={3}, PaymentTxnId={4}.",
++                            detail.Amount, feeForLine, objprofileAdminDTO.ProfileID, objServiceOrderDTO.OrderId, detail.PaymentTransactionID));
++                        continue;
++                    }
++
++                    double dblOriginalAmount = detail.Amount;
++                    detail.Amount = UtilityFunctions.ToRoundOff(dblOriginalAmount - feeForLine);
++                    anyAdjusted = true;
++                    LogManager.GetLogger().Info(string.Format("ADJUST_PAYPROFEES_IF_RECORDASLINE applied (per line). ProfileID={0}, OrderId={1}, OriginalAmount={2}, LineFee={3}, AdjustedAmount={4}, PaymentTxnId={5}.",
++                        objprofileAdminDTO.ProfileID, objServiceOrderDTO.OrderId, dblOriginalAmount, feeForLine, detail.Amount, detail.PaymentTransactionID));
++                }
++
++                if (!anyAdjusted)
++                    LogManager.GetLogger().Warning(string.Format("ADJUST_PAYPROFEES_IF_RECORDASLINE — no payment lines adjusted (no matching OrderPaymentTransaction/OrderPayment fees for details). ProfileID={0}, OrderId={1}, OrderPaymentProcessorFees={2}.",
++                        objprofileAdminDTO.ProfileID, objServiceOrderDTO.OrderId, objServiceOrderDTO.PaymentProcessorFees));
++            }
++            catch (Exception ex)
++            {
++                LogManager.GetLogger().Exception(ex, true);
++            }
++        }
++
++        /// <summary>
++        /// Fee attributed to one payment line: sum of OrderPaymentTransaction.Fees for matching TransactionNumber,
++        /// else fees from matching OrderPayment (same rules as aggregate parse).
++        /// </summary>
++        private static double GetProcessorFeeForPaymentLine(ProfileAdminDTO objprofileAdminDTO, PaymentDetailDTO detail, MarshalledData objMarshalledData)
++        {
++            if (UtilityFunctions.IsNullOrBlank(detail.PaymentTransactionID) || objMarshalledData == null)
++                return 0;
++
++            if (objMarshalledData.OrderPaymentTransaction != null && objMarshalledData.OrderPaymentTransaction.Count > 0)
++            {
++                double sumTxn = objMarshalledData.OrderPaymentTransaction
++                    .Where(t => UtilityFunctions.ToEqual(t.TransactionNumber, detail.PaymentTransactionID))
++                    .Sum(t => t.Fees > 0 ? t.Fees : 0);
++                if (sumTxn > 0)
++                    return sumTxn;
++            }
++
++            if (objMarshalledData.OrderPayment == null || objMarshalledData.OrderPayment.Count == 0)
++                return 0;
++
++            foreach (OrderPayment op in objMarshalledData.OrderPayment)
++            {
++                if (!UtilityFunctions.ToEqual(op.PaymentTransactionId, detail.PaymentTransactionID))
++                    continue;
++                if (!(UtilityFunctions.ToEqual(op.Kind, "SALE") || UtilityFunctions.ToEqual(op.Kind, "CAPTURE")))
++                    continue;
++                if (!UtilityFunctions.ToEqual(op.Status, "SUCCESS"))
++                    continue;
++
++                double fee = 0;
++                if (op.Fees != 0)
++                    fee = UtilityFunctions.getDouble(CommonUtility.SplitDecimalInAmount(op.Fees));
++                else if (op.TransactionFeeTotalAmount != 0 && !UtilityFunctions.ToEqual(op.Kind, "refund"))
++                    fee = UtilityFunctions.getDouble(CommonUtility.SplitDecimalInAmount(op.TransactionFeeTotalAmount));
++                else if (op.PaymentFees != 0)
++                    fee = op.PaymentFees;
++
++                if (fee > 0)
++                    return fee;
++            }
++
++            return 0;
++        }
++    }
++}
+diff --git a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/ShopifyCloudIntegrationService_Parsing.cs b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/ShopifyCloudIntegrationService_Parsing.cs
+index 97f7809..07d5fa5 100644
+--- a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/ShopifyCloudIntegrationService_Parsing.cs
++++ b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/ShopifyCloudIntegrationService_Parsing.cs
+@@ -5965,7 +5965,7 @@ namespace wg.eCC.OnlineStoreFactory.CloudIntegrationService
+                         }
+ 
+                         // UD-32242 — per capture: subtract each balance-transaction fee from the matching payment line when node ADJUST_PAYPROFEES_IF_RECORDASLINE_<ProfileID> is on
+-                        AdjustPaymentAmountByProcessorFee(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData);
++                        PaymentProcessorFeeHelper.AdjustPaymentAmountByProcessorFee(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData);
+                     }
+                     if (UtilityFunctions.ToStr(objServiceOrderDTO.Bill.PayMethod) != "" && CommonUtility.CustomizationNode.Contains(CustomizationConstant.MAPSHOPIFY_PAYMENTMETHOD) && CommonUtility.IsVerifyShopifyPaymentMethod(objServiceOrderDTO.Bill.PayMethod) && CommonUtility.IsMappedwithShopifyPaymentMethod(objServiceOrderDTO.Bill.PayMethod))
+                     {
+@@ -5983,103 +5983,8 @@ namespace wg.eCC.OnlineStoreFactory.CloudIntegrationService
+                 LogManager.GetLogger().Exception(ex, true);
+             }
+         }
+-        /// <summary>
+-        /// UD-32242: When ADJUST_PAYPROFEES_IF_RECORDASLINE_&lt;ProfileID&gt; is on and fees are recorded as line items,
+-        /// subtract processor fees per payment line (per capture): match each PaymentDetailDTO to OrderPaymentTransaction
+-        /// by PaymentTransactionID / TransactionNumber, or to OrderPayment by PaymentTransactionId when balance rows are absent.
+-        /// </summary>
+-        private void AdjustPaymentAmountByProcessorFee(ProfileAdminDTO objprofileAdminDTO, ServiceOrderDTO objServiceOrderDTO, MarshalledData objMarshalledData)
+-        {
+-            try
+-            {
+-                if (!(CommonUtility.CustomizationNode.Contains(CustomizationConstant.ADJUST_PAYPROFEES_IF_RECORDASLINE + UtilityFunctions.ToStr(objprofileAdminDTO.ProfileID))
+-                    && objprofileAdminDTO.ISPaymentProcessorApplicable
+-                    && objprofileAdminDTO.StorePaymentProcessor != null
+-                    && UtilityFunctions.ToEqual(objprofileAdminDTO.StorePaymentProcessor.AccountingTransactionType, "Line Item")))
+-                    return;
+-
+-                if (objServiceOrderDTO.PaymentProcessorFees <= 0 || objServiceOrderDTO.PaymentDetails == null || !objServiceOrderDTO.PaymentDetails.Any())
+-                    return;
+-
+-                bool anyAdjusted = false;
+-                foreach (DTO.StoreService.PaymentDetailDTO detail in objServiceOrderDTO.PaymentDetails)
+-                {
+-                    double feeForLine = GetProcessorFeeForPaymentLine(objprofileAdminDTO, detail, objMarshalledData);
+-                    if (feeForLine <= 0)
+-                        continue;
+-
+-                    if (detail.Amount < feeForLine)
+-                    {
+-                        LogManager.GetLogger().Warning(string.Format("ADJUST_PAYPROFEES_IF_RECORDASLINE skipped for a line — payment amount ({0}) is less than line processor fee ({1}). ProfileID={2}, OrderId={3}, PaymentTxnId={4}.",
+-                            detail.Amount, feeForLine, objprofileAdminDTO.ProfileID, objServiceOrderDTO.OrderId, detail.PaymentTransactionID));
+-                        continue;
+-                    }
+-
+-                    double dblOriginalAmount = detail.Amount;
+-                    detail.Amount = UtilityFunctions.ToRoundOff(dblOriginalAmount - feeForLine);
+-                    anyAdjusted = true;
+-                    LogManager.GetLogger().Info(string.Format("ADJUST_PAYPROFEES_IF_RECORDASLINE applied (per line). ProfileID={0}, OrderId={1}, OriginalAmount={2}, LineFee={3}, AdjustedAmount={4}, PaymentTxnId={5}.",
+-                        objprofileAdminDTO.ProfileID, objServiceOrderDTO.OrderId, dblOriginalAmount, feeForLine, detail.Amount, detail.PaymentTransactionID));
+-                }
+-
+-                if (!anyAdjusted)
+-                    LogManager.GetLogger().Warning(string.Format("ADJUST_PAYPROFEES_IF_RECORDASLINE — no payment lines adjusted (no matching OrderPaymentTransaction/OrderPayment fees for details). ProfileID={0}, OrderId={1}, OrderPaymentProcessorFees={2}.",
+-                        objprofileAdminDTO.ProfileID, objServiceOrderDTO.OrderId, objServiceOrderDTO.PaymentProcessorFees));
+-            }
+-            catch (Exception ex)
+-            {
+-                LogManager.GetLogger().Exception(ex, true);
+-            }
+-        }
+-
+-        /// <summary>
+-        /// Fee attributed to one payment line: sum of OrderPaymentTransaction.Fees for matching TransactionNumber, else fees from matching OrderPayment (Shopify/PayPal same rules as aggregate parse).
+-        /// </summary>
+-        private static double GetProcessorFeeForPaymentLine(ProfileAdminDTO objprofileAdminDTO, DTO.StoreService.PaymentDetailDTO detail, MarshalledData objMarshalledData)
+-        {
+-            if (UtilityFunctions.IsNullOrBlank(detail.PaymentTransactionID) || objMarshalledData == null)
+-                return 0;
+-
+-            if (objMarshalledData.OrderPaymentTransaction != null && objMarshalledData.OrderPaymentTransaction.Count > 0)
+-            {
+-                double sumTxn = objMarshalledData.OrderPaymentTransaction
+-                    .Where(t => UtilityFunctions.ToEqual(t.TransactionNumber, detail.PaymentTransactionID))
+-                    .Sum(t => t.Fees > 0 ? t.Fees : 0);
+-                if (sumTxn > 0)
+-                    return sumTxn;
+-            }
+-
+-            if (objMarshalledData.OrderPayment == null || objMarshalledData.OrderPayment.Count == 0)
+-                return 0;
+-
+-            foreach (OrderPayment op in objMarshalledData.OrderPayment)
+-            {
+-                if (!UtilityFunctions.ToEqual(op.PaymentTransactionId, detail.PaymentTransactionID))
+-                    continue;
+-                if (!(UtilityFunctions.ToEqual(op.Kind, "SALE") || UtilityFunctions.ToEqual(op.Kind, "CAPTURE")))
+-                    continue;
+-                if (!UtilityFunctions.ToEqual(op.Status, "SUCCESS"))
+-                    continue;
+-
+-                if (UtilityFunctions.ToEqual(op.Method, "SHOPIFY_PAYMENTS"))
+-                {
+-                    if (op.Fees != 0)
+-                        return UtilityFunctions.getDouble(CommonUtility.SplitDecimalInAmount(op.Fees));
+-                    if (op.TransactionFeeTotalAmount != 0 && !UtilityFunctions.ToEqual(op.Kind, "refund"))
+-                        return UtilityFunctions.getDouble(CommonUtility.SplitDecimalInAmount(op.TransactionFeeTotalAmount));
+-                }
+-                else if (UtilityFunctions.ToEqual(op.Method, "PAYPAL"))
+-                {
+-                    if (CommonUtility.CustomizationNode.Contains(CustomizationConstant.DONOTDOWNLOAD_PAYPALFEES_VIASHOPIFY + objprofileAdminDTO.ProfileID))
+-                        return 0;
+-                    if (op.PaymentFees != 0)
+-                        return op.PaymentFees;
+-                    return UtilityFunctions.getDouble(CommonUtility.SplitDecimalInAmount(op.Fees));
+-                }
+-            }
+-
+-            return 0;
+-        }
++        // UD-32242: AdjustPaymentAmountByProcessorFee and GetProcessorFeeForPaymentLine
++        // moved to shared PaymentProcessorFeeHelper for cross-parser reuse.
+ 
+         /// <summary>
+         /// This method is use to parse shipment info of order.
+diff --git a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Square/SquareCISOrder.cs b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Square/SquareCISOrder.cs
+index 8de6d29..903e575 100644
+--- a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Square/SquareCISOrder.cs
++++ b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Square/SquareCISOrder.cs
+@@ -418,6 +418,9 @@ namespace wg.eCC.OnlineStoreFactory.CloudIntegrationService
+                 GetPaymentInfo(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData, objCISSpecificOrderProcessingSettings);
+                 GetSurcharges(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData, objCISSpecificOrderProcessingSettings);
+ 
++                // UD-32242 — per capture: subtract each balance-transaction fee from the matching payment line
++                PaymentProcessorFeeHelper.AdjustPaymentAmountByProcessorFee(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData);
++
+                 //https://webgility.atlassian.net/browse/UD-20714
+                 CopyShippingInfo(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData, objCISSpecificOrderProcessingSettings);
+ 
+diff --git a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Uniformity/UniformOrder.cs b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Uniformity/UniformOrder.cs
+index 691ea00..b85a516 100644
+--- a/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Uniformity/UniformOrder.cs
++++ b/Desktop/wg.eCC.OnlineStoreFactory/CloudIntegrationService/Uniformity/UniformOrder.cs
+@@ -13,6 +13,7 @@ using wg.Unify.OnlineStoreFactory.CloudIntegrationService.DTO;
+ using WgUtility;
+ using WgUtility.Logging;
+ using static wg.eCC.DTO.Enums;
++using wg.eCC.OnlineStoreFactory.CloudIntegrationService;
+ 
+ namespace wg.Unify.OnlineStoreFactory.CloudIntegrationService
+ {
+@@ -65,7 +66,9 @@ namespace wg.Unify.OnlineStoreFactory.CloudIntegrationService
+ 
+             //Gift Card Payment
+             ParseOrderPaymentInfo(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData, objCISSpecificOrderProcessingSettings);
+-            
++
++            // UD-32242 — per capture: subtract each balance-transaction fee from the matching payment line
++            PaymentProcessorFeeHelper.AdjustPaymentAmountByProcessorFee(objprofileAdminDTO, objServiceOrderDTO, objMarshalledData);
+         }
+         public void DownloadOrderItemDetails_Parsing_and_Customization(ProfileAdminDTO objprofileAdminDTO, ServiceOrderDTO objServiceOrderDTO, ServiceItemDTO objOrderItemsDTO, CISOrderItem objCISOrderItem, CISSpecificOrderProcessingSettings objCISSpecificOrderProcessingSettings, MarshalledData objMarshalledData)
+         {
+diff --git a/Desktop/wg.eCC.OnlineStoreFactory/wg.Unify.OnlineStoreFactory.csproj b/Desktop/wg.eCC.OnlineStoreFactory/wg.Unify.OnlineStoreFactory.csproj
+index abf89d6..5d0e833 100644
+--- a/Desktop/wg.eCC.OnlineStoreFactory/wg.Unify.OnlineStoreFactory.csproj
++++ b/Desktop/wg.eCC.OnlineStoreFactory/wg.Unify.OnlineStoreFactory.csproj
+@@ -166,6 +166,7 @@
+     <Compile Include="CloudIntegrationService\Amazon\AmazonCISOrdersRefund.cs" />
+     <Compile Include="CloudIntegrationService\Amazon\AmazonCISSettlementReport.cs" />
+     <Compile Include="CloudIntegrationService\CloudIntegrationService_Payout.cs" />
++    <Compile Include="CloudIntegrationService\PaymentProcessorFeeHelper.cs" />
+     <Compile Include="CloudIntegrationService\Clover\CloverCISConnection.cs" />
+     <Compile Include="CloudIntegrationService\Clover\CloverCISInventory.cs" />
+     <Compile Include="CloudIntegrationService\Clover\CloverCISOrder.cs" />
