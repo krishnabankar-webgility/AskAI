@@ -1,0 +1,10 @@
+{
+  "name": "es-logs-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Minimal Elasticsearch MCP server — raw fetch, no license/product checks",
+  "main": "server.mjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
