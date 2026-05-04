@@ -21,7 +21,6 @@ const WO_ES  = process.env.WO_ES_URL ?? "http://kibana-wo.webgility.com:9200";
 const KIBANA_CIS = "https://kibana-cis.webgility.com";
 const KIBANA_AUTH = process.env.KIBANA_WD_AUTH ?? process.env.KIBANA_AUTH; // user:pass
 const SLACK_WEBHOOK = process.env.SLACK_WEBHOOK_MY_DAILY_UPDATE;
-const SLACK_CHANNEL = process.env.SLACK_CHANNEL ?? "wd_performance";
 
 // --- Time window (default: yesterday 9 AM IST → today 9 AM IST) ---
 function defaultTimeRange() {
@@ -405,12 +404,12 @@ async function postToSlack(report, sources, results) {
     const resp = await fetch(SLACK_WEBHOOK, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: summary, channel: `#${SLACK_CHANNEL}` }),
+      body: JSON.stringify({ text: summary }),
       signal: AbortSignal.timeout(15_000),
     });
 
     if (resp.ok) {
-      console.log(`✅ Report summary posted to Slack #${SLACK_CHANNEL}`);
+      console.log("✅ Report summary posted to Slack via webhook");
     } else {
       const body = await resp.text();
       console.error(`⚠ Slack webhook returned ${resp.status}: ${body.substring(0, 200)}`);

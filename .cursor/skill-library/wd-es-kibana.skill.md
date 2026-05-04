@@ -19,7 +19,7 @@ This file is the **canonical** procedure. The Cursor agent at `.cursor/agents/wd
 | CIS ES (MCP only) | `http://172.31.66.65:9200` — `cis-*`, `cns-*`, `cnsrcv-*` |
 | WO ES (MCP only) | `http://kibana-wo.webgility.com:9200` — `wo-*`, `woonboarding-*` |
 | Report output dir | `reports/wd-kibana-logs/` |
-| Slack delivery channel | `#wd_performance` (override via `SLACK_CHANNEL` env) |
+| Slack delivery channel | Fixed at webhook creation time (e.g. `#wd_performance`) — **not** overridable at runtime |
 | Slack webhook env | `SLACK_WEBHOOK_MY_DAILY_UPDATE` |
 | Confluence parent ID | `3042410502` |
 | Confluence space ID | `2590998546` |
@@ -44,6 +44,8 @@ Add to agent secrets in **Cursor Dashboard → Cloud Agents → Secrets**: `KIBA
 ### SLACK_WEBHOOK_MY_DAILY_UPDATE
 Slack Incoming Webhook URL for posting reports.
 
+**Important — channel is fixed at webhook creation time.** When you create an Incoming Webhook in your Slack App, you select the target channel (e.g. `#wd_performance`). The webhook **always posts to that channel** — you cannot override it via a `channel` parameter in the payload. If you need to post to a different channel, create a new webhook pointed at that channel.
+
 **Local Setup (Windows):**
 ```powershell
 [System.Environment]::SetEnvironmentVariable('SLACK_WEBHOOK_MY_DAILY_UPDATE', 'https://hooks.slack.com/...', 'User')
@@ -52,14 +54,8 @@ Slack Incoming Webhook URL for posting reports.
 **Cursor Cloud Setup:**
 Add to agent secrets: `SLACK_WEBHOOK_MY_DAILY_UPDATE`
 
-### SLACK_CHANNEL (Optional)
-Slack channel name (default: `wd_performance`).
-
-**Cursor Cloud Setup:**
-Add to agent secrets: `SLACK_CHANNEL` (value: `wd_performance`)
-
 ### SLACK_BOT_TOKEN + SLACK_TEAM_ID (Optional — Slack MCP posting)
-If the Slack MCP is connected, the agent can post via `slack_send_message` instead of the webhook. The webhook is the **preferred** path for automated/scheduled runs because it requires no MCP server.
+If the Slack MCP is connected, the agent can post via `slack_send_message` instead of the webhook. With the MCP, the channel **is** selectable at runtime (the agent sends to `#wd_performance` by default). The webhook is the **preferred** path for automated/scheduled runs because it requires no MCP server.
 
 - **Never** hard-code or log credentials.
 - Script supports both User env (local) and Process env (Cursor Cloud).
@@ -278,8 +274,7 @@ Go to **Cursor Dashboard → Cloud Agents → Secrets** and add these secrets. T
 | Secret name | Value | Required? |
 |-------------|-------|-----------|
 | `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
-| `SLACK_WEBHOOK_MY_DAILY_UPDATE` | `https://hooks.slack.com/services/T.../B.../xxx` | **Yes** — Slack Incoming Webhook URL for posting reports |
-| `SLACK_CHANNEL` | `wd_performance` | Optional — defaults to `wd_performance` |
+| `SLACK_WEBHOOK_MY_DAILY_UPDATE` | `https://hooks.slack.com/services/T.../B.../xxx` | **Yes** — Slack Incoming Webhook URL (channel is baked into the webhook — it posts to whatever channel you selected when creating the webhook in your Slack App) |
 | `SLACK_BOT_TOKEN` | `xoxb-...` | Optional — only if using Slack MCP instead of webhook |
 | `SLACK_TEAM_ID` | `T01ABCDE123` | Optional — only if using Slack MCP |
 
@@ -411,7 +406,7 @@ Add `KIBANA_WD_AUTH` and `SLACK_WEBHOOK_MY_DAILY_UPDATE` to **GitHub repo → Se
 | ES proxy path | `/api/console/proxy?path=...&method=POST` | 2026-04 |
 | Default report window | Yesterday 9 AM IST → Today 9 AM IST | 2026-04 |
 | Standalone script | `.mcp-servers/es-logs/fetch-daily-logs.mjs` | 2026-05 |
-| Slack delivery channel | `#wd_performance` (override via `SLACK_CHANNEL`) | 2026-05 |
+| Slack delivery channel | Fixed at webhook creation (e.g. `#wd_performance`) — channel override param is **ignored** by Slack App webhooks | 2026-05 |
 | Slack webhook env var | `SLACK_WEBHOOK_MY_DAILY_UPDATE` | 2026-05 |
 | Cursor Automation URL | `cursor.com/automations/new` | 2026-05 |
 | Cursor Automation trigger | Webhook triggered → generates hook URL for external cron | 2026-05 |
