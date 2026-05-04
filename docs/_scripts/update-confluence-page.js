@@ -35,10 +35,18 @@ function req(method, path, body) {
       res.on("data", (c) => (d += c));
       res.on("end", () => {
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          if (!d || !d.trim()) {
+            reject(new Error("Empty response body (expected JSON)"));
+            return;
+          }
           try {
             resolve(JSON.parse(d));
-          } catch {
-            resolve(d);
+          } catch (e) {
+            reject(
+              new Error(
+                `Expected JSON in success response, parse failed: ${e.message}. Body (first 500 chars): ${d.slice(0, 500)}`
+              )
+            );
           }
         } else {
           reject(new Error(`HTTP ${res.statusCode}: ${d.slice(0, 2500)}`));

@@ -131,11 +131,11 @@ These pages are in the personal space (space ID `2590998546`). The agent should 
 | `2993487893` | Amazon Inventory Report Help Doc | `2590998867` | 2026-03-13 |
 | `3014885382` | ToDo Items & Questions | `3014819843` (Personal folder) | 2026-04-03 |
 | `3021045763` | template (CS template container page) | `3014361116` (Public folder) | 2026-04-10 |
-| `3045425160` | Daily Work Update agent — team guide (Cursor / Copilot / VS Code) | `3014361116` (Public folder) | 2026-05-04 |
 | `3021275138` | Customization Delivery | `3021045763` | 2026-04-10 |
 | `3021209607` | Comment for QA Testing | `3021045763` | 2026-04-10 |
 | `3029205012` | Customization Notes Template | `3021045763` | 2026-04-17 |
 | `3037495319` | UD-32071 CIM | `3027959816` (Customizations folder) | 2026-04-27 |
+| `3045425160` | Daily Work Update agent — team guide (Cursor / Copilot / VS Code) | `3014361116` (Public folder) | 2026-05-04 |
 | `3027632135` | Customization Dev Notes | `3027337225` (My Notes folder) | 2026-04-16 |
 | `3027468302` | QBD Custom Field Code | `3027337225` (My Notes folder) | 2026-04-16 |
 | `3024093188` | KPI Report — Customizations & Revenue (Oct 2025 – Mar 2026) | `2590998867` | 2026-04-13 |
