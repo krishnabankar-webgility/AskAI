@@ -195,9 +195,26 @@ Query each index pattern for errors in the time window. See agent file for full 
 - Top error message templates
 - Sample error logs (latest 10)
 
-### Step 3 — Performance Signals (WD only)
+### Step 3 — Performance by module — Shopify (PayoutPosting) (WD only)
 
-For WD report generation, also collect performance-oriented data from documents containing perf fields (`processedRecords`, `averagePerSecond`, `clientAge`).
+For WD daily reports, surface **one** performance section — not separate “Performance Signals”, “Performance by Module”, and “Performance by Store”. Scope perf queries to **Shopify** and **`module` = `PayoutPosting`** (today’s only store-specific payout perf slice).
+
+**Filter (conceptual):** `store.keyword` is Shopify **and** `module.keyword` is `PayoutPosting`, plus the report time range on `timestamp`. Prefer perf-oriented documents (those that carry throughput fields such as `processedRecords`, `averagePerSecond`, `clientAge`, or explicit duration fields).
+
+**Metrics to compute:**
+
+| Output | Meaning |
+|--------|---------|
+| **Total payouts processed** | Sum of `processedRecords` (or the field that counts payouts in each perf doc) across matching documents. |
+| **Total processing time** | Prefer **sum** of a duration field in milliseconds/seconds if present (e.g. `totalDurationMs`, `elapsedMs`, `durationMs` — confirm names from mapping or a sample hit). If no total-duration field exists, approximate **per document** as `processedRecords / averagePerSecond` seconds when `averagePerSecond > 0`, then **sum** across docs. State “estimated from rate fields” when using the approximation. |
+| **Time per payout — average** | `Total processing time ÷ Total payouts processed` (same units as total time). |
+| **Time per payout — min / max** | Prefer **min** and **max** aggregations on a **per-payout** duration field if one exists. If only batch-level `averagePerSecond` exists per doc, use **min/max of `1 / averagePerSecond`** across documents as a **proxy** for fastest/slowest batch effective time-per-record, and label the row as **(proxy from per-batch rate)**. |
+
+**Prior-window column (“vs prior window”):** Re-run the same aggregations for the **previous** window of equal length (e.g. the prior calendar day for the default “yesterday 9 AM IST → today 9 AM IST” report). Compare total payouts and total time; omit the column if the prior query fails or returns zero docs.
+
+**Presentation:** One markdown section titled `## Performance by module — Shopify (PayoutPosting)` with a compact table (see `.cursor/agents/wd-es-kibana.agent.md`). Do **not** duplicate the same numbers under separate “Performance Signals” or “Performance by Store” headings.
+
+**Do not** present **records/sec** as the primary headline metric; counts and elapsed time drive the narrative. Optional secondary note: if rates help triage, put them in **Observations**, not as the main table.
 
 ### Step 4 — File Artifact
 
@@ -411,3 +428,4 @@ Add `KIBANA_WD_AUTH` and `SLACK_WEBHOOK_MY_DAILY_UPDATE` to **GitHub repo → Se
 | Cursor Automation URL | `cursor.com/automations/new` | 2026-05 |
 | Cursor Automation trigger | Webhook triggered → generates hook URL for external cron | 2026-05 |
 | Cursor Automation repo | AskAI on master | 2026-05 |
+| WD perf section | Single block **Performance by module — Shopify (PayoutPosting)**; metrics: total payouts, total time, min/max/avg time per payout; no separate Performance Signals / Performance by Store for this slice | 2026-05 |

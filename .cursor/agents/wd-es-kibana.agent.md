@@ -79,11 +79,33 @@ The skill file contains the full index & field schema. For quick reference, here
 ## Top Error Messages (with Kibana drilldown links)
 ## Error Timeline (Hourly)
 ## Fatal Breakdown
-## Performance Signals
-## Performance by Module
-## Performance by Store
+## Performance by module — Shopify (PayoutPosting)
 ## Sample Errors (Latest 10)
 ## Observations
+```
+
+### WD performance block (Shopify PayoutPosting only)
+
+For the daily report, **do not** emit separate **Performance Signals**, **Performance by Module** (multi-module), or **Performance by Store** tables for WD perf. The only Shopify-relevant perf slice today is **PayoutPosting** — fold everything into one section.
+
+Use this shape (fill from Elasticsearch; see `wd-es-kibana.skill.md` Step 3 for aggregations and fallbacks):
+
+```markdown
+## Performance by module — Shopify (PayoutPosting)
+
+Perf logs filtered with `store` = Shopify and `module` = PayoutPosting (same time window as the report). Omit this section if there are no matching perf documents.
+
+| Metric | Value | vs prior window |
+|--------|-------|----------------|
+| Total payouts processed | {count} | {optional: prior → current, % change} |
+| Total processing time | {sum of durations} | {optional comparison} |
+| Time per payout — average | {duration} | |
+| Time per payout — min | {duration} | |
+| Time per payout — max | {duration} | |
+
+**Drilldown:** {Discover link and/or KQL / filter column per skill rules}
+
+_Do not lead with records/sec; express throughput as payout counts and wall-clock time. If prior-window comparison is unavailable, drop that column rather than guessing._
 ```
 
 ## Persist new learnings

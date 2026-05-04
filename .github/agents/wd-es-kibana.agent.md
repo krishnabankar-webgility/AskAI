@@ -26,6 +26,8 @@ Before any analysis or writes, **read all of the following files in order** usin
 2. **Check MCP connectivity** — attempt `mcp_kibana-logs_list_indices` and `mcp_wo-log_list_indices`. If MCP is unavailable, fall back to Kibana WD HTTPS API.
 3. **Execute the user's request** following the skill's procedures.
 
+**Daily report layout** (full markdown template): see `.cursor/agents/wd-es-kibana.agent.md` — **Report output format**. WD performance is a **single** section, **Performance by module — Shopify (PayoutPosting)** (totals: payouts processed, total time, min/max/avg time per payout), not three separate performance tables.
+
 ## Hard safety rules
 
 - **Read-only** — never modify ES data.
