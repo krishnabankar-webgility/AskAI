@@ -20,14 +20,7 @@ const CIS_ES = process.env.ES_URL ?? "http://172.31.66.65:9200";
 const WO_ES  = process.env.WO_ES_URL ?? "http://kibana-wo.webgility.com:9200";
 const KIBANA_CIS = "https://kibana-cis.webgility.com";
 const KIBANA_AUTH = process.env.KIBANA_WD_AUTH ?? process.env.KIBANA_AUTH; // user:pass
-
-function defaultReportPath() {
-  const start = TIME.gte.slice(0, 10);
-  const end = TIME.lt.slice(0, 10);
-  return resolve(__dirname, "../../reports/wd-kibana-logs", `${start}-to-${end}-daily-log-report.md`);
-}
-
-const REPORT_PATH = process.env.REPORT_PATH ?? defaultReportPath();
+const SLACK_WEBHOOK = process.env.SLACK_WEBHOOK_MY_DAILY_UPDATE;
 
 // --- Time window (default: yesterday 9 AM IST → today 9 AM IST) ---
 function defaultTimeRange() {
@@ -43,6 +36,14 @@ function defaultTimeRange() {
 
 const [,, argGte, argLt] = process.argv;
 const TIME = argGte && argLt ? { gte: argGte, lt: argLt } : defaultTimeRange();
+
+function defaultReportPath() {
+  const start = TIME.gte.slice(0, 10);
+  const end = TIME.lt.slice(0, 10);
+  return resolve(__dirname, "../../reports/wd-kibana-logs", `${start}-to-${end}-daily-log-report.md`);
+}
+
+const REPORT_PATH = process.env.REPORT_PATH ?? defaultReportPath();
 
 // --- ES Query Helper ---
 async function esQuery(baseUrl, index, queryBody, label) {
@@ -345,6 +346,77 @@ async function main() {
 
   console.log(`\nMarkdown report saved to: ${REPORT_PATH}\n`);
   console.log(report);
+
+  await postToSlack(report, sources, results);
+}
+
+async function buildSlackSummary(report, sources, results) {
+  const istGte = utcToIST(TIME.gte);
+  const istLt = utcToIST(TIME.lt);
+
+  let text = `*WD Kibana Daily Log Report*\n`;
+  text += `*Period:* ${istGte} IST → ${istLt} IST\n`;
+  text += `────────────────────────\n`;
+  text += `*Summary*\n`;
+
+  for (const src of sources) {
+    const r = results[src.name];
+    const errors = getTotal(r.errorCount);
+    const warnings = getTotal(r.warningCount);
+    text += `• *${src.name}* (${src.index}): ${errors} errors, ${warnings} warnings\n`;
+  }
+
+  const allTopErrors = [];
+  for (const src of sources) {
+    const r = results[src.name];
+    const buckets = getBuckets(r.topErrors, "top_errors");
+    for (const b of buckets) {
+      const existing = allTopErrors.find(e => e.key === b.key);
+      if (existing) existing.count += b.doc_count;
+      else allTopErrors.push({ key: b.key, count: b.doc_count });
+    }
+  }
+  allTopErrors.sort((a, b) => b.count - a.count);
+
+  if (allTopErrors.length > 0) {
+    text += `\n*Top Errors*\n`;
+    for (const e of allTopErrors.slice(0, 5)) {
+      const msg = e.key.length > 80 ? e.key.substring(0, 80) + "…" : e.key;
+      text += `• ${msg} — *${e.count}*\n`;
+    }
+  }
+
+  text += `\n📄 Full report: \`${REPORT_PATH}\``;
+  text += `\n🔗 <https://kibana-wd.webgility.com|Kibana WD>`;
+
+  return text;
+}
+
+async function postToSlack(report, sources, results) {
+  if (!SLACK_WEBHOOK) {
+    console.log("ℹ SLACK_WEBHOOK_MY_DAILY_UPDATE not set — skipping Slack post.");
+    return;
+  }
+
+  const summary = await buildSlackSummary(report, sources, results);
+
+  try {
+    const resp = await fetch(SLACK_WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: summary }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (resp.ok) {
+      console.log("✅ Report summary posted to Slack via webhook");
+    } else {
+      const body = await resp.text();
+      console.error(`⚠ Slack webhook returned ${resp.status}: ${body.substring(0, 200)}`);
+    }
+  } catch (e) {
+    console.error(`⚠ Slack webhook failed: ${e.message}`);
+  }
 }
 
 main().catch(e => { console.error("Fatal:", e); process.exit(1); });
