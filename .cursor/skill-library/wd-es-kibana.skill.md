@@ -271,45 +271,97 @@ For non-report queries (subscriber lookup, error investigation, etc.):
 
 ## Cursor Cloud Automation Setup
 
-### Option 1: Cursor Scheduled Cloud Agent (Recommended)
+### Prerequisites — Cloud Secrets
 
-Set up at [cursor.com](https://cursor.com) → Dashboard → Cloud Agents → Scheduled Agents:
+Go to **Cursor Dashboard → Cloud Agents → Secrets** and add these secrets. They are injected as environment variables into every Cloud Agent VM.
 
-| Setting | Value |
-|---------|-------|
-| **Name** | `WD ES Kibana Daily Report` |
-| **Repository** | `krishnabankar-webgility/AskAI` |
-| **Branch** | `master` |
-| **Agent / Prompt** | `Generate the daily WD Kibana log report for the last 24 hours and post it to Slack. Use the WD ES Kibana agent.` |
-| **Schedule (cron)** | `30 4 * * 1-5` (= 10:00 AM IST, Mon–Fri) |
-| **Timezone** | `Asia/Kolkata` or `UTC` (adjust cron accordingly) |
+| Secret name | Value | Required? |
+|-------------|-------|-----------|
+| `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
+| `SLACK_WEBHOOK_MY_DAILY_UPDATE` | `https://hooks.slack.com/services/T.../B.../xxx` | **Yes** — Slack Incoming Webhook URL for posting reports |
+| `SLACK_CHANNEL` | `wd_performance` | Optional — defaults to `wd_performance` |
+| `SLACK_BOT_TOKEN` | `xoxb-...` | Optional — only if using Slack MCP instead of webhook |
+| `SLACK_TEAM_ID` | `T01ABCDE123` | Optional — only if using Slack MCP |
 
-**Required Cloud Secrets:**
+### Option 1: Cursor Automation with Webhook Trigger (Recommended)
 
-| Secret name | Value | Purpose |
-|-------------|-------|---------|
-| `KIBANA_WD_AUTH` | `username:password` | Kibana WD Basic auth |
-| `SLACK_WEBHOOK_MY_DAILY_UPDATE` | `https://hooks.slack.com/services/...` | Slack Incoming Webhook |
-| `SLACK_CHANNEL` | `wd_performance` | Target Slack channel name (optional, defaults to `wd_performance`) |
-| `SLACK_BOT_TOKEN` | `xoxb-...` | Slack MCP bot token (optional — only needed if using MCP instead of webhook) |
-| `SLACK_TEAM_ID` | `T01ABCDE123` | Slack workspace ID (optional — only needed if using MCP) |
+This uses the **Cursor Automations** UI at [cursor.com/automations/new](https://cursor.com/automations/new).
 
-### Option 2: Standalone Script via Cron / GitHub Actions
+#### Step-by-step setup
 
-Run the Node.js script directly (no Cursor agent needed):
+1. Go to **[cursor.com/automations/new](https://cursor.com/automations/new)**
+2. Set **Name**: `WD ES Kibana Daily Report`
+3. Under **Triggers**:
+   - Select **Webhook triggered**
+   - Set repository: **AskAI** on branch **master**
+   - Click **Save and enable** — Cursor will generate a **Webhook URL** (e.g. `https://cursor.com/api/automations/hooks/abc123...`)
+   - Copy this URL — you will call it from a cron job, Slack scheduled command, or GitHub Actions to fire the automation
+4. Under **Instructions**, paste this prompt:
 
-```bash
-# crontab (Linux/macOS) — 10:00 AM IST = 04:30 UTC
-30 4 * * 1-5 cd /path/to/AskAI/.mcp-servers/es-logs && KIBANA_WD_AUTH="$KIBANA_WD_AUTH" SLACK_WEBHOOK_MY_DAILY_UPDATE="$SLACK_WEBHOOK_MY_DAILY_UPDATE" node fetch-daily-logs.mjs >> /var/log/wd-kibana-report.log 2>&1
+```
+You are the WD ES Kibana agent. Generate the daily WD Kibana log report and post it to Slack.
+
+Steps:
+1. Read .cursor/skill-library/wd-es-kibana.skill.md for the full procedure.
+2. Time window: yesterday 9:00 AM IST to today 9:00 AM IST (yesterday 03:30 UTC to today 03:30 UTC).
+3. Query Kibana WD (https://kibana-wd.webgility.com) via HTTPS API. Auth is in KIBANA_WD_AUTH env variable. Use date-scoped indices (webgilitydesktop-YYYY.MM.DD).
+4. Build the full daily report markdown per the skill's output format.
+5. Save the report to reports/wd-kibana-logs/{YYYY-MM-DD}-wd-kibana-daily-report.md
+6. Post a summary to Slack using the SLACK_WEBHOOK_MY_DAILY_UPDATE env variable (Incoming Webhook). The standalone script at .mcp-servers/es-logs/fetch-daily-logs.mjs can do this — run: node .mcp-servers/es-logs/fetch-daily-logs.mjs
+7. Do not ask for confirmation — this is an automated run.
 ```
 
-**GitHub Actions workflow** (`.github/workflows/wd-kibana-daily-report.yml`):
+5. Under **Tools**, click **+ Add Tool or MCP** and add:
+   - **Slack** MCP (optional fallback — the webhook is the primary posting path)
+6. Click **Save**
+
+#### Triggering the webhook
+
+After saving, Cursor gives you a webhook URL. Call it to trigger a report run:
+
+```bash
+# Manual trigger (test it)
+curl -X POST "https://cursor.com/api/automations/hooks/<your-hook-id>"
+
+# Cron (10:00 AM IST = 04:30 UTC, Mon-Fri)
+30 4 * * 1-5 curl -s -X POST "https://cursor.com/api/automations/hooks/<your-hook-id>" >> /var/log/wd-kibana-trigger.log 2>&1
+
+# GitHub Actions (see Option 3 below)
+```
+
+#### Triggering from a Slack scheduled command (optional)
+
+If you want Slack itself to trigger the report:
+1. In your Slack App settings, create a **Slash Command** (e.g. `/kibana-report`)
+2. Set the Request URL to your Cursor Automation webhook URL
+3. Users can type `/kibana-report` in any channel to trigger an on-demand report
+
+### Option 2: Cursor Automation without Webhook (Cron Trigger)
+
+If your Cursor plan supports **scheduled triggers** (cron), you can skip the webhook:
+
+1. Go to **[cursor.com/automations/new](https://cursor.com/automations/new)**
+2. Set **Name**: `WD ES Kibana Daily Report`
+3. Under **Triggers**, click **+ Add Trigger** and select **Schedule**:
+   - Cron: `30 4 * * 1-5` (= 10:00 AM IST, Mon–Fri)
+   - Repository: **AskAI** on branch **master**
+4. Under **Instructions**, paste the same prompt as Option 1 above
+5. Under **Tools**, add **Slack** MCP (optional)
+6. Click **Save**
+
+This runs automatically every weekday morning without needing an external cron to call the webhook.
+
+### Option 3: Standalone Script via GitHub Actions
+
+If you prefer not to use Cursor Automations at all, the Node.js script handles everything end-to-end:
+
+**GitHub Actions workflow** — create `.github/workflows/wd-kibana-daily-report.yml`:
 
 ```yaml
 name: WD Kibana Daily Report
 on:
   schedule:
-    - cron: '30 4 * * 1-5'  # 10:00 AM IST, Mon-Fri
+    - cron: '30 4 * * 1-5'  # 10:00 AM IST = 04:30 UTC, Mon-Fri
   workflow_dispatch: {}
 
 jobs:
@@ -326,21 +378,26 @@ jobs:
           SLACK_WEBHOOK_MY_DAILY_UPDATE: ${{ secrets.SLACK_WEBHOOK_MY_DAILY_UPDATE }}
         run: |
           cd .mcp-servers/es-logs
-          npm install --omit=dev
           node fetch-daily-logs.mjs
 ```
 
-### Option 3: Cursor Scheduled Agent with Auto-send
+Add `KIBANA_WD_AUTH` and `SLACK_WEBHOOK_MY_DAILY_UPDATE` to **GitHub repo → Settings → Secrets and variables → Actions → Repository secrets**.
 
-For fully unattended operation, the Cursor scheduled agent prompt should include:
+### Option 4: Local cron / Task Scheduler
 
+```bash
+# crontab (Linux/macOS) — 10:00 AM IST = 04:30 UTC
+30 4 * * 1-5 cd /path/to/AskAI/.mcp-servers/es-logs && KIBANA_WD_AUTH="$KIBANA_WD_AUTH" SLACK_WEBHOOK_MY_DAILY_UPDATE="$SLACK_WEBHOOK_MY_DAILY_UPDATE" node fetch-daily-logs.mjs >> /var/log/wd-kibana-report.log 2>&1
 ```
-Generate the daily WD Kibana log report. Time window: yesterday 9:00 AM IST to today 9:00 AM IST. 
-Query Kibana WD via HTTPS API using KIBANA_WD_AUTH. 
-Save the report to reports/wd-kibana-logs/{date}-wd-kibana-daily-report.md.
-Post a summary to Slack #wd_performance via the SLACK_WEBHOOK_MY_DAILY_UPDATE webhook.
-Do not ask for confirmation — this is an automated scheduled run.
-```
+
+### Which option to choose?
+
+| Option | Best for | Requires |
+|--------|----------|----------|
+| **1 — Cursor Webhook** | On-demand + scheduled via external cron/Slack | Cursor Automations + webhook URL |
+| **2 — Cursor Cron** | Fully hands-off daily runs | Cursor Automations with schedule trigger |
+| **3 — GitHub Actions** | No Cursor dependency, CI/CD native | GitHub repo secrets |
+| **4 — Local cron** | Dev machines, manual control | Node.js + cron on the machine |
 
 ---
 
@@ -355,4 +412,7 @@ Do not ask for confirmation — this is an automated scheduled run.
 | Default report window | Yesterday 9 AM IST → Today 9 AM IST | 2026-04 |
 | Standalone script | `.mcp-servers/es-logs/fetch-daily-logs.mjs` | 2026-05 |
 | Slack delivery channel | `#wd_performance` (override via `SLACK_CHANNEL`) | 2026-05 |
-| Webhook env var | `SLACK_WEBHOOK_MY_DAILY_UPDATE` | 2026-05 |
+| Slack webhook env var | `SLACK_WEBHOOK_MY_DAILY_UPDATE` | 2026-05 |
+| Cursor Automation URL | `cursor.com/automations/new` | 2026-05 |
+| Cursor Automation trigger | Webhook triggered → generates hook URL for external cron | 2026-05 |
+| Cursor Automation repo | AskAI on master | 2026-05 |
