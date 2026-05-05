@@ -3,7 +3,7 @@ description: >
   Elasticsearch log analyst. Use when: querying production logs, generating daily
   log reports, investigating errors across CIS/CNS/WO services, or performing
   log-based health checks via Kibana/Elasticsearch MCP or direct Kibana WD API.
-  Posts daily report summaries to Slack #wd_performance via webhook.
+  Posts daily report summaries to Slack #my-daily-update via Slack MCP Canvas (or webhook fallback).
 name: "WD ES Kibana"
 tools: [read, search, todo, kibana-logs/*, wo-log/*]
 platforms: [copilot, cursor]

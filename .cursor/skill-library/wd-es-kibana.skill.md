@@ -19,7 +19,8 @@ This file is the **canonical** procedure. The Cursor agent at `.cursor/agents/wd
 | CIS ES (MCP only) | `http://172.31.66.65:9200` — `cis-*`, `cns-*`, `cnsrcv-*` |
 | WO ES (MCP only) | `http://kibana-wo.webgility.com:9200` — `wo-*`, `woonboarding-*` |
 | Report output dir | `reports/wd-kibana-logs/` |
-| Slack delivery channel | Fixed at webhook creation time (e.g. `#wd_performance`) — **not** overridable at runtime |
+| Slack delivery channel (MCP) | `#my-daily-update` — channel ID `C0B0CBW8G03` (selectable at runtime via Slack MCP) |
+| Slack delivery channel (webhook) | Fixed at webhook creation time — **not** overridable at runtime |
 | Slack webhook env | `SLACK_WEBHOOK_MY_DAILY_UPDATE` |
 | Confluence parent ID | `3042410502` |
 | Confluence space ID | `2590998546` |
@@ -55,7 +56,7 @@ Slack Incoming Webhook URL for posting reports.
 Add to agent secrets: `SLACK_WEBHOOK_MY_DAILY_UPDATE`
 
 ### SLACK_BOT_TOKEN + SLACK_TEAM_ID (Optional — Slack MCP posting)
-If the Slack MCP is connected, the agent can post via `slack_send_message` instead of the webhook. With the MCP, the channel **is** selectable at runtime (the agent sends to `#wd_performance` by default). The webhook is the **preferred** path for automated/scheduled runs because it requires no MCP server.
+If the Slack MCP is connected, the agent can post via `slack_create_canvas` + `slack_send_message` instead of the webhook. With the MCP, the channel **is** selectable at runtime. The Cursor Automation uses the MCP path to post a **Canvas** (full report as a readable document) to `#my-daily-update` (`C0B0CBW8G03`). The webhook is an alternative for non-MCP environments (GitHub Actions, local cron).
 
 - **Never** hard-code or log credentials.
 - Script supports both User env (local) and Process env (Cursor Cloud).
@@ -223,11 +224,26 @@ For WD daily reports, surface **one** performance section — not separate “Pe
 
 ### Step 5 — Slack Posting
 
-After writing the file artifact:
+After writing the file artifact, post the report to Slack. **Use exactly ONE posting method** — do NOT combine methods or the report will be posted multiple times.
 
-1. **Webhook (preferred for automation):** If `SLACK_WEBHOOK_MY_DAILY_UPDATE` is set, POST the report summary to the webhook. The standalone script (`fetch-daily-logs.mjs`) handles this automatically.
-2. **Slack MCP (interactive runs):** If the Slack MCP is connected and webhook is unavailable, use `slack_send_message` to post to `#wd_performance`.
+**Decision tree (pick the FIRST match and stop):**
+
+1. **Slack MCP connected (preferred for Cursor Automation):**
+   Use the Slack MCP to post to `#my-daily-update` (channel ID `C0B0CBW8G03`).
+   - **Step 5a:** Create a Slack Canvas from the full report markdown using `slack_create_canvas` with the title `WD Kibana Daily Log Report — {report-date}`. The canvas content should be the full report markdown.
+   - **Step 5b:** Post a message to `#my-daily-update` using `slack_send_message` referencing the canvas: `:page_facing_up: *WD Kibana Daily Log Report — {report-date}*\n\nFull report document: {canvas_id}`
+   - **Do NOT also run `fetch-daily-logs.mjs`** or post via webhook — that would cause a duplicate post.
+
+2. **Webhook only (no Slack MCP — e.g. GitHub Actions, local cron):**
+   If Slack MCP is not available but `SLACK_WEBHOOK_MY_DAILY_UPDATE` is set, POST a plain-text summary via webhook. The standalone script (`fetch-daily-logs.mjs`) handles this. The webhook channel is fixed at creation time.
+   - **Do NOT also use Slack MCP** if you chose this path.
+
 3. **Neither available:** Print the report to stdout and inform the user that Slack posting was skipped.
+
+**CRITICAL — Avoid dual posting:**
+- The Cursor Automation has Slack MCP connected → use method 1 only.
+- The `fetch-daily-logs.mjs` script uses the webhook (method 2) → do NOT run the script when Slack MCP is available.
+- Never combine MCP posting + webhook posting + script execution in the same run.
 
 ### Step 6 — Confluence Report (optional)
 
@@ -291,9 +307,9 @@ Go to **Cursor Dashboard → Cloud Agents → Secrets** and add these secrets. T
 | Secret name | Value | Required? |
 |-------------|-------|-----------|
 | `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
-| `SLACK_WEBHOOK_MY_DAILY_UPDATE` | `https://hooks.slack.com/services/T.../B.../xxx` | **Yes** — Slack Incoming Webhook URL (channel is baked into the webhook — it posts to whatever channel you selected when creating the webhook in your Slack App) |
-| `SLACK_BOT_TOKEN` | `xoxb-...` | Optional — only if using Slack MCP instead of webhook |
-| `SLACK_TEAM_ID` | `T01ABCDE123` | Optional — only if using Slack MCP |
+| `SLACK_WEBHOOK_MY_DAILY_UPDATE` | `https://hooks.slack.com/services/T.../B.../xxx` | Optional — only for non-MCP posting (GitHub Actions, local cron). Channel is baked into the webhook at creation time. |
+| `SLACK_BOT_TOKEN` | `xoxb-...` | **Yes** for Cursor Automation — Slack MCP uses this to create Canvas + post message |
+| `SLACK_TEAM_ID` | `T01ABCDE123` | **Yes** for Cursor Automation — Slack MCP workspace ID |
 
 ### Option 1: Cursor Automation with Webhook Trigger (Recommended)
 
@@ -315,16 +331,18 @@ You are the WD ES Kibana agent. Generate the daily WD Kibana log report and post
 
 Steps:
 1. Read .cursor/skill-library/wd-es-kibana.skill.md for the full procedure.
-2. Time window: yesterday 9:00 AM IST to today 9:00 AM IST (yesterday 03:30 UTC to today 03:30 UTC).
-3. Query Kibana WD (https://kibana-wd.webgility.com) via HTTPS API. Auth is in KIBANA_WD_AUTH env variable. Use date-scoped indices (webgilitydesktop-YYYY.MM.DD).
-4. Build the full daily report markdown per the skill's output format.
-5. Save the report to reports/wd-kibana-logs/{YYYY-MM-DD}-wd-kibana-daily-report.md
-6. Post a summary to Slack using the SLACK_WEBHOOK_MY_DAILY_UPDATE env variable (Incoming Webhook). The standalone script at .mcp-servers/es-logs/fetch-daily-logs.mjs can do this — run: node .mcp-servers/es-logs/fetch-daily-logs.mjs
-7. Do not ask for confirmation — this is an automated run.
+2. Time window: yesterday 9:00 AM IST to today 9:00 AM IST.
+3. Query Kibana WD via HTTPS API using KIBANA_WD_AUTH env variable.
+4. Save report to reports/wd-kibana-logs/{YYYY-MM-DD}-wd-kibana-daily-report.md
+5. Post to Slack channel #my-daily-update (C0B0CBW8G03) using the Slack MCP — use ONLY ONE posting method:
+   a. Create a Slack Canvas (slack_create_canvas) with the full report markdown.
+   b. Send a message (slack_send_message) to #my-daily-update referencing the canvas.
+   c. Do NOT also run fetch-daily-logs.mjs or post via webhook — that causes duplicate posts.
+6. Do not ask for confirmation — this is an automated run.
 ```
 
 5. Under **Tools**, click **+ Add Tool or MCP** and add:
-   - **Slack** MCP (optional fallback — the webhook is the primary posting path)
+   - **Slack** MCP (**required** — used to create Canvas and post to `#my-daily-update`)
 6. Click **Save**
 
 #### Triggering the webhook
@@ -423,9 +441,12 @@ Add `KIBANA_WD_AUTH` and `SLACK_WEBHOOK_MY_DAILY_UPDATE` to **GitHub repo → Se
 | ES proxy path | `/api/console/proxy?path=...&method=POST` | 2026-04 |
 | Default report window | Yesterday 9 AM IST → Today 9 AM IST | 2026-04 |
 | Standalone script | `.mcp-servers/es-logs/fetch-daily-logs.mjs` | 2026-05 |
-| Slack delivery channel | Fixed at webhook creation (e.g. `#wd_performance`) — channel override param is **ignored** by Slack App webhooks | 2026-05 |
+| Slack delivery channel (MCP) | `#my-daily-update` — channel ID `C0B0CBW8G03` (selectable at runtime via Slack MCP) | 2026-05 |
+| Slack delivery channel (webhook) | Fixed at webhook creation (e.g. `#wd_performance`) — channel override param is **ignored** by Slack App webhooks | 2026-05 |
+| Slack posting format (MCP) | Canvas (`slack_create_canvas`) + message with canvas link — full MD report as readable document | 2026-05 |
+| Slack posting — avoid dual | Use ONLY ONE method per run: MCP Canvas or Webhook, never both; do NOT run `fetch-daily-logs.mjs` when Slack MCP is connected | 2026-05 |
 | Slack webhook env var | `SLACK_WEBHOOK_MY_DAILY_UPDATE` | 2026-05 |
 | Cursor Automation URL | `cursor.com/automations/new` | 2026-05 |
-| Cursor Automation trigger | Webhook triggered → generates hook URL for external cron | 2026-05 |
+| Cursor Automation trigger | Webhook triggered + Daily cron at 09:00 GMT+5:30 | 2026-05 |
 | Cursor Automation repo | AskAI on master | 2026-05 |
 | WD perf section | Single block **Performance by module — Shopify (PayoutPosting)**; metrics: total payouts, total time, min/max/avg time per payout; no separate Performance Signals / Performance by Store for this slice | 2026-05 |
