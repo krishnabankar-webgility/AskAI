@@ -234,55 +234,48 @@ Fetch 10 latest error samples for context:
 
 Same as Step 2 but with `"@l": "Warning"`.
 
-### Step 6 — Performance Signals
+### Step 6 — Shopify Payout Performance
 
-For WD report generation, also collect performance-oriented data from documents that contain perf fields such as `processedRecords`, `averagePerSecond`, and `clientAge`.
+Collect time-based performance metrics for Shopify PayoutPosting (module=PayoutPosting, store=Shopify are the same dataset — report as a single unified section).
 
-Use date-scoped indices and aggregate only documents where perf fields are present.
+Use date-scoped indices and filter to only PayoutPosting batches with a non-zero processing rate.
 
 ```json
 {
   "query": {
     "bool": {
       "must": [
-        { "range": { "timestamp": { "gte": "{start_utc}", "lt": "{end_utc}" } } }
-      ],
-      "should": [
+        { "range": { "timestamp": { "gte": "{start_utc}", "lt": "{end_utc}" } } },
+        { "term": { "store.keyword": "Shopify" } },
+        { "term": { "module.keyword": "PayoutPosting" } },
         { "exists": { "field": "processedRecords" } },
-        { "exists": { "field": "averagePerSecond" } },
-        { "exists": { "field": "clientAge" } }
-      ],
-      "minimum_should_match": 1
+        { "range": { "averagePerSecond": { "gt": 0 } } }
+      ]
     }
   },
   "size": 0,
   "aggs": {
-    "perf_docs": {
-      "filter": { "exists": { "field": "averagePerSecond" } },
-      "aggs": {
-        "avg_rate": { "avg": { "field": "averagePerSecond" } },
-        "p95_rate": { "percentiles": { "field": "averagePerSecond", "percents": [95] } },
-        "max_rate": { "max": { "field": "averagePerSecond" } }
-      }
-    },
-    "processed_total": { "sum": { "field": "processedRecords" } },
-    "by_module_perf": {
-      "terms": { "field": "module.keyword", "size": 10 },
-      "aggs": {
-        "processed_total": { "sum": { "field": "processedRecords" } },
-        "avg_rate": { "avg": { "field": "averagePerSecond" } }
-      }
-    },
-    "by_store_perf": {
-      "terms": { "field": "store.keyword", "size": 10 },
-      "aggs": {
-        "processed_total": { "sum": { "field": "processedRecords" } },
-        "avg_rate": { "avg": { "field": "averagePerSecond" } }
+    "total_processed": { "sum": { "field": "processedRecords" } },
+    "payout_time_stats": {
+      "scripted_metric": {
+        "init_script": "state.total_time = 0; state.per_record_times = []",
+        "map_script": "double rate = doc['averagePerSecond'].value; long records = doc['processedRecords'].value; if (rate > 0 && records > 0) { double batch_time = records / rate; state.total_time += batch_time; state.per_record_times.add(1.0 / rate); }",
+        "combine_script": "return ['total_time': state.total_time, 'per_record_times': state.per_record_times]",
+        "reduce_script": "double total = 0; double min_t = Double.MAX_VALUE; double max_t = 0; double sum_t = 0; int count = 0; for (s in states) { total += s.total_time; for (t in s.per_record_times) { if (t < min_t) min_t = t; if (t > max_t) max_t = t; sum_t += t; count++; } } return ['total_seconds': total, 'min_per_payout_seconds': min_t == Double.MAX_VALUE ? 0 : min_t, 'max_per_payout_seconds': max_t, 'avg_per_payout_seconds': count > 0 ? sum_t / count : 0, 'batch_count': count]"
       }
     }
   }
 }
 ```
+
+**Interpreting the results:**
+- `total_processed` → total Shopify payouts processed in the period
+- `payout_time_stats.value.total_seconds` → total wall-clock time across all batches
+- `payout_time_stats.value.min_per_payout_seconds` → fastest single-payout processing time (1 / max_rate)
+- `payout_time_stats.value.max_per_payout_seconds` → slowest single-payout processing time (1 / min_rate)
+- `payout_time_stats.value.avg_per_payout_seconds` → average time per payout across all batches
+
+Format durations: if < 60s show as `{n}s`, if ≥ 60s show as `{m}m {s}s`, if ≥ 3600s show as `{h}h {m}m`.
 
 ### Step 6.5 — Prior Day Comparison (for Executive Summary)
 
@@ -393,21 +386,15 @@ The report MUST follow this **rich format** (matching existing reports in `repor
 
 > **Peak hour:** {hour} IST ({count} errors). {brief pattern observation}
 
-## Performance Signals
-| Metric | Value | vs {prior_date} |
-|--------|------:|----------|
-| **Processed Records** | {n} | {prior} → {current} ({pct}%) ▲/▼ |
-| **Max Rate** | {n} rec/s | — |
-| **Active Module** | {module} | — |
-| **Active Store** | {store} | — |
+## Shopify Payout Performance
 
-### Performance by Module
-| Module | Processed | Avg Rate | Drilldown |
-|--------|----------:|---------:|-----------|
-
-### Performance by Store
-| Store | Processed | Avg Rate | Drilldown |
-|-------|----------:|---------:|-----------|
+| Metric | Value | Drilldown |
+|--------|------:|-----------|
+| **Total Payouts Processed** | {n} | [View](short-url) |
+| **Total Time (all payouts)** | {duration} | — |
+| **Min Time (1 payout)** | {duration} | — |
+| **Max Time (1 payout)** | {duration} | — |
+| **Avg Time (1 payout)** | {duration} | — |
 
 ## Actionable Insights
 1. **{title}:** {2-3 sentence analysis with impact and recommendation}
@@ -445,9 +432,22 @@ Every drilldown link in the report MUST use Kibana short URLs (format: `https://
 - ❌ `/app/discover#/` — this is Kibana 8.x+ format, NOT 7.6.2
 - ❌ `dataSource:(dataViewId:...)` — this is Kibana 8.x+ format
 - ❌ `level : "Error"` — wrong KQL (spaces, no .keyword suffix)
-- ❌ Double-escaping quotes in KQL — use single escape only
+- ❌ **Double-escaping quotes in KQL** — use single escape only. The KQL value MUST be `level.keyword:"Error"` NOT `level.keyword:""Error""`. When building the URL string in PowerShell, use single-quotes for the outer string or escape carefully — do NOT let PowerShell or JSON serialization double the quotes.
 
-Generate short URLs for: Executive Summary metrics, each module/store/tag/process row, each top message, each subscriber, each fatal message/store, and performance drilldowns.
+**MANDATORY — Short URL coverage (every row MUST have a clickable link):**
+Generate short URLs for **ALL** rows in:
+- Executive Summary: each metric count in the "Today" column MUST be a `[count](short-url)` link
+- Error Breakdown by Module: ALL rows (not just top 3)
+- Error Breakdown by Store: ALL rows (not just top 5)
+- Error Breakdown by Tag: ALL rows
+- Error Breakdown by Process: ALL rows
+- Top Error Messages: ALL 15 rows
+- Top Error Subscribers: ALL 10 rows
+- Fatal by Message: ALL rows
+- Fatal by Store: ALL rows
+- Performance by Module/Store: ALL rows
+
+**Never** fall back to raw KQL text in the Drilldown column — every row must have `[View](https://kibana-wd.webgility.com/goto/{hash})`. If short URL generation fails for a specific row, retry once; if still failing, link to `https://kibana-wd.webgility.com` with the filter in a tooltip.
 
 ### Visual Bar Generation
 
