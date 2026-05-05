@@ -424,15 +424,28 @@ The report MUST follow this **rich format** (matching existing reports in `repor
 Every drilldown link in the report MUST use Kibana short URLs (format: `https://kibana-wd.webgility.com/goto/{hash}`).
 
 **API:** `POST https://kibana-wd.webgility.com/api/shorten_url`
-**Body:** `{"url": "/app/discover#/?_g=(...)&_a=(...)"}`
+**Body:** `{"url": "/app/kibana#/discover?_g=(...)&_a=(...)"}`
 **Response:** `{"urlId": "{hash}"}`
 
-**Discover URL pattern:**
+**CRITICAL — Kibana 7.6.2 Discover URL pattern (NOT 8.x format):**
 ```
-/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{from_utc}',to:'{to_utc}'))&_a=(columns:!(message,level,module,store,subscriberID),dataSource:(dataViewId:'61237d60-0ed9-11eb-816a-cde07dc15a1f',type:dataView),filters:!(),query:(language:kuery,query:'{kql_filter}'))
+/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'{from_utc}',to:'{to_utc}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'{kql_filter}'),sort:!(!(timestamp,desc)))
 ```
 
-**Data View ID:** `61237d60-0ed9-11eb-816a-cde07dc15a1f`
+**Index ID:** `61237d60-0ed9-11eb-816a-cde07dc15a1f`
+
+**KQL filter rules (Kibana 7.6.2):**
+- Use `.keyword` suffix for keyword fields: `level.keyword:"Error"` NOT `level:Error`
+- Use double-quotes around values: `store.keyword:"Shopify"` NOT `store.keyword:Shopify`
+- Boolean AND: `level.keyword:"Error" AND module.keyword:"PostOrderToAccounting"`
+- Wildcards for message matching: `level.keyword:"Error" AND message:*CPU Info*`
+- Subscriber filter: `level.keyword:"Error" AND subscriberID:73243`
+
+**Common mistakes to AVOID:**
+- ❌ `/app/discover#/` — this is Kibana 8.x+ format, NOT 7.6.2
+- ❌ `dataSource:(dataViewId:...)` — this is Kibana 8.x+ format
+- ❌ `level : "Error"` — wrong KQL (spaces, no .keyword suffix)
+- ❌ Double-escaping quotes in KQL — use single escape only
 
 Generate short URLs for: Executive Summary metrics, each module/store/tag/process row, each top message, each subscriber, each fatal message/store, and performance drilldowns.
 
