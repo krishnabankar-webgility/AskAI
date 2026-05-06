@@ -302,109 +302,59 @@ Use the prior day's totals to compute % change for the Executive Summary table. 
 
 ### Step 7 — File Artifact
 
-The primary deliverable is a markdown artifact, not only an inline chat response.
+The primary deliverable is an **HTML** report file, not only an inline chat response.
 
-- Write the report to `reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.md`
-- Keep the markdown self-contained so it can be published directly to Confluence
+- Write the report to `reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.html`
+- The HTML must be self-contained (inline CSS, no external dependencies, no JavaScript)
 - After writing the file, respond with the file path plus a short summary of the most important findings
 
-### Output Format
+### Output Format — HTML Report
 
-The report MUST follow this **rich format** (matching existing reports in `reports/wd-kibana-logs/`):
+The report MUST be a **self-contained HTML file** with inline CSS. Reference the most recent HTML report in `reports/wd-kibana-logs/` for the exact styling.
 
-```markdown
-# WD Kibana Daily Log Report — {report-date}
+**Design principles:**
+- Light theme, clean modern UI (system fonts, border-radius cards, subtle shadows)
+- No JavaScript — pure HTML + CSS only
+- All Kibana drilldown links attached to the **text itself** (name, tag, message, subscriber ID, or count) as clickable `<a href="..." target="_blank">` links — NO separate "Drilldown" column
+- Every row must show a **vs Previous** comparison badge: `↓42.8%` (green for decrease), `↑67.3%` (red for increase), `≈` (flat/unchanged), or `NEW` (not in previous day)
+- Use `≈` for items that existed yesterday at roughly the same count (±10%)
+- Use `NEW` for items not present in previous day's data
 
-**Report Period:** {prev_date} 9:00 AM IST → {report_date} 9:00 AM IST ({day_of_week})
-**Index:** `webgilitydesktop-{prev_YYYY.MM.DD}, webgilitydesktop-{report_YYYY.MM.DD}`
-**Generated:** {report-date}
+**Required sections and layout:**
 
----
+1. **Header** — Title (`WD Kibana Daily Log Report — {date}`), period, index, compared-to date
+2. **Executive Summary** — Card grid (Total, Errors, Fatals, Warnings, Info, Error Rate) with colored left borders, values as Kibana links, % change badges
+3. **Hourly Error Timeline (IST)** — Vertical bar chart (CSS flex, bars grow upward from bottom), colored by severity (grey=low, gold=medium, orange=high, red=peak), hour labels along x-axis, peak annotation in header
+4. **Error Breakdown** — 2×2 grid layout:
+   - By Module: columns = Name (linked) | Count | % of Errors (with inline progress bar) | vs Prev badge
+   - By Store: columns = Name (linked) | Count | % (with inline progress bar) | vs Prev badge
+   - By Tag: columns = Name (linked) | Count | vs Prev badge
+   - By Process: columns = Name (linked) | Count | vs Prev badge
+5. **Top Error Messages** — Table: # | Message (linked) | Count | vs Prev badge
+6. **Top Error Subscribers** — Table: Subscriber ID (linked) | Error Count | % of Errors | vs Prev badge
+7. **Fatal Events** — Side-by-side grid:
+   - Left: By Message table (linked name | count | vs Prev)
+   - Right: By Store with donut chart (CSS conic-gradient) + table
+8. **Shopify Payout Performance** — Separate card with metrics grid:
+   - Records Processed (linked, with % change vs prev)
+   - Batches, Min Time/Record, Max Rate, Avg Time/Record, Avg Rate, Est. Total Time, Status
+   - Each metric shows % change vs previous day where applicable
+9. **Actionable Insights** — 2-column card grid with icon indicators (! danger, ↑ warning, ⚡ spike, ✓ healthy), title + description
+10. **Footer** — Source attribution
 
-## Executive Summary
-
-| Metric | Today ({report_date}) | Previous ({prev_report_date}) | Change |
-|--------|--------------|-------------------|--------|
-| **Total Events** | [{count}](short-url) | {prior_count} | {pct}% ▲/▼ |
-| **Errors** | [{count}](short-url) | {prior_count} | {pct}% ▲/▼ |
-| **Fatals** | [{count}](short-url) | {prior_count} | {pct}% ▲/▼ |
-| **Warnings** | [{count}](short-url) | {prior_count} | {pct}% ▲/▼ |
-| **Info** | [{count}](short-url) | {prior_count} | {pct}% ▲/▼ |
-| **Error Rate** | {pct}% | {prior_pct}% | {diff}pp ▲/▼ |
-
-> **Key Observation:** {1-2 sentence narrative of the most important finding}
-
----
-
-## Error Breakdown by Module
-| Module | Count | % of Errors | Drilldown |
-|--------|------:|------------:|-----------|
-| {module} | {n} | {pct}% | [View](short-url) |
-
-## Error Breakdown by Store
-| Store | Count | % of Errors | Drilldown |
-|-------|------:|------------:|-----------|
-
-## Error Breakdown by Tag
-| Tag | Count | Drilldown |
-|-----|------:|-----------|
-
-## Error Breakdown by Process
-| Process | Count | Drilldown |
-|---------|------:|-----------|
-
-## Top Error Messages
-| # | Message | Count | Drilldown |
-|---|---------|------:|-----------|
-| 1 | {short_message} | {n} | [View](short-url) |
-... (top 15)
-
-> **{observation about error concentration}**
-
-## Top Error Subscribers
-| Subscriber ID | Error Count | % of Errors | Drilldown |
-|--------------|------------:|------------:|-----------|
-... (top 10)
-
-## Fatal Events ({total_fatal_count})
-
-### Fatal by Message
-| Message | Count | Drilldown |
-|---------|------:|-----------|
-... (top 10)
-
-### Fatal by Store
-| Store | Count | Drilldown |
-|-------|------:|-----------|
-... (top 10)
-
-## Hourly Error Timeline (IST)
-| Hour (IST) | Errors | Visual |
-|------------|-------:|--------|
-| 09:00 | {n} | ████░░░░░░ |
-... (all 24 hours with visual bar — max = 10 chars ██████████)
-
-> **Peak hour:** {hour} IST ({count} errors). {brief pattern observation}
-
-## Shopify Payout Performance
-
-| Metric | Value | Drilldown |
-|--------|------:|-----------|
-| **Total Payouts Processed** | {n} | [View](short-url) |
-| **Total Time (all payouts)** | {duration} | — |
-| **Min Time (1 payout)** | {duration} | — |
-| **Max Time (1 payout)** | {duration} | — |
-| **Avg Time (1 payout)** | {duration} | — |
-
-## Actionable Insights
-1. **{title}:** {2-3 sentence analysis with impact and recommendation}
-2. ...
-... (3-5 insights)
-
----
-
-*Report generated from Kibana WD (`kibana-wd.webgility.com`). All drilldown links open in Kibana Discover with pre-filtered queries.*
+**CSS classes for vs-prev badges:**
+```css
+.cb.down { background: #dcfce7; color: #166534; }  /* green = improvement */
+.cb.up { background: #fef2f2; color: #991b1b; }    /* red = regression */
+.cb.new { background: #eff6ff; color: #1e40af; }   /* blue = new entry */
+.cb.flat { background: #f3f4f6; color: #6b7280; }  /* grey = unchanged */
 ```
+
+**Inline progress bars for % of Errors:**
+```html
+<div class="pct-bar-wrap"><span class="pct-text">88.1%</span><div class="pct-bar"><div class="pct-bar-fill red" style="width:88.1%"></div></div></div>
+```
+Color thresholds: >50% = red, >20% = orange, >10% = amber, >5% = blue, ≤5% = gray
 
 ### Kibana Short URL Generation
 
@@ -436,13 +386,17 @@ Every drilldown link in the report MUST use Kibana short URLs (format: `https://
 
 Generate short URLs for: Executive Summary metrics, each module/store/tag/process row, each top message, each subscriber, each fatal message/store, and performance drilldowns.
 
-### Visual Bar Generation
+### Visual Bar Generation (Hourly Timeline)
 
-For the Hourly Error Timeline, generate visual bars using block characters:
-- Find max error count in any hour
-- Scale each hour to 10 characters: `chars = round(count / max * 10)`
-- Use `█` for filled and `░` for empty
-- Example: 50% = `█████░░░░░`, 100% = `██████████`, <5% = `░`
+For the vertical bar chart in HTML:
+- Calculate `height_pct = (count / max_count) * 100` for each hour
+- Assign color class based on count thresholds:
+  - `c1` (grey): < 10% of max
+  - `c2` (gold): 10-25% of max
+  - `c3` (orange): 25-60% of max
+  - `c4` (red): > 60% of max
+- Each bar is a `<div>` with `style="height:{pct}%"` inside a flex container
+- Add `title` attribute with `"{hour}:00 — {count}"` for hover tooltip
 
 ### Step 8 — Post-Report Cleanup
 
@@ -454,7 +408,8 @@ After the report markdown file is successfully written, **clean up intermediate/
 - Any `*-to-*-daily-log-report.md` files in the same folder (basic-format reports from `fetch-daily-logs.mjs` that are superseded by the rich report)
 
 **KEEP these files** (they provide context/template for future daily reports):
-- `reports/wd-kibana-logs/{date}-wd-kibana-daily-report.md` — the rich report files themselves (historical reference + day-over-day comparison source)
+- `reports/wd-kibana-logs/{date}-wd-kibana-daily-report.html` — the HTML report files themselves (historical reference + day-over-day comparison source)
+- `reports/wd-kibana-logs/{date}-wd-kibana-daily-report.md` — legacy markdown reports (if any exist)
 - This agent file (`.github/agents/wg-es.agent.md`)
 - `.mcp-servers/es-logs/` scripts (reusable automation)
 - Any file under `.github/agents/` or `.cursor/` (agent configuration)
@@ -469,6 +424,32 @@ Get-ChildItem "reports/wd-kibana-logs/*-to-*-daily-log-report.md" | Remove-Item 
 ```
 
 Execute this cleanup automatically after confirming the rich report file was written successfully. Report which files were deleted in the summary.
+
+### Step 9 — Post to Slack
+
+After the HTML report is written and cleanup is done, post a summary to Slack channel **#my-daily-update**.
+
+**Method:** Use Slack MCP tools/plugins available in the IDE (e.g., `slack_post_message`, Slack MCP Canvas, or any Slack integration plugin). Do NOT use webhooks — the webhook app for `wd_performance` channel has been removed.
+
+**Message format (Slack mrkdwn):**
+```
+:bar_chart: *WD Kibana Daily Report — {report-date}*
+
+*Summary:* Total {total} | Errors {errors} ({error_change}%) | Fatals {fatals} ({fatal_change}%) | Warnings {warnings}
+*Error Rate:* {rate}% (prev {prev_rate}%)
+*Peak Hour:* {hour} IST ({peak_count} errors)
+
+:rotating_light: *Top Issues:*
+• {insight_1_title}
+• {insight_2_title}
+• {insight_3_title}
+
+:page_facing_up: Report: `reports/wd-kibana-logs/{date}-wd-kibana-daily-report.html`
+```
+
+**Channel:** `#my-daily-update` (only this channel — do NOT post to any other channel)
+
+**If Slack MCP is unavailable:** Skip posting silently and inform the user that Slack posting was skipped due to MCP unavailability. Do NOT fall back to webhooks.
 
 ---
 
