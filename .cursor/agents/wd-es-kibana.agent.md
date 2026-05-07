@@ -313,9 +313,12 @@ Use the prior day's totals to compute % change for the Executive Summary table. 
 
 The primary deliverable is an **HTML** report file, not only an inline chat response.
 
-- Write the report to `reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.html`
+- Write the report to `reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html`
+  - **`{TODAY}`** = the date the report is generated (today), NOT the data window start date (yesterday)
+  - Example: If running on May 7, 2026, the file is `2026-05-07-wd-kibana-daily-report.html`
+- The **header title** inside the HTML must also use today's date: `WD Kibana Daily Log Report — {TODAY}`
 - The HTML must be self-contained (inline CSS, no external dependencies, no JavaScript)
-- After writing the file, respond with the file path plus a short summary of the most important findings
+- After writing the file, commit + push to origin, then respond with the htmlpreview link + short summary
 
 ### Output Format — HTML Report
 
@@ -447,20 +450,44 @@ Get-ChildItem "reports/wd-kibana-logs/*-to-*-daily-log-report.md" | Remove-Item 
 
 Execute this cleanup automatically after confirming the rich report file was written successfully. Report which files were deleted in the summary.
 
-### Step 9 — Slack Delivery
+### Step 9 — Slack Delivery (htmlpreview link + summary)
 
-Slack posting is handled **automatically by the Cursor Automation platform** via its built-in **"Send to Slack"** tool. The agent does **NOT** call `slack_send_message` or any Slack MCP tool itself.
+The agent posts a **short summary message** with a **browser-renderable htmlpreview.github.io link** to the `#my-daily-update` channel via `slack_send_message` (Slack MCP).
 
-**How it works:**
-- The Cursor Automation has a **"Send to Slack"** tool configured with a target channel (e.g. `#my-daily-update`).
-- When the agent finishes, Cursor automatically posts the agent's final response to the configured channel.
-- The channel is selectable in the Automation UI and can be changed at any time without modifying agent instructions.
+**Report date naming:** The report date in the title, filename, and Slack message is **today** (the day the report is generated/sent), NOT yesterday.
+
+**htmlpreview.github.io link format:**
+```
+https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html
+```
 
 **What the agent must do:**
-1. After writing the HTML report file, **read it back** and include the full HTML report content in the agent's final response.
-2. The final response IS the report — Cursor's "Send to Slack" tool will deliver it to the configured channel.
-3. Do **NOT** call `slack_send_message`, `slack_create_canvas`, or any Slack tool directly.
-4. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
+1. After writing the HTML report file, **commit and push** to origin (the current branch).
+2. Build the htmlpreview URL using the pushed branch name and today's filename.
+3. Post a Slack message to `#my-daily-update` (channel ID `C0B0CBW8G03`) via `slack_send_message` with:
+   - Report title with today's date
+   - Key metrics summary (Total, Errors, Fatals, % changes)
+   - 3–5 bullet actionable insights
+   - The **htmlpreview.github.io link** as the primary CTA ("View Full Report")
+4. Do **NOT** include the full HTML content in the Slack message.
+5. Do **NOT** use `slack_create_canvas` — the htmlpreview link provides the full visual experience.
+6. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
+
+**Example Slack message format:**
+```
+:bar_chart: *WD Kibana Daily Log Report — 2026-05-07*
+
+*Summary:* 105,834 events | 19,215 errors (+7.5%) | 2,293 fatals (-20.8%)
+
+• :zap: SchedulerJobKilled spike +155% (3,197 jobs killed)
+• :warning: WooCommerce +52%, Shopify +63% error growth
+• :white_check_mark: Fatal 401 Unauthorized cut by half — auth fixes working
+• Peak: 02:00 IST with 2,378 errors
+
+:point_right: <https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/master/reports/wd-kibana-logs/2026-05-07-wd-kibana-daily-report.html|View Full Visual Report>
+
+_Period: May 6, 2026 09:00 IST — May 7, 2026 09:00 IST_
+```
 
 ---
 
