@@ -209,25 +209,31 @@ For WD daily reports, surface **one** performance section — not separate “Pe
 
 The primary deliverable is an **HTML** report file, not a markdown file or inline chat response.
 
-- Write the report to `reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.html`
+- Write the report to `reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html`
+  - **`{TODAY}`** = the date the report is generated (today), NOT the data window start date (yesterday)
+  - Example: Running on May 7 → file is `2026-05-07-wd-kibana-daily-report.html`
+- The **header title** must use today's date: `WD Kibana Daily Log Report — {TODAY}`
 - The HTML must be self-contained (inline CSS, no external dependencies, no JavaScript)
-- After writing the file, respond with the file path plus a short summary of the most important findings
+- After writing the file, **commit and push** to origin, then build the htmlpreview link
 - **Daily report layout** (full HTML template, required sections, CSS classes): see `.cursor/agents/wd-es-kibana.agent.md` — **Output Format — HTML Report** section
 
-### Step 5 — Slack Delivery
+### Step 5 — Slack Delivery (htmlpreview link + summary)
 
-Slack posting is handled **automatically by the Cursor Automation platform** via its built-in **"Send to Slack"** tool. The agent does **NOT** call `slack_send_message` or any Slack MCP tool itself.
+The agent posts a **short summary** with a **browser-renderable htmlpreview.github.io link** to `#my-daily-update` via `slack_send_message` (Slack MCP).
 
-**How it works:**
-- The Cursor Automation has a **"Send to Slack"** tool configured with a target channel (e.g. `#my-daily-update`).
-- When the agent finishes, Cursor automatically posts the agent's final response (which includes the HTML report content) to the configured channel.
-- The channel is selectable in the Automation UI and can be changed at any time without modifying agent instructions.
+**Delivery approach:**
+1. After writing the HTML report file, **commit and push** to origin (current branch).
+2. Build the htmlpreview URL: `https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html`
+3. Post to `#my-daily-update` (channel ID `C0B0CBW8G03`) via `slack_send_message`:
+   - Report title with **today's date** (the generation date)
+   - Key metrics (Total, Errors, Fatals, % changes)
+   - 3–5 bullet actionable insights
+   - **htmlpreview.github.io link** as the primary CTA
+4. Do **NOT** include the full HTML content in Slack — just the summary + link.
+5. Do **NOT** use `slack_create_canvas` — htmlpreview provides the full visual experience in browser.
+6. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
 
-**What the agent must do:**
-1. After writing the HTML report file, **read it back** and include the full HTML report content in the agent's final response.
-2. The final response IS the report — Cursor's "Send to Slack" tool will deliver it to the configured channel.
-3. Do **NOT** call `slack_send_message`, `slack_create_canvas`, or any Slack tool directly.
-4. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
+**Report date convention:** The report title, filename, and Slack header use **today's date** (generation day), even though the data window is yesterday 9 AM IST → today 9 AM IST.
 
 ### Step 6 — Confluence Report (optional)
 
@@ -316,16 +322,17 @@ Steps:
 5. Query Kibana WD via HTTPS API using KIBANA_WD_AUTH env variable (base64-encode for Basic auth, include kbn-xsrf header).
 6. Query the previous day's window too (for vs-previous comparison badges in the report).
 7. Generate Kibana short URLs for all drilldown links (POST /api/shorten_url).
-8. Save the self-contained HTML report (inline CSS, no JS) to reports/wd-kibana-logs/{YYYY-MM-DD}-wd-kibana-daily-report.html
-9. Clean up intermediate files (gen-short-urls-*.ps1, short-urls-*.json, *-to-*-daily-log-report.md).
-10. Read the saved HTML report file and include its FULL content in your final response — this is what gets posted to Slack via the automation's "Send to Slack" tool.
-11. Do NOT call slack_send_message or any Slack tool directly — Slack delivery is handled by the Cursor Automation platform.
-12. Do not ask for confirmation — this is an automated run.
+8. Report date = TODAY (generation date). Save to reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html. Header title uses today's date.
+9. Commit and push the HTML report to origin.
+10. Clean up intermediate files (gen-short-urls-*.ps1, short-urls-*.json, *-to-*-daily-log-report.md).
+11. Post a SHORT SUMMARY + htmlpreview.github.io link to #my-daily-update (C0B0CBW8G03) via slack_send_message (Slack MCP). The htmlpreview URL format: https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html
+12. Do NOT include the full HTML in the Slack message — just summary + link.
+13. Do NOT use slack_create_canvas — htmlpreview link is the delivery method.
+14. Do not ask for confirmation — this is an automated run.
 ```
 
 5. Under **Tools**, click **+ Add Tool or MCP** and add:
-   - **Send to Slack** — select your target channel (e.g. `#my-daily-update`). You can change the channel later without modifying the instructions.
-   - **Slack** MCP (connected — provides Slack workspace context)
+   - **Slack** MCP (connected — required for `slack_send_message` to post summary + link)
 6. Click **Save**
 
 **Important — Triggers:**
@@ -386,10 +393,12 @@ This runs automatically every weekday morning without needing an external cron t
 | Kibana version | 7.6.2 | 2026-04 |
 | ES proxy path | `/api/console/proxy?path=...&method=POST` | 2026-04 |
 | Default report window | Yesterday 9 AM IST → Today 9 AM IST | 2026-04 |
+| Report date convention | Filename + header title use **today** (generation date), not yesterday (data start date) | 2026-05 |
+| htmlpreview link | `https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html` | 2026-05 |
 | Standalone script | `.mcp-servers/es-logs/fetch-daily-logs.mjs` | 2026-05 |
-| Slack delivery | Via Cursor Automation **"Send to Slack"** tool — channel is configurable in the Automation UI (default: `#my-daily-update`) | 2026-05 |
+| Slack delivery | Short summary + `htmlpreview.github.io` link via `slack_send_message` to `#my-daily-update` (C0B0CBW8G03). Browser link renders full HTML report visually. | 2026-05 |
 | Report output format | Self-contained HTML file (inline CSS, no JS) — see `.cursor/agents/wd-es-kibana.agent.md` for template | 2026-05 |
-| Slack posting method | Agent outputs full HTML report as final response; Cursor Automation "Send to Slack" delivers it — agent does NOT call `slack_send_message` directly | 2026-05 |
+| Slack posting method | Agent posts short summary + htmlpreview.github.io link to `#my-daily-update` via `slack_send_message` (Slack MCP). Full HTML stays in GitHub repo. | 2026-05 |
 | Slack webhook | **Deleted** — `SLACK_WEBHOOK_MY_DAILY_UPDATE` is no longer used | 2026-05 |
 | Cursor Automation URL | `cursor.com/automations/new` | 2026-05 |
 | Cursor Automation trigger | Webhook triggered + Daily cron at 09:00 GMT+5:30 | 2026-05 |
