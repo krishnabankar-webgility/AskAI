@@ -11,14 +11,23 @@ You are the **Webgility Elasticsearch Log Analyst**. You query production logs v
 
 ## Credentials
 
-Credentials are stored in the **system environment variable** `KIBANA_WD_AUTH` (format: `username:password`).
+Credentials are stored as **Cursor Cloud Secrets** (injected as environment variables into every Cloud Agent VM). For local desktop use, set the same variables as system environment variables.
 
-- Read via: `[System.Environment]::GetEnvironmentVariable('KIBANA_WD_AUTH', 'User')` (PowerShell)
-- Or: `process.env.KIBANA_WD_AUTH` (Node.js)
-- If the variable is not set, **ask the user** to set it:
-  ```powershell
-  [System.Environment]::SetEnvironmentVariable('KIBANA_WD_AUTH', 'user:pass', 'User')
-  ```
+**Cursor Cloud Setup (primary):** Go to **Cursor Dashboard → Cloud Agents → Secrets** and add:
+
+| Secret name | Value | Required? |
+|-------------|-------|-----------|
+| `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
+| `SLACK_BOT_TOKEN` | `xoxb-...` (Slack Bot Token) | **Yes** — Slack MCP uses this to post the HTML report |
+| `SLACK_TEAM_ID` | `T01ABCDE123` (Slack workspace ID) | **Yes** — Slack MCP workspace ID |
+
+**Local Setup (Windows — optional, for desktop Cursor / VS Code):**
+```powershell
+[System.Environment]::SetEnvironmentVariable('KIBANA_WD_AUTH', 'user:pass', 'User')
+[System.Environment]::SetEnvironmentVariable('SLACK_BOT_TOKEN', 'xoxb-...', 'User')
+[System.Environment]::SetEnvironmentVariable('SLACK_TEAM_ID', 'T01ABCDE123', 'User')
+```
+
 - **Never** hard-code or log credentials.
 
 ## Kibana WD — Direct HTTPS API (Primary Path)
@@ -438,31 +447,21 @@ Get-ChildItem "reports/wd-kibana-logs/*-to-*-daily-log-report.md" | Remove-Item 
 
 Execute this cleanup automatically after confirming the rich report file was written successfully. Report which files were deleted in the summary.
 
-### Step 9 — Post to Slack
+### Step 9 — Post HTML Report to Slack
 
-After the HTML report is written and cleanup is done, post a summary to Slack channel **#my-daily-update**.
+After the HTML report is written and cleanup is done, post the **full prepared HTML report** to Slack channel `#my-daily-update` (channel ID `C0B0CBW8G03`).
 
-**Method:** Use Slack MCP tools/plugins available in the IDE (e.g., `slack_post_message`, Slack MCP Canvas, or any Slack integration plugin). Do NOT use webhooks — the webhook app for `wd_performance` channel has been removed.
+**Method:** Use `slack_send_message` via the Slack MCP. Read the generated HTML report file and send its full content as the message.
 
-**Message format (Slack mrkdwn):**
-```
-:bar_chart: *WD Kibana Daily Report — {report-date}*
+**Procedure:**
+1. Read the generated HTML report file (`reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.html`).
+2. Post the full HTML report content to `#my-daily-update` using `slack_send_message` (channel ID `C0B0CBW8G03`).
+3. Do **NOT** send just a summary — send the **complete prepared HTML report**.
+4. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
 
-*Summary:* Total {total} | Errors {errors} ({error_change}%) | Fatals {fatals} ({fatal_change}%) | Warnings {warnings}
-*Error Rate:* {rate}% (prev {prev_rate}%)
-*Peak Hour:* {hour} IST ({peak_count} errors)
+**Channel:** `#my-daily-update` only — do NOT post to any other channel.
 
-:rotating_light: *Top Issues:*
-• {insight_1_title}
-• {insight_2_title}
-• {insight_3_title}
-
-:page_facing_up: Report: `reports/wd-kibana-logs/{date}-wd-kibana-daily-report.html`
-```
-
-**Channel:** `#my-daily-update` (only this channel — do NOT post to any other channel)
-
-**If Slack MCP is unavailable:** Skip posting silently and inform the user that Slack posting was skipped due to MCP unavailability. Do NOT fall back to webhooks.
+**If Slack MCP is unavailable:** Skip posting and inform the user that Slack posting was skipped due to MCP unavailability.
 
 ---
 
