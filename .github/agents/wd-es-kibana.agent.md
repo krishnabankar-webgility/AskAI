@@ -382,9 +382,22 @@ Every drilldown link in the report MUST use Kibana short URLs (format: `https://
 - ❌ `/app/discover#/` — this is Kibana 8.x+ format, NOT 7.6.2
 - ❌ `dataSource:(dataViewId:...)` — this is Kibana 8.x+ format
 - ❌ `level : "Error"` — wrong KQL (spaces, no .keyword suffix)
-- ❌ Double-escaping quotes in KQL — use single escape only
+- ❌ **Double-escaping quotes in KQL** — use single escape only. The KQL value MUST be `level.keyword:"Error"` NOT `level.keyword:""Error""`. When building the URL string in PowerShell, use single-quotes for the outer string or escape carefully — do NOT let PowerShell or JSON serialization double the quotes.
 
-Generate short URLs for: Executive Summary metrics, each module/store/tag/process row, each top message, each subscriber, each fatal message/store, and performance drilldowns.
+**MANDATORY — Short URL coverage (every row MUST have a clickable link):**
+Generate short URLs for **ALL** rows in:
+- Executive Summary: each metric count in the "Today" column MUST be a `[count](short-url)` link
+- Error Breakdown by Module: ALL rows (not just top 3)
+- Error Breakdown by Store: ALL rows (not just top 5)
+- Error Breakdown by Tag: ALL rows
+- Error Breakdown by Process: ALL rows
+- Top Error Messages: ALL 15 rows
+- Top Error Subscribers: ALL 10 rows
+- Fatal by Message: ALL rows
+- Fatal by Store: ALL rows
+- Performance by Module/Store: ALL rows
+
+**Never** fall back to raw KQL text in the Drilldown column — every row must have `[View](https://kibana-wd.webgility.com/goto/{hash})`. If short URL generation fails for a specific row, retry once; if still failing, link to `https://kibana-wd.webgility.com` with the filter in a tooltip.
 
 ### Visual Bar Generation (Hourly Timeline)
 
