@@ -447,21 +447,20 @@ Get-ChildItem "reports/wd-kibana-logs/*-to-*-daily-log-report.md" | Remove-Item 
 
 Execute this cleanup automatically after confirming the rich report file was written successfully. Report which files were deleted in the summary.
 
-### Step 9 — Post HTML Report to Slack
+### Step 9 — Slack Delivery
 
-After the HTML report is written and cleanup is done, post the **full prepared HTML report** to Slack channel `#my-daily-update` (channel ID `C0B0CBW8G03`).
+Slack posting is handled **automatically by the Cursor Automation platform** via its built-in **"Send to Slack"** tool. The agent does **NOT** call `slack_send_message` or any Slack MCP tool itself.
 
-**Method:** Use `slack_send_message` via the Slack MCP. Read the generated HTML report file and send its full content as the message.
+**How it works:**
+- The Cursor Automation has a **"Send to Slack"** tool configured with a target channel (e.g. `#my-daily-update`).
+- When the agent finishes, Cursor automatically posts the agent's final response to the configured channel.
+- The channel is selectable in the Automation UI and can be changed at any time without modifying agent instructions.
 
-**Procedure:**
-1. Read the generated HTML report file (`reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.html`).
-2. Post the full HTML report content to `#my-daily-update` using `slack_send_message` (channel ID `C0B0CBW8G03`).
-3. Do **NOT** send just a summary — send the **complete prepared HTML report**.
+**What the agent must do:**
+1. After writing the HTML report file, **read it back** and include the full HTML report content in the agent's final response.
+2. The final response IS the report — Cursor's "Send to Slack" tool will deliver it to the configured channel.
+3. Do **NOT** call `slack_send_message`, `slack_create_canvas`, or any Slack tool directly.
 4. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
-
-**Channel:** `#my-daily-update` only — do NOT post to any other channel.
-
-**If Slack MCP is unavailable:** Skip posting and inform the user that Slack posting was skipped due to MCP unavailability.
 
 ---
 
