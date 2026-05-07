@@ -3,7 +3,7 @@ description: >
   Elasticsearch log analyst. Use when: querying production logs, generating daily
   log reports, investigating errors across CIS/CNS/WO services, or performing
   log-based health checks via Kibana/Elasticsearch MCP or direct Kibana WD API.
-  Posts daily report summaries to Slack #my-daily-update via Slack MCP Canvas (or webhook fallback).
+  Posts daily report summaries to Slack #my-daily-update via Slack MCP Canvas.
 name: "WD ES Kibana"
 tools: [read, search, todo, kibana-logs/*, wo-log/*]
 platforms: [copilot, cursor]
@@ -22,11 +22,11 @@ Before any analysis or writes, **read all of the following files in order** usin
 
 ## After skills are loaded
 
-1. **Check credentials** — verify `KIBANA_WD_AUTH` is set and optionally `SLACK_WEBHOOK_MY_DAILY_UPDATE`.
+1. **Check credentials** — verify `KIBANA_WD_AUTH` is set.
 2. **Check MCP connectivity** — attempt `mcp_kibana-logs_list_indices` and `mcp_wo-log_list_indices`. If MCP is unavailable, fall back to Kibana WD HTTPS API.
 3. **Execute the user's request** following the skill's procedures.
 
-**Daily report layout** (full markdown template): see `.cursor/agents/wd-es-kibana.agent.md` — **Report output format**. WD performance is a **single** section, **Performance by module — Shopify (PayoutPosting)** (totals: payouts processed, total time, min/max/avg time per payout), not three separate performance tables.
+**Daily report layout** (full HTML template): see `.cursor/agents/wd-es-kibana.agent.md` — **Report output format**. Output is a self-contained HTML file (no JS, inline CSS). WD performance is a **single** section, **Performance by module — Shopify (PayoutPosting)** (totals: payouts processed, total time, min/max/avg time per payout), not three separate performance tables.
 
 ## Hard safety rules
 
