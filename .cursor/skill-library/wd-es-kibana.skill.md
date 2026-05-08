@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Query production logs from Webgility Elasticsearch clusters and produce structured, actionable daily log reports. Reports are saved as self-contained HTML files (inline CSS, no JS), optionally published to Confluence, and the full HTML report is posted to Slack `#my-daily-update` via Slack MCP.
+Query production logs from Webgility Elasticsearch clusters and produce structured, actionable daily log reports. Reports are saved as self-contained HTML files (inline CSS, no JS), optionally published to Confluence, and delivered to Slack via the Cursor Automation's built-in "Send to Slack" tool (channel is configured in the Automation UI — not hardcoded in agent files).
 
 This file is the **canonical** procedure. The Cursor agent at `.cursor/agents/wd-es-kibana.agent.md` and the Copilot mirror at `.github/copilot/agents/wd-es-kibana.agent.md` only point at this file.
 
@@ -19,7 +19,7 @@ This file is the **canonical** procedure. The Cursor agent at `.cursor/agents/wd
 | CIS ES (MCP only) | `http://172.31.66.65:9200` — `cis-*`, `cns-*`, `cnsrcv-*` |
 | WO ES (MCP only) | `http://kibana-wo.webgility.com:9200` — `wo-*`, `woonboarding-*` |
 | Report output dir | `reports/wd-kibana-logs/` |
-| Slack delivery channel | `#my-daily-update` — channel ID `C0B0CBW8G03` (via Slack MCP) |
+| Slack delivery | Via Cursor Automation "Send to Slack" tool (channel configured in Automation UI — not hardcoded) |
 | Confluence parent ID | `3042410502` |
 | Confluence space ID | `2590998546` |
 
@@ -34,20 +34,19 @@ Credentials are stored as **Cursor Cloud Secrets** (injected as environment vari
 | Secret name | Value | Required? |
 |-------------|-------|-----------|
 | `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
-| `SLACK_BOT_TOKEN` | `xoxb-...` (Slack Bot Token) | **Yes** — Slack MCP uses this to post the HTML report |
-| `SLACK_TEAM_ID` | `T01ABCDE123` (Slack workspace ID) | **Yes** — Slack MCP workspace ID |
+
+> **Note:** `SLACK_BOT_TOKEN` and `SLACK_TEAM_ID` are **not needed** for WD Kibana report delivery — Slack posting is handled by the Cursor Automation's built-in "Send to Slack" tool. Those secrets are only needed if other agents use Slack MCP directly.
 
 **Local Setup (Windows — optional, for desktop Cursor / VS Code):**
 ```powershell
 [System.Environment]::SetEnvironmentVariable('KIBANA_WD_AUTH', 'user:pass', 'User')
-[System.Environment]::SetEnvironmentVariable('SLACK_BOT_TOKEN', 'xoxb-...', 'User')
-[System.Environment]::SetEnvironmentVariable('SLACK_TEAM_ID', 'T01ABCDE123', 'User')
 ```
 
-### Slack MCP — posting the HTML report
-The agent reads the generated HTML report file and posts its **full content** to `#my-daily-update` (channel ID `C0B0CBW8G03`) via `slack_send_message`. The Slack MCP requires `SLACK_BOT_TOKEN` and `SLACK_TEAM_ID`.
+### Slack Delivery
+Slack posting is handled **automatically by the Cursor Automation platform** via its built-in **"Send to Slack"** tool. The agent does **NOT** hardcode any Slack channel name or ID, and does **NOT** call `slack_send_message` or any Slack MCP tool itself. The target channel is selected in the Automation UI and can be changed at any time without modifying agent files.
 
 - **Never** hard-code or log credentials.
+- **Never** hardcode Slack channel names or IDs in agent/skill files.
 
 ---
 
@@ -217,20 +216,20 @@ The primary deliverable is an **HTML** report file, not a markdown file or inlin
 - After writing the file, **commit and push** to origin, then build the htmlpreview link
 - **Daily report layout** (full HTML template, required sections, CSS classes): see `.cursor/agents/wd-es-kibana.agent.md` — **Output Format — HTML Report** section
 
-### Step 5 — Slack Delivery (htmlpreview link + summary)
+### Step 5 — Slack Delivery
 
-The agent posts a **short summary** with a **browser-renderable htmlpreview.github.io link** to `#my-daily-update` via `slack_send_message` (Slack MCP).
+Slack posting is handled **automatically by the Cursor Automation platform** via its built-in **"Send to Slack"** tool. The agent does **NOT** hardcode any Slack channel and does **NOT** call `slack_send_message` or any Slack MCP tool itself.
 
 **Delivery approach:**
 1. After writing the HTML report file, **commit and push** to origin (current branch).
 2. Build the htmlpreview URL: `https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html`
-3. Post to `#my-daily-update` (channel ID `C0B0CBW8G03`) via `slack_send_message`:
+3. Include a **short summary** in the agent's final response with:
    - Report title with **today's date** (the generation date)
    - Key metrics (Total, Errors, Fatals, % changes)
    - 3–5 bullet actionable insights
    - **htmlpreview.github.io link** as the primary CTA
-4. Do **NOT** include the full HTML content in Slack — just the summary + link.
-5. Do **NOT** use `slack_create_canvas` — htmlpreview provides the full visual experience in browser.
+4. The Cursor Automation platform delivers the agent's final response to the Slack channel configured in the Automation UI.
+5. Do **NOT** call `slack_send_message`, `slack_create_canvas`, or any Slack tool directly.
 6. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
 
 **Report date convention:** The report title, filename, and Slack header use **today's date** (generation day), even though the data window is yesterday 9 AM IST → today 9 AM IST.
@@ -293,8 +292,8 @@ Go to **Cursor Dashboard → Cloud Agents → Secrets** and add these secrets. T
 | Secret name | Value | Required? |
 |-------------|-------|-----------|
 | `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
-| `SLACK_BOT_TOKEN` | `xoxb-...` | **Yes** — Slack MCP uses this to post the HTML report to `#my-daily-update` |
-| `SLACK_TEAM_ID` | `T01ABCDE123` | **Yes** — Slack MCP workspace ID |
+
+> `SLACK_BOT_TOKEN` / `SLACK_TEAM_ID` are **not needed** for WD Kibana report delivery — Slack posting is via the Automation's "Send to Slack" tool.
 
 ### Option 1: Cursor Automation with Webhook Trigger (Recommended)
 
@@ -325,19 +324,20 @@ Steps:
 8. Report date = TODAY (generation date). Save to reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html. Header title uses today's date.
 9. Commit and push the HTML report to origin.
 10. Clean up intermediate files (gen-short-urls-*.ps1, short-urls-*.json, *-to-*-daily-log-report.md).
-11. Post a SHORT SUMMARY + htmlpreview.github.io link to #my-daily-update (C0B0CBW8G03) via slack_send_message (Slack MCP). The htmlpreview URL format: https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html
-12. Do NOT include the full HTML in the Slack message — just summary + link.
+11. Include a SHORT SUMMARY + htmlpreview.github.io link in the agent's final response. The htmlpreview URL format: https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html
+12. Do NOT call slack_send_message or any Slack tool directly — the Cursor Automation's "Send to Slack" tool delivers the final response to the configured channel.
 13. Do NOT use slack_create_canvas — htmlpreview link is the delivery method.
 14. Do not ask for confirmation — this is an automated run.
 ```
 
 5. Under **Tools**, click **+ Add Tool or MCP** and add:
-   - **Slack** MCP (connected — required for `slack_send_message` to post summary + link)
+   - **Send to Slack** — select the desired target channel in the Automation UI dropdown
+   - (Optional) **Slack** MCP — only if the agent needs to read Slack channels; NOT required for posting
 6. Click **Save**
 
 **Important — Triggers:**
 - Keep the **schedule trigger** (Every day at 09:00 GMT+5:30).
-- **Remove** any "New message in #my-daily-update" trigger — it would cause an infinite loop since the automation posts to the same channel.
+- **Remove** any "New message in ..." trigger for the same channel the report posts to — it would cause an infinite loop.
 
 #### Triggering the webhook
 
@@ -370,7 +370,7 @@ If your Cursor plan supports **scheduled triggers** (cron), you can skip the web
    - Cron: `30 4 * * 1-5` (= 10:00 AM IST, Mon–Fri)
    - Repository: **AskAI** on branch **master**
 4. Under **Instructions**, paste the same prompt as Option 1 above
-5. Under **Tools**, add **Slack** MCP (**required** for Slack posting)
+5. Under **Tools**, add **Send to Slack** (select target channel) — Slack MCP is optional, not required for posting
 6. Click **Save**
 
 This runs automatically every weekday morning without needing an external cron to call the webhook.
@@ -396,9 +396,9 @@ This runs automatically every weekday morning without needing an external cron t
 | Report date convention | Filename + header title use **today** (generation date), not yesterday (data start date) | 2026-05 |
 | htmlpreview link | `https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{TODAY}-wd-kibana-daily-report.html` | 2026-05 |
 | Standalone script | `.mcp-servers/es-logs/fetch-daily-logs.mjs` | 2026-05 |
-| Slack delivery | Short summary + `htmlpreview.github.io` link via `slack_send_message` to `#my-daily-update` (C0B0CBW8G03). Browser link renders full HTML report visually. | 2026-05 |
+| Slack delivery | Via Cursor Automation "Send to Slack" tool — channel configured in Automation UI, **never hardcoded** in agent files. Agent includes summary + `htmlpreview.github.io` link in final response. | 2026-05 |
 | Report output format | Self-contained HTML file (inline CSS, no JS) — see `.cursor/agents/wd-es-kibana.agent.md` for template | 2026-05 |
-| Slack posting method | Agent posts short summary + htmlpreview.github.io link to `#my-daily-update` via `slack_send_message` (Slack MCP). Full HTML stays in GitHub repo. | 2026-05 |
+| Slack posting method | Agent does **NOT** call `slack_send_message` directly. Cursor Automation's "Send to Slack" delivers the final response to the configured channel. Full HTML stays in GitHub repo. | 2026-05 |
 | Slack webhook | **Deleted** — `SLACK_WEBHOOK_MY_DAILY_UPDATE` is no longer used | 2026-05 |
 | Cursor Automation URL | `cursor.com/automations/new` | 2026-05 |
 | Cursor Automation trigger | Webhook triggered + Daily cron at 09:00 GMT+5:30 | 2026-05 |
