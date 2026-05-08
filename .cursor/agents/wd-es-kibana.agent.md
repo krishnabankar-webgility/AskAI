@@ -18,14 +18,12 @@ Credentials are stored as **Cursor Cloud Secrets** (injected as environment vari
 | Secret name | Value | Required? |
 |-------------|-------|-----------|
 | `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
-| `SLACK_BOT_TOKEN` | `xoxb-...` (Slack Bot Token) | **Yes** — Slack MCP uses this to post the HTML report |
-| `SLACK_TEAM_ID` | `T01ABCDE123` (Slack workspace ID) | **Yes** — Slack MCP workspace ID |
+
+> **Note:** `SLACK_BOT_TOKEN` and `SLACK_TEAM_ID` are **not needed** for WD Kibana report delivery — Slack posting is handled by the Cursor Automation's built-in "Send to Slack" tool (channel configured in Automation UI, not hardcoded).
 
 **Local Setup (Windows — optional, for desktop Cursor / VS Code):**
 ```powershell
 [System.Environment]::SetEnvironmentVariable('KIBANA_WD_AUTH', 'user:pass', 'User')
-[System.Environment]::SetEnvironmentVariable('SLACK_BOT_TOKEN', 'xoxb-...', 'User')
-[System.Environment]::SetEnvironmentVariable('SLACK_TEAM_ID', 'T01ABCDE123', 'User')
 ```
 
 - **Never** hard-code or log credentials.
@@ -450,9 +448,14 @@ Get-ChildItem "reports/wd-kibana-logs/*-to-*-daily-log-report.md" | Remove-Item 
 
 Execute this cleanup automatically after confirming the rich report file was written successfully. Report which files were deleted in the summary.
 
-### Step 9 — Slack Delivery (htmlpreview link + summary)
+### Step 9 — Slack Delivery
 
-The agent posts a **short summary message** with a **browser-renderable htmlpreview.github.io link** to the `#wd-health` channel via `slack_send_message` (Slack MCP).
+Slack posting is handled **automatically by the Cursor Automation platform** via its built-in **"Send to Slack"** tool. The agent does **NOT** hardcode any Slack channel name or ID, and does **NOT** call `slack_send_message` or any Slack MCP tool itself.
+
+**How it works:**
+- The Cursor Automation has a **"Send to Slack"** tool configured with a target channel (selected in the Automation UI).
+- The agent's final text response is automatically posted to whichever channel is selected in the automation settings.
+- The channel is selectable in the Automation UI and can be changed at any time **without modifying agent instructions**.
 
 **Report date naming:** The report date in the title, filename, and Slack message is **today** (the day the report is generated/sent), NOT yesterday.
 
@@ -464,30 +467,13 @@ https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/
 **What the agent must do:**
 1. After writing the HTML report file, **commit and push** to origin (the current branch).
 2. Build the htmlpreview URL using the pushed branch name and today's filename.
-3. Post a Slack message to `#wd-health` (channel ID `C0B30EAD5BJ`) via `slack_send_message` with:
+3. Include a **short summary** in the agent's final response with:
    - Report title with today's date
    - Key metrics summary (Total, Errors, Fatals, % changes)
    - 3–5 bullet actionable insights
    - The **htmlpreview.github.io link** as the primary CTA ("View Full Report")
-4. Do **NOT** include the full HTML content in the Slack message.
-5. Do **NOT** use `slack_create_canvas` — the htmlpreview link provides the full visual experience.
-6. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
-
-**Example Slack message format:**
-```
-:bar_chart: *WD Kibana Daily Log Report — 2026-05-07*
-
-*Summary:* 105,834 events | 19,215 errors (+7.5%) | 2,293 fatals (-20.8%)
-
-• :zap: SchedulerJobKilled spike +155% (3,197 jobs killed)
-• :warning: WooCommerce +52%, Shopify +63% error growth
-• :white_check_mark: Fatal 401 Unauthorized cut by half — auth fixes working
-• Peak: 02:00 IST with 2,378 errors
-
-:point_right: <https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/master/reports/wd-kibana-logs/2026-05-07-wd-kibana-daily-report.html|View Full Visual Report>
-
-_Period: May 6, 2026 09:00 IST — May 7, 2026 09:00 IST_
-```
+4. Do **NOT** call `slack_send_message`, `slack_create_canvas`, or any Slack tool directly — the automation platform delivers the message.
+5. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
 
 ---
 

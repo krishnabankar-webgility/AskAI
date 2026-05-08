@@ -18,14 +18,12 @@ Credentials are stored as **Cursor Cloud Secrets** (injected as environment vari
 | Secret name | Value | Required? |
 |-------------|-------|-----------|
 | `KIBANA_WD_AUTH` | `username:password` (Kibana WD LDAP) | **Yes** — needed to query ES |
-| `SLACK_BOT_TOKEN` | `xoxb-...` (Slack Bot Token) | **Yes** — Slack MCP uses this to post the HTML report |
-| `SLACK_TEAM_ID` | `T01ABCDE123` (Slack workspace ID) | **Yes** — Slack MCP workspace ID |
+
+> **Note:** `SLACK_BOT_TOKEN` and `SLACK_TEAM_ID` are **not needed** for WD Kibana report delivery — Slack posting is handled by the Cursor Automation's built-in "Send to Slack" tool (channel configured in Automation UI, not hardcoded).
 
 **Local Setup (Windows — optional, for desktop Cursor / VS Code):**
 ```powershell
 [System.Environment]::SetEnvironmentVariable('KIBANA_WD_AUTH', 'user:pass', 'User')
-[System.Environment]::SetEnvironmentVariable('SLACK_BOT_TOKEN', 'xoxb-...', 'User')
-[System.Environment]::SetEnvironmentVariable('SLACK_TEAM_ID', 'T01ABCDE123', 'User')
 ```
 
 - **Never** hard-code or log credentials.
@@ -452,9 +450,9 @@ Execute this cleanup automatically after confirming the rich report file was wri
 Slack posting is handled **automatically by the Cursor Automation platform** via its built-in **"Send to Slack"** tool. The agent does **NOT** call `slack_send_message` or any Slack MCP tool itself.
 
 **How it works:**
-- The Cursor Automation has a **"Send to Slack"** tool configured with a target channel (e.g. `#my-daily-update`).
-- When the agent finishes, Cursor automatically posts the agent's final response to the configured channel.
-- The channel is selectable in the Automation UI and can be changed at any time without modifying agent instructions.
+- The Cursor Automation has a **"Send to Slack"** tool configured with a target channel (selected in the Automation UI).
+- The agent's final text response is automatically posted to whichever channel is selected in the automation settings.
+- The channel is selectable in the Automation UI and can be changed at any time **without modifying agent instructions**.
 
 **What the agent must do:**
 1. After writing the HTML report file, **read it back** and include the full HTML report content in the agent's final response.

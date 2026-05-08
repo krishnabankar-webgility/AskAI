@@ -10,7 +10,7 @@
 
 ---
 
-## 🤖 Post to Slack #wd_performance
+## 🤖 Post to Slack (channel configured in Automation UI)
 
 ### Setup (One-time)
 

@@ -1,6 +1,6 @@
 ---
 name: "Slack Daily Report Automation"
-description: "Automation rules to post WD Kibana daily reports to Slack #my-daily-update"
+description: "Automation rules to post WD Kibana daily reports to Slack (channel configured in Cursor Automation UI)"
 ---
 
 # Slack Daily Report Automation — #my-daily-update
