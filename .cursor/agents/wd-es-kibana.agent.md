@@ -452,7 +452,7 @@ Execute this cleanup automatically after confirming the rich report file was wri
 
 ### Step 9 — Slack Delivery (htmlpreview link + summary)
 
-The agent posts a **short summary message** with a **browser-renderable htmlpreview.github.io link** to the `#my-daily-update` channel via `slack_send_message` (Slack MCP).
+The agent posts a **short summary message** with a **browser-renderable htmlpreview.github.io link** to the `#wd-health` channel via `slack_send_message` (Slack MCP).
 
 **Report date naming:** The report date in the title, filename, and Slack message is **today** (the day the report is generated/sent), NOT yesterday.
 
@@ -464,7 +464,7 @@ https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/
 **What the agent must do:**
 1. After writing the HTML report file, **commit and push** to origin (the current branch).
 2. Build the htmlpreview URL using the pushed branch name and today's filename.
-3. Post a Slack message to `#my-daily-update` (channel ID `C0B0CBW8G03`) via `slack_send_message` with:
+3. Post a Slack message to `#wd-health` (channel ID `C0B30EAD5BJ`) via `slack_send_message` with:
    - Report title with today's date
    - Key metrics summary (Total, Errors, Fatals, % changes)
    - 3–5 bullet actionable insights
