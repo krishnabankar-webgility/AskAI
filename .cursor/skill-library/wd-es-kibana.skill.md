@@ -384,6 +384,47 @@ This runs automatically every weekday morning without needing an external cron t
 
 ---
 
+## Alternative Platforms (GitHub Copilot / Claude)
+
+The same daily report automation can run on **GitHub Copilot** or **Claude Code** instead of (or alongside) Cursor Cloud Automations.
+
+**Full setup guide:** [`docs/automation-setup-copilot-claude.md`](../../docs/automation-setup-copilot-claude.md)
+
+### Option 3: GitHub Agentic Workflows (`gh-aw`) — Recommended for Copilot
+
+Uses a markdown workflow file at `.github/workflows/wd-kibana-daily-report.md` with YAML frontmatter for schedule triggers, permissions, and network allowlists. Runs on GitHub Actions with Copilot as the AI engine.
+
+**Prerequisites:** GitHub Copilot Premium + `gh-aw` CLI extension + `COPILOT_GITHUB_TOKEN` + `KIBANA_WD_AUTH` as GitHub Actions Secrets.
+
+**Quick start:**
+```bash
+gh extension install github/gh-aw
+gh aw secrets set COPILOT_GITHUB_TOKEN --value "ghp_..."
+gh secret set KIBANA_WD_AUTH --body "user:pass"
+gh aw compile
+git add .github/workflows/ && git commit -m "Add agentic workflow" && git push
+gh aw run wd-kibana-daily-report
+```
+
+### Option 4: Copilot Coding Agent via GitHub Issues
+
+Simpler but less automated: create a GitHub Issue → assign to `@copilot` → Copilot generates report on a branch → opens a PR. Schedule via cron workflow `.github/workflows/kibana-report-trigger.yml`.
+
+### Option 5: Claude Code Routines (Anthropic Cloud)
+
+Uses **Routines** at [claude.ai/code/routines](https://claude.ai/code/routines). Supports schedule, API, and GitHub event triggers on Anthropic-managed infrastructure.
+
+**Prerequisites:** Claude Pro/Max/Team/Enterprise + GitHub connected + `KIBANA_WD_AUTH` in Claude cloud environment variables.
+
+| Option | Platform | Schedule | Secrets Location | Slack Delivery |
+|--------|----------|----------|-----------------|----------------|
+| 1–2 — Cursor | Cursor Cloud | Cron/Webhook | Cursor Cloud Secrets | Built-in "Send to Slack" |
+| 3 — gh-aw | GitHub Actions | Cron in frontmatter | GH Actions Secrets | MCP/webhook/post-step |
+| 4 — Copilot Issue | GitHub Actions | Cron → issue creation | GH Actions Secrets | Manual |
+| 5 — Claude Routines | Anthropic Cloud | Built-in picker | Claude Environment Vars | MCP Connector |
+
+---
+
 ## Learnings locked in
 
 | Item | Value | Confirmed |
@@ -404,3 +445,7 @@ This runs automatically every weekday morning without needing an external cron t
 | Cursor Automation trigger | Webhook triggered + Daily cron at 09:00 GMT+5:30 | 2026-05 |
 | Cursor Automation repo | AskAI on master | 2026-05 |
 | WD perf section | Single block **Performance by module — Shopify (PayoutPosting)**; metrics: total payouts, total time, min/max/avg time per payout; no separate Performance Signals / Performance by Store for this slice | 2026-05 |
+| GitHub Agentic Workflows | `.github/workflows/wd-kibana-daily-report.md` — Copilot-powered scheduled automation via `gh-aw` | 2026-05 |
+| Copilot setup steps | `.github/workflows/copilot-setup-steps.yml` — .NET 8 + Node 20 + KIBANA_WD_AUTH | 2026-05 |
+| Claude Routines | Alternative at `claude.ai/code/routines` — schedule + API + GitHub triggers on Anthropic cloud | 2026-05 |
+| Multi-platform guide | `docs/automation-setup-copilot-claude.md` — setup instructions for Copilot (gh-aw, coding agent) and Claude (routines, GH Actions) | 2026-05 |

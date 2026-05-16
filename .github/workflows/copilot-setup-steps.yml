@@ -1,0 +1,24 @@
+name: "Copilot Setup Steps"
+on: workflow_dispatch
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Set KIBANA_WD_AUTH
+        run: echo "KIBANA_WD_AUTH=${{ secrets.KIBANA_WD_AUTH }}" >> $GITHUB_ENV

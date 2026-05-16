@@ -1,0 +1,33 @@
+name: "Trigger Kibana Daily Report (Copilot)"
+
+on:
+  schedule:
+    - cron: "30 3 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue for Copilot coding agent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "WD Kibana Daily Report — ${TODAY}" \
+            --body "Generate the daily WD Kibana log report.
+
+          **Instructions:**
+          1. Read \`.cursor/skill-library/wd-es-kibana.skill.md\` for the full procedure, query templates, and report format.
+          2. Read \`.cursor/agents/wd-es-kibana.agent.md\` for the HTML report template.
+          3. Use \`KIBANA_WD_AUTH\` env variable for Kibana authentication (base64-encode for Basic auth, include kbn-xsrf header).
+          4. Time window: yesterday 9:00 AM IST to today 9:00 AM IST.
+          5. Query the previous day's window too (for vs-previous comparison badges).
+          6. Generate Kibana short URLs for all drilldown links.
+          7. Report date = TODAY. Save to \`reports/wd-kibana-logs/${TODAY}-wd-kibana-daily-report.html\`.
+          8. Commit and push the HTML report.
+          9. Include a short summary with key metrics and the htmlpreview link.
+          10. Do not ask for confirmation — this is an automated run." \
+            --assignee "copilot"
