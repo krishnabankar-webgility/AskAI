@@ -87,24 +87,6 @@
             text-decoration: underline;
         }
         
-        .card-badge {
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .cb {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        .cb.up { background: #fef2f2; color: #991b1b; }
-        .cb.down { background: #dcfce7; color: #166534; }
-        .cb.flat { background: #f3f4f6; color: #6b7280; }
-        .cb.new { background: #eff6ff; color: #1e40af; }
-        
         section {
             background: white;
             padding: 30px;
@@ -153,6 +135,7 @@
         
         a:hover {
             text-decoration: underline;
+            font-weight: 600;
         }
         
         .pct-bar-wrap {
@@ -168,7 +151,6 @@
             background: #e5e7eb;
             border-radius: 4px;
             overflow: hidden;
-            position: relative;
         }
         
         .pct-bar-fill {
@@ -281,6 +263,17 @@
             margin-top: 40px;
             padding: 20px;
         }
+        
+        .kibana-badge {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4f46e5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body>
@@ -291,30 +284,26 @@
         </header>
         
         <h2 style="margin-bottom: 20px; font-size: 20px;">Executive Summary</h2>
-
+        
         <div class="cards-grid">
             <div class="card total">
                 <div class="card-title">Total Events</div>
-                <div class="card-value"><a href="#">10,486</a></div>
-                <div class="card-badge"><span class="cb down">↓20.3%</span></div>
+                <div class="card-value"><a href="https://kibana-wd.webgility.com/goto/6eadfb85fa50a1affc8c879c0213ffcc">10,486</a></div>
             </div>
             <div class="card error">
                 <div class="card-title">Errors</div>
-                <div class="card-value"><a href="#">1,907</a></div>
-                <div class="card-badge"><span class="cb up">↑369.7%</span></div>
+                <div class="card-value"><a href="https://kibana-wd.webgility.com/goto/911949fcd1bcdbea0d77df9dc50a5a30">1,907</a></div>
             </div>
             <div class="card fatal">
                 <div class="card-title">Fatals</div>
-                <div class="card-value"><a href="#">101</a></div>
-                <div class="card-badge"><span class="cb up">↑102.0%</span></div>
+                <div class="card-value"><a href="https://kibana-wd.webgility.com/goto/a868a8c938c19e2eedbf7d8213ad5fff">101</a></div>
             </div>
             <div class="card warning">
                 <div class="card-title">Warnings</div>
-                <div class="card-value"><a href="#">85</a></div>
-                <div class="card-badge"><span class="cb up">↑174.2%</span></div>
+                <div class="card-value"><a href="https://kibana-wd.webgility.com/goto/a5c15ab61349f06567068c5029f20390">85</a></div>
             </div>
         </div>
-    
+        
         <section>
             
     <div class="timeline-section">
@@ -335,230 +324,198 @@
         <section>
             <h2>Error Breakdown</h2>
             <div class="grid-2x2">
-<div class="subsection"><h3>By Module</h3><table><tr><th>Module</th><th>Count</th><th>% of Errors</th><th>vs Prev</th></tr>
+<div class="subsection"><h3>By Module</h3><table><tr><th>Module</th><th>Count</th><th>% of Errors</th></tr>
         <tr>
-            <td><a href="#">Unknown</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/738aa5fc5febe0113d2c5819e19fd13f" target="_blank">Unknown</a></td>
             <td>7,857</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">74.9%</span><div class="pct-bar"><div class="pct-bar-fill red" style="width:74.92847606332252%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">QBOAPICallingLog</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/d059c185cbf2d9c3681e82bff758bfaa" target="_blank">QBOAPICallingLog</a></td>
             <td>938</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">8.9%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:8.945260347129507%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">StoreConnection</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/61331ff353f25bbfda0dcbabaf3c9365" target="_blank">StoreConnection</a></td>
             <td>891</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">8.5%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:8.497043677283997%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">PostOrderToAccounting</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/8379eb46c2bd135be9cd4c3a6eef72f1" target="_blank">PostOrderToAccounting</a></td>
             <td>376</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">3.6%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:3.5857333587640663%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">PayoutPosting</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/941520894239af7b4757b0bcfde3fee5" target="_blank">PayoutPosting</a></td>
             <td>334</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">3.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:3.185199313370208%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        </table></div><div class="subsection"><h3>By Store</h3><table><tr><th>Store</th><th>Count</th><th>% of Errors</th><th>vs Prev</th></tr>
+    </table></div><div class="subsection"><h3>By Store</h3><table><tr><th>Store</th><th>Count</th><th>% of Errors</th></tr>
         <tr>
-            <td><a href="#">Shopify</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/708efc3c0d04fadf48c1e19083f71a20" target="_blank">Shopify</a></td>
             <td>5,391</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">51.4%</span><div class="pct-bar"><div class="pct-bar-fill red" style="width:51.41140568376883%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">BigCommerce</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/1710ebcfe783be6214ffb1f511e4a12f" target="_blank">BigCommerce</a></td>
             <td>1,880</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">17.9%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:17.928666793820334%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">Etsy</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/c0bfd80785b22a96a9ed95628a8ca275" target="_blank">Etsy</a></td>
             <td>1,074</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">10.2%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:10.242227732214381%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">WooCommerce</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/b9ceefc361ee4443477e3700b0d26e8c" target="_blank">WooCommerce</a></td>
             <td>1,021</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">9.7%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:9.736791913026893%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">Magento</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/8bcc7cac4233764fec12c023a5cf95bd" target="_blank">Magento</a></td>
             <td>391</td>
             <td><div class="pct-bar-wrap"><span class="pct-text">3.7%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:3.728781232119016%"></div></div></div></td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        </table></div><div class="subsection"><h3>By Tag</h3><table><tr><th>Tag</th><th>Count</th><th>vs Prev</th></tr>
+    </table></div><div class="subsection"><h3>By Tag</h3><table><tr><th>Tag</th><th>Count</th></tr>
         <tr>
-            <td><a href="#">StoreConnectionRequest</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/a6d4e5c5de237bf7e527d11de163358c" target="_blank">StoreConnectionRequest</a></td>
             <td>4,140</td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">StoreConnectionResponse</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/4f528a5216083ad606ad5e8731d17d2b" target="_blank">StoreConnectionResponse</a></td>
             <td>2,731</td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">QuickBooksOnline_API_CALL_LOG</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/69cfae80327f82682fb3f1369d0e3bad" target="_blank">QuickBooksOnline_API_CALL_LOG</a></td>
             <td>938</td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">Performance</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/20cea8b7c36b57c9570916ee915b2d41" target="_blank">Performance</a></td>
             <td>399</td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">QuickBooksConnection</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/e698581be459e7837c904741bdc1c06d" target="_blank">QuickBooksConnection</a></td>
             <td>283</td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        </table></div><div class="subsection"><h3>By Process</h3><table><tr><th>Process</th><th>Count</th><th>vs Prev</th></tr>
+    </table></div><div class="subsection"><h3>By Process</h3><table><tr><th>Process</th><th>Count</th></tr>
         <tr>
-            <td><a href="#">Scheduler</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/a68d392e6f74e666f6d2cc372698af35" target="_blank">Scheduler</a></td>
             <td>1,310</td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        
+    
         <tr>
-            <td><a href="#">Manual</a></td>
+            <td><a href="https://kibana-wd.webgility.com/goto/72d7298523443b1407f0b65c32c0789b" target="_blank">Manual</a></td>
             <td>944</td>
-            <td><span class="cb new">NEW</span></td>
         </tr>
-        </table></div>
+    </table></div>
             </div>
         </section>
 
         <section>
             <h2>Top Error Messages</h2>
             <table>
-                <tr><th>#</th><th>Message</th><th>Count</th><th>vs Prev</th></tr>
+                <tr><th>#</th><th>Message</th><th>Count</th></tr>
 
                 <tr>
                     <td>1</td>
-                    <td><a href="#">System Matrix Get CPU Info Error : Invalid query</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/d26a0b3ab3512615cf09016be6d4930c" target="_blank">System Matrix Get CPU Info Error : Invalid query</a></td>
                     <td>733</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>2</td>
-                    <td><a href="#">System Matrix Get CPU Info Error : Invalid class</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/d26a0b3ab3512615cf09016be6d4930c" target="_blank">System Matrix Get CPU Info Error : Invalid class</a></td>
                     <td>732</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>3</td>
-                    <td><a href="#">SaveSettingError</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/e49dd5d3a17d1890305a0989ee5bf915" target="_blank">SaveSettingError</a></td>
                     <td>158</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>4</td>
-                    <td><a href="#">QB Common Open connection problem</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/8afeeff02c9862e659920ef65f90eeef" target="_blank">QB Common Open connection problem</a></td>
                     <td>98</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>5</td>
-                    <td><a href="#">StoreConnectionError</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/b0425639911736a06f232ee865d44fe2" target="_blank">StoreConnectionError</a></td>
                     <td>46</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>6</td>
-                    <td><a href="#">The remote server returned an error: (500) Internal Server Error.</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/264a7f4d257e8f352d96748ba3b1eb50" target="_blank">The remote server returned an error: (500) Internal Server Error.</a></td>
                     <td>42</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>7</td>
-                    <td><a href="#">Thread was being aborted.</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/c2b3715739effa49c316b7e459664f5a" target="_blank">Thread was being aborted.</a></td>
                     <td>18</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>8</td>
-                    <td><a href="#">Get Store Response Error code:= NotImplemented</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/d932d42152c8fcc593b2d8b2396fe394" target="_blank">Get Store Response Error code:= NotImplemented</a></td>
                     <td>13</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>9</td>
-                    <td><a href="#">The fractional part of the provided time value overflows the scale of the corres</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/b767027bcbeda810ab663dfc2ffda963" target="_blank">The fractional part of the provided time value overflows the scale of the corres</a></td>
                     <td>10</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>10</td>
-                    <td><a href="#">A QuickBooks company data file is already open and it is different from the one </a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/41d5b97aefba3579e62c57d5b6c10780" target="_blank">A QuickBooks company data file is already open and it is different from the one </a></td>
                     <td>6</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>11</td>
-                    <td><a href="#">This application is not allowed to log into this QuickBooks company data file au</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/d8cab82f2c1c18b07fc0d0d961e66d27" target="_blank">This application is not allowed to log into this QuickBooks company data file au</a></td>
                     <td>6</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>12</td>
-                    <td><a href="#">Order ID:7685 :  Mismatch in Return Item Name and Order Item Name</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/c666b18817c31844baa9886e32d68838" target="_blank">Order ID:7685 :  Mismatch in Return Item Name and Order Item Name</a></td>
                     <td>4</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>13</td>
-                    <td><a href="#">Order ID:8693 :  Mismatch in Return Item Name and Order Item Name</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/c8c895ce23001a12ef85f48deff53e0b" target="_blank">Order ID:8693 :  Mismatch in Return Item Name and Order Item Name</a></td>
                     <td>4</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>14</td>
-                    <td><a href="#">Job Killed</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/a11b65e0fd5b6e42eb5d601c9db3d623" target="_blank">Job Killed</a></td>
                     <td>3</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
                 <tr>
                     <td>15</td>
-                    <td><a href="#">The remote name could not be resolved: 'www.candlemaking.com'</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/f9a084ff12d4249d75c64ac848f7e2ef" target="_blank">The remote name could not be resolved: 'www.candlemaking.com'</a></td>
                     <td>3</td>
-                    <td><span class="cb new">NEW</span></td>
                 </tr>
         
             </table>
@@ -567,76 +524,66 @@
         <section>
             <h2>Top Error Subscribers</h2>
             <table>
-                <tr><th>Subscriber ID</th><th>Error Count</th><th>% of Errors</th><th>vs Prev</th></tr>
+                <tr><th>Subscriber ID</th><th>Error Count</th><th>% of Errors</th></tr>
 
                 <tr>
-                    <td><a href="#">72125</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/c5d388067a02b15a19ff002f88aefe3a" target="_blank">72125</a></td>
                     <td>753</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">9.0%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:8.971762182771357%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">42.8%</span><div class="pct-bar"><div class="pct-bar-fill orange" style="width:42.784090909090914%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">7797</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/d68f5dbff2d52c5a6ced86dfef3fa69a" target="_blank">7797</a></td>
                     <td>712</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">8.5%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:8.48325985940665%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">40.5%</span><div class="pct-bar"><div class="pct-bar-fill orange" style="width:40.45454545454545%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">8865</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/e687b4598157bc1947cda32ee4d45251" target="_blank">8865</a></td>
                     <td>100</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">1.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:1.1914690813773383%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">5.7%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:5.681818181818182%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">50726</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/f9746633f95200461a309d364828a2ca" target="_blank">50726</a></td>
                     <td>46</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">0.5%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.5480757774335756%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">2.6%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:2.6136363636363633%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">100802</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/7f7cbbb8f5be7d42c8a3e2176495689c" target="_blank">100802</a></td>
                     <td>39</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">0.5%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.46467294173716195%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">2.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:2.215909090909091%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">6531</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/acc60252d4df26451e0461cd0edcf131" target="_blank">6531</a></td>
                     <td>36</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">0.4%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.4289288692958418%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">2.0%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:2.0454545454545454%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">56483</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/570b362167c0a47b530d555bd1f28438" target="_blank">56483</a></td>
                     <td>23</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">0.3%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.2740378887167878%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">1.3%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:1.3068181818181817%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">95492</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/2570440c755afbe708debbc0a732e06a" target="_blank">95492</a></td>
                     <td>20</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">0.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.23829381627546767%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">1.1%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:1.1363636363636365%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">98163</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/34a9426e5f3716e73de1a604135b2efe" target="_blank">98163</a></td>
                     <td>17</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">0.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.20254974383414748%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">1.0%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.9659090909090908%"></div></div></div></td>
                 </tr>
         
                 <tr>
-                    <td><a href="#">46356</a></td>
+                    <td><a href="https://kibana-wd.webgility.com/goto/a156db43d4f5d495e45b39ce371c5dcb" target="_blank">46356</a></td>
                     <td>14</td>
-                    <td><div class="pct-bar-wrap"><span class="pct-text">0.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.16680567139282734%"></div></div></div></td>
-                    <td><span class="cb new">NEW</span></td>
+                    <td><div class="pct-bar-wrap"><span class="pct-text">0.8%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:0.7954545454545454%"></div></div></div></td>
                 </tr>
         
             </table>
@@ -648,93 +595,15 @@
                 <div class="subsection">
                     <h3>By Message</h3>
                     <table>
-                        <tr><th>Message</th><th>Count</th><th>vs Prev</th></tr>
+                        <tr><th>Message</th><th>Count</th></tr>
 
-                        <tr>
-                            <td><a href="#">The remote server returned an error: (401) Unauthorized.</a></td>
-                            <td>20</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">The fractional part of the provided time value overflows the</a></td>
-                            <td>17</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">The remote server returned an error: (400) Bad Request.</a></td>
-                            <td>14</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">The remote server returned an error: (501) Not Implemented.</a></td>
-                            <td>13</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">Unexpected character encountered while parsing value: T. Pat</a></td>
-                            <td>13</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
                     </table>
                 </div>
                 <div class="subsection">
                     <h3>By Store</h3>
                     <table>
-                        <tr><th>Store</th><th>Count</th><th>vs Prev</th></tr>
+                        <tr><th>Store</th><th>Count</th></tr>
 
-                        <tr>
-                            <td><a href="#">Shopify</a></td>
-                            <td>37</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">Shift4Shop</a></td>
-                            <td>20</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">BigCommerce</a></td>
-                            <td>18</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">Clover</a></td>
-                            <td>8</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">PinnacleCart</a></td>
-                            <td>7</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">Magento</a></td>
-                            <td>6</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">eBay</a></td>
-                            <td>3</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
-                        <tr>
-                            <td><a href="#">AmazonMarketPlace</a></td>
-                            <td>2</td>
-                            <td><span class="cb new">NEW</span></td>
-                        </tr>
-        
                     </table>
                 </div>
             </div>
@@ -742,6 +611,7 @@
         
         <footer>
             <p>Report generated: {today_date} from Webgility Elasticsearch | Period: IST 9 AM yesterday to 9 AM today</p>
+            <p style="margin-top: 10px; font-size: 11px;">All table rows link to Kibana Discover for detailed investigation</p>
         </footer>
     </div>
 </body>
