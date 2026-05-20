@@ -711,6 +711,19 @@ The primary deliverable is an **HTML** report file, not only an inline chat resp
 
 - Write the report to `reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.html`
 - The HTML must be self-contained (inline CSS, no external dependencies, no JavaScript)
+- After writing the file, **git add + commit + push** the file to the current branch
+- After pushing, construct the **GitHub HTML Preview URL** so the report is viewable directly in a browser without cloning:
+
+```bash
+REPO_URL=$(git remote get-url origin | sed 's/\.git$//')
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+REPORT_FILE="reports/wd-kibana-logs/{report-date}-wd-kibana-daily-report.html"
+HTML_PREVIEW_URL="https://htmlpreview.github.io/?${REPO_URL}/blob/${BRANCH}/${REPORT_FILE}"
+```
+
+  Example output: `https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/cursor/daily-wd-kibana-log-report-1ba6/reports/wd-kibana-logs/2026-05-20-wd-kibana-daily-report.html`
+
+- Include this `HTML_PREVIEW_URL` in the Slack summary message (see Step 9)
 - After writing the file, respond with the file path plus a short summary of the most important findings
 
 ### Output Format — HTML Report
@@ -913,10 +926,37 @@ Slack posting is handled **automatically by the Cursor Automation platform** via
 - The channel is selectable in the Automation UI and can be changed at any time **without modifying agent instructions**.
 
 **What the agent must do:**
-1. After writing the HTML report file, **read it back** and include the full HTML report content in the agent's final response.
-2. The final response IS the report — Cursor's "Send to Slack" tool will deliver it to the configured channel.
-3. Do **NOT** call `slack_send_message`, `slack_create_canvas`, or any Slack tool directly.
+1. After writing and pushing the HTML report file, call `SendSlackMessage` with the executive summary and all key findings.
+2. The Slack message **MUST** include the GitHub HTML Preview link as a clickable URL (constructed in Step 7) so the recipient can view the full visual report instantly in their browser.
+3. Format the preview link in the Slack message as: `🌐 *View full report:* <{HTML_PREVIEW_URL}|Open in browser (htmlpreview.github.io)>`
 4. Do **NOT** run `fetch-daily-logs.mjs` — that is a standalone script for non-MCP environments only.
+
+**Slack message structure (required elements in order):**
+```
+📊 *WD Kibana Daily Log Report — {date}*
+Period: {start_ist} → {end_ist}
+
+🌐 *View full report:* <https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/{branch}/reports/wd-kibana-logs/{date}-wd-kibana-daily-report.html|Open in browser (htmlpreview.github.io)>
+
+*Executive Summary*
+[table: Total / Errors / Fatals / Warnings / Info / Error Rate with vs-prev]
+
+⏱ *Peak:* {count} errors at {hour} IST
+
+*🔥 Key Findings:*
+[bullet list of top issues/anomalies]
+
+*✅ Positive:*
+[bullet list of improvements]
+
+*💳 Shopify Payout Performance ({N} runs):*
+[key metrics]
+
+*🛒 Amazon Settlement Performance ({N} runs):*
+[key metrics]
+
+📁 Report file: `reports/wd-kibana-logs/{date}-wd-kibana-daily-report.html` ({size} KB, all 13 sections)
+```
 
 ---
 
