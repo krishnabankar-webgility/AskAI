@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WD Kibana Daily Log Report - 2026-05-20</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;color:#0f172a;line-height:1.5;padding:20px}
+.container{max-width:1200px;margin:0 auto}
+h1{font-size:1.4rem;color:#0f172a;margin-bottom:4px}
+h2{font-size:1rem;color:#334155;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}
+.subtitle{font-size:.75rem;color:#64748b;margin-bottom:16px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.card{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card-label{font-size:.68rem;color:#64748b;text-transform:uppercase;font-weight:600}
+.card-value{font-size:1.3rem;font-weight:700;margin:2px 0}
+.card-value a{color:inherit;text-decoration:none;border-bottom:1px dashed #94a3b8}
+.card-value a:hover{color:#3b82f6}
+.card-change{font-size:.72rem}
+.cb{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.68rem;font-weight:600}
+.cb.down{background:#dcfce7;color:#166534}
+.cb.up{background:#fef2f2;color:#991b1b}
+.cb.new{background:#eff6ff;color:#1e40af}
+.cb.flat{background:#f3f4f6;color:#6b7280}
+.section-card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th{background:#f1f5f9;padding:7px 10px;text-align:left;font-size:.72rem;color:#475569;font-weight:600;border-bottom:2px solid #e2e8f0}
+td{padding:6px 10px;border-bottom:1px solid #f1f5f9}
+td.r{text-align:right}
+a{color:#3b82f6;text-decoration:none}
+a:hover{text-decoration:underline}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:800px){.grid-2{grid-template-columns:1fr}}
+.pct-bar-wrap{display:flex;align-items:center;gap:6px;min-width:100px}
+.pct-text{font-size:.7rem;color:#64748b;min-width:34px;text-align:right}
+.pct-bar{flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.pct-bar-fill{height:100%;border-radius:3px}
+.pct-bar-fill.red{background:#ef4444}
+.pct-bar-fill.orange{background:#f97316}
+.pct-bar-fill.amber{background:#eab308}
+.pct-bar-fill.blue{background:#3b82f6}
+.pct-bar-fill.gray{background:#94a3b8}
+.chart-wrap{background:#fff;border-radius:10px;padding:16px 12px 8px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin:16px 0}
+.chart-title{font-size:.85rem;font-weight:600;color:#475569;margin-bottom:10px}
+.bar-chart{display:flex;align-items:stretch;gap:3px;height:180px;padding:0 4px;overflow:visible}
+.bar-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0;height:100%}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px}
+.bar.c1{background:#cbd5e1}
+.bar.c2{background:#fbbf24}
+.bar.c3{background:#f97316}
+.bar.c4{background:#ef4444}
+.bar-lbl{font-size:.6rem;color:#94a3b8;margin-top:4px;flex-shrink:0}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.metric{background:#f8fafc;border-radius:8px;padding:10px 12px}
+.metric-label{font-size:.68rem;color:#64748b;text-transform:uppercase;font-weight:600}
+.metric-value{font-size:1.1rem;font-weight:700;color:#0f172a;margin:2px 0}
+.metric-sub{font-size:.68rem;color:#94a3b8}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media(max-width:900px){.insight-grid{grid-template-columns:1fr}}
+.insight-card{display:flex;gap:10px;background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:4px solid #e2e8f0}
+.insight-card.danger{border-left-color:#ef4444}
+.insight-card.warning{border-left-color:#f97316}
+.insight-card.spike{border-left-color:#eab308}
+.insight-card.healthy{border-left-color:#22c55e}
+.insight-icon{font-size:1.1rem;min-width:22px;text-align:center;padding-top:2px}
+.insight-title{font-weight:600;font-size:.82rem;color:#0f172a}
+.insight-desc{font-size:.75rem;color:#64748b;margin-top:2px}
+.placeholder{font-size:.82rem;color:#94a3b8;font-style:italic;padding:16px 0}
+.perf-table{width:100%;border-collapse:collapse;font-size:.76rem;margin:12px 0}
+.perf-table th{background:#f1f5f9;padding:7px 10px;text-align:left;font-size:.7rem;color:#475569;font-weight:600;border-bottom:2px solid #e2e8f0}
+.perf-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.perf-table tr:hover td{background:#fafafa}
+.perf-email{font-size:.66rem;color:#94a3b8;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.perf-time{font-weight:700;color:#0f172a}
+.perf-step-max{font-size:.72rem;color:#dc2626;font-weight:600}
+.perf-step-ms{font-size:.66rem;color:#f97316;font-weight:400}
+.perf-step-detail{font-size:.64rem;color:#64748b;font-family:monospace;max-width:180px}
+.step-chart{margin:16px 0 4px}
+.step-chart-title{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:10px}
+.step-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.step-label{font-size:.66rem;color:#475569;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;padding-right:4px}
+.step-bar-wrap{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.step-bar{height:16px;border-radius:4px;min-width:4px;flex-shrink:0}
+.step-bar.red{background:#ef4444}
+.step-bar.orange{background:#f97316}
+.step-bar.amber{background:#eab308}
+.step-bar.blue{background:#3b82f6}
+.step-bar-val{font-size:.64rem;color:#64748b;white-space:nowrap}
+footer{text-align:center;color:#94a3b8;font-size:.72rem;margin-top:28px;padding-top:12px;border-top:1px solid #e2e8f0}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>WD Kibana Daily Log Report &mdash; May 20, 2026</h1>
+<div class="subtitle">
+Period: May 19, 2026 09:00 IST &mdash; May 20, 2026 09:00 IST
+&nbsp;|&nbsp; Index: <code>webgilitydesktop-2026.05.19, webgilitydesktop-2026.05.20</code>
+&nbsp;|&nbsp; Compared to: May 18, 2026 09:00 IST &mdash; May 19, 2026 09:00 IST
+</div>
+
+<h2>Executive Summary</h2>
+<div class="card-grid">
+<div class="card">
+  <div class="card-label">Total Events</div>
+  <div class="card-value">0</div>
+  <div class="card-change"><span class="cb flat">N/A</span></div>
+</div>
+<div class="card">
+  <div class="card-label">Errors</div>
+  <div class="card-value">0</div>
+  <div class="card-change"><span class="cb flat">N/A</span></div>
+</div>
+<div class="card">
+  <div class="card-label">Fatals</div>
+  <div class="card-value">0</div>
+  <div class="card-change"><span class="cb flat">N/A</span></div>
+</div>
+<div class="card">
+  <div class="card-label">Warnings</div>
+  <div class="card-value">0</div>
+  <div class="card-change"><span class="cb flat">N/A</span></div>
+</div>
+<div class="card">
+  <div class="card-label">Info</div>
+  <div class="card-value">0</div>
+  <div class="card-change"><span class="cb flat">Info</span></div>
+</div>
+<div class="card">
+  <div class="card-label">Error Rate</div>
+  <div class="card-value">0%</div>
+  <div class="card-change">Daily Rate</div>
+</div>
+</div>
+
+<h2>Shopify Payout Performance</h2>
+<div class="section-card">
+<p class="placeholder">No PayoutPosting data found for this period.</p>
+</div>
+
+<h2>Amazon Settlement Report</h2>
+<div class="section-card">
+<p class="placeholder">No Amazon Settlement activity found for this period.</p>
+</div>
+
+<h2>🏃 Shopify Payout — Performance Deep-Dive</h2>
+<div class="section-card">
+<p class="placeholder">No <code>Payout_PerformanceSummary</code> logs found in this period.</p>
+</div>
+
+<h2>🏃 Amazon Settlement — Performance Deep-Dive</h2>
+<div class="section-card">
+<p class="placeholder">No <code>Settlement_PerformanceSummary</code> logs found in this period.</p>
+</div>
+
+<h2>Actionable Insights</h2>
+<div class="insight-grid">
+<div class="insight-card healthy">
+  <div class="insight-icon">✓</div>
+  <div>
+    <div class="insight-title">Report Generated</div>
+    <div class="insight-desc">Daily WD Kibana report successfully generated for May 20, 2026.</div>
+  </div>
+</div>
+</div>
+
+<footer>
+Generated by WD Kibana Log Analyst • Data from webgilitydesktop indices • Report date: 2026-05-20T03:31:58.702Z
+</footer>
+
+</div>
+</body>
+</html>
