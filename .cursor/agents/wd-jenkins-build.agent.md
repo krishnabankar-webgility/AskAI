@@ -55,13 +55,21 @@ For EVERY step — print a clear progress log message:
 Before triggering a new build, check if there is an ALREADY RUNNING build on Jenkins.
 - If yes → WAIT for it to complete. Log: `⏳ Jenkins build #<N> already in progress. Waiting...`
 - Show build progress updates while waiting.
-- Once existing build finishes → proceed to Step 2.
-- If no running build → proceed directly to Step 2.
+- Once existing build finishes → proceed to Step 1.5.
+- If no running build → proceed directly to Step 1.5.
 
 Follow **§1.0** in the skill.
 
+### Step 1.5 — Pre-Build Slack Notification
+BEFORE triggering the build, send a message to the user's Slack channel:
+```
+@here creating installer from <branch>
+```
+Follow **§1a** in the skill.
+
 ### Step 2 — Trigger Jenkins Build
-Trigger build for the given branch. Follow **§1** in the skill.
+**Trigger the build EXACTLY ONCE.** Record `nextBuildNumber` before triggering, then call `buildWithParameters` a single time. NEVER trigger twice.
+Follow **§1** in the skill.
 
 ### Step 3 — Poll for Build Completion
 Poll until build finishes. Record `build_number` (plain integer, NO `#` prefix in file names).

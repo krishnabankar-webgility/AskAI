@@ -103,25 +103,66 @@ Write-Host "✅ [Step 1 — Pre-Build Check] DONE — Ready to trigger new build
 
 ---
 
+## §1a Pre-Build Slack Notification
+
+**MUST run BEFORE triggering the build.** Posts a heads-up to the Slack channel.
+
+```powershell
+Write-Host "🔄 [Step 1.5 — Pre-Build Slack Notification] IN PROGRESS..."
+
+$slackToken = $env:SLACK_BOT_TOKEN
+if (-not $slackToken) {
+    $slackToken = [System.Environment]::GetEnvironmentVariable("SLACK_BOT_TOKEN","User")
+}
+
+if ($slackToken -and $slackChannel) {
+    $preMsg = "@here creating installer from $branch"
+    $preBody = @{ channel = $slackChannel; text = $preMsg } | ConvertTo-Json -Compress
+    $preResp = Invoke-RestMethod `
+        -Uri "https://slack.com/api/chat.postMessage" -Method Post `
+        -Headers @{ Authorization = "Bearer $slackToken"; "Content-Type" = "application/json" } `
+        -Body $preBody -TimeoutSec 15
+    if ($preResp.ok) {
+        Write-Host "  ✅ Pre-build Slack: sent to $slackChannel"
+    } else {
+        Write-Warning "  ⚠️ Pre-build Slack failed: $($preResp.error)"
+    }
+} else {
+    Write-Warning "  ⚠️ Skipping pre-build Slack (no token or channel)"
+}
+
+Write-Host "✅ [Step 1.5 — Pre-Build Slack Notification] DONE"
+```
+
+---
+
 ## §1 Jenkins Build Trigger
+
+**CRITICAL: Trigger exactly ONCE. Never call buildWithParameters more than once per pipeline run.**
 
 ```powershell
 Write-Host "🔄 [Step 2 — Trigger Jenkins Build] IN PROGRESS..."
 
-# Discover parameter name (first run only)
-$jobConfig = Invoke-RestMethod `
-    -Uri "$jenkinsUrl/job/UnifyEnterprise/api/json?tree=property[parameterDefinitions[name,defaultParameterValue]]" `
+# Record nextBuildNumber BEFORE triggering — this is the build we expect to create
+$jobInfo = Invoke-RestMethod `
+    -Uri "$jenkinsUrl/job/UnifyEnterprise/api/json?tree=nextBuildNumber" `
     -Headers $headers
+$expectedBuildNumber = $jobInfo.nextBuildNumber
+Write-Host "  Expected build number: $expectedBuildNumber"
 
-# Trigger build with branch parameter
+# Trigger build EXACTLY ONCE
 $buildUri = "$jenkinsUrl/job/UnifyEnterprise/buildWithParameters"
-$body = @{ BRANCH = $branch }   # adjust key name if job uses different param name
+$body = @{ Branch = $branch; PostSharp = "Yes" }
 
 Invoke-RestMethod -Uri $buildUri -Method Post -Headers $headers -Body $body
-Write-Host "  ✅ Build triggered for branch: $branch"
+Write-Host "  ✅ Build triggered for branch: $branch (expected #$expectedBuildNumber)"
+
+# IMPORTANT: Do NOT call buildWithParameters again. The build is now queued/running.
 ```
 
 > **If job has no parameter** (reads branch from SCM): use `/build` instead of `/buildWithParameters`
+>
+> **Anti-pattern (NEVER DO):** Do not trigger → then trigger again. One trigger per pipeline execution.
 
 ---
 
@@ -132,10 +173,22 @@ Write-Host "🔄 [Step 3 — Poll Build Completion] IN PROGRESS..."
 
 Start-Sleep -Seconds 8
 
-# Get latest build number (the one we just triggered)
-$jobInfo = Invoke-RestMethod -Uri "$jenkinsUrl/job/UnifyEnterprise/api/json" -Headers $headers
-$buildNumber = $jobInfo.lastBuild.number
-Write-Host "  Tracking build: $buildNumber"
+# Use the expectedBuildNumber from §1 (NOT lastBuild — that can pick up a different build)
+$buildNumber = $expectedBuildNumber
+Write-Host "  Tracking build: #$buildNumber"
+
+# Verify this build actually exists (may still be in queue)
+$retries = 0
+while ($retries -lt 10) {
+    try {
+        $null = Invoke-RestMethod -Uri "$jenkinsUrl/job/UnifyEnterprise/$buildNumber/api/json?tree=building" -Headers $headers -TimeoutSec 10
+        break
+    } catch {
+        $retries++
+        Write-Host "  ⏳ Build #$buildNumber not started yet (queued). Waiting... ($retries)"
+        Start-Sleep -Seconds 10
+    }
+}
 
 # Poll until complete
 $maxMinutes = 90

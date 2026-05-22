@@ -33,11 +33,14 @@ Collect from user message (ask if missing / cannot be inferred):
 ## Pipeline — Strict Sequential Steps
 
 1. **Pre-flight Check** — Check for running Jenkins builds (§1.0)
-2. **Trigger Jenkins Build** — For the given branch (§1)
-3. **Poll for Build Completion** — Wait for SUCCESS (§2)
-4. **Verify Network Share** — Check `\\inwsfs02\UDInstaller` accessibility (§3)
-5. **Copy to QA Share** — Copy installer to destination (§4)
-6. **Dropbox Upload** — Optional, only if requested (§5)
-7. **Jira Comment + Slack** — Structured QA Testing comment + notification (§6)
+2. **Pre-Build Slack** — Send `@here creating installer from <branch>` to Slack channel (§1a)
+3. **Trigger Jenkins Build** — Trigger EXACTLY ONCE, record `nextBuildNumber` (§1)
+4. **Poll for Build Completion** — Wait for SUCCESS using `expectedBuildNumber` (§2)
+5. **Verify Network Share** — Check `\\inwsfs02\UDInstaller` accessibility (§3)
+6. **Copy to QA Share** — Copy installer to destination (§4)
+7. **Dropbox Upload** — Optional, only if requested (§5)
+8. **Jira Comment + Slack** — Structured QA Testing comment + notification (§6)
 
 For EVERY step, print progress: `🔄 IN PROGRESS...` → `✅ DONE` or `❌ FAILED`
+
+**CRITICAL:** The build trigger (§1) must be called EXACTLY ONCE per pipeline run. Never trigger twice.
