@@ -38,8 +38,10 @@ Collect from user message (ask if missing / cannot be inferred):
 4. **Poll for Build Completion** — Wait for SUCCESS using `expectedBuildNumber` (§2)
 5. **Verify Network Share** — Check `\\inwsfs02\UDInstaller` accessibility (§3)
 6. **Copy to QA Share** — Copy installer to destination (§4)
-7. **Dropbox Upload** — Optional, only if requested (§5)
-8. **Jira Comment + Slack** — Structured QA Testing comment + notification (§6)
+7. **Dropbox Upload** — Optional, only if requested. Uses refresh token + chunked upload via curl (§5)
+8. **Change Jira Assignee + RFT** — Assign to QA tester (default: `alsok mendhe`), transition to RFT (§6)
+9. **Slack Notification** — Full QA notification to user's channel (§7)
+10. **Jira Comment (LAST)** — Structured QA Testing comment on Customer Issue. Collect data from Jira description + Confluence CIM page + branch commits. Template: customization details, workflow (enable/setup/execute/result), limitations, impacted area (modules only, NO file names), test cases, links. ALWAYS draft for user review first. (§8)
 
 For EVERY step, print progress: `🔄 IN PROGRESS...` → `✅ DONE` or `❌ FAILED`
 

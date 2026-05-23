@@ -55,27 +55,27 @@ For EVERY step — print a clear progress log message:
 Before triggering a new build, check if there is an ALREADY RUNNING build on Jenkins.
 - If yes → WAIT for it to complete. Log: `⏳ Jenkins build #<N> already in progress. Waiting...`
 - Show build progress updates while waiting.
-- Once existing build finishes → proceed to Step 1.5.
-- If no running build → proceed directly to Step 1.5.
+- Once existing build finishes → proceed to Step 2.
+- If no running build → proceed directly to Step 2.
 
 Follow **§1.0** in the skill.
 
-### Step 1.5 — Pre-Build Slack Notification
+### Step 2 — Pre-Build Slack Notification
 BEFORE triggering the build, send a message to the user's Slack channel:
 ```
 @here creating installer from <branch>
 ```
 Follow **§1a** in the skill.
 
-### Step 2 — Trigger Jenkins Build
+### Step 3 — Trigger Jenkins Build
 **Trigger the build EXACTLY ONCE.** Record `nextBuildNumber` before triggering, then call `buildWithParameters` a single time. NEVER trigger twice.
 Follow **§1** in the skill.
 
-### Step 3 — Poll for Build Completion
+### Step 4 — Poll for Build Completion
 Poll until build finishes. Record `build_number` (plain integer, NO `#` prefix in file names).
 Confirm `result = SUCCESS`. Follow **§2** in the skill.
 
-### Step 4 — Verify Network Share Accessibility
+### Step 5 — Verify Network Share Accessibility
 Check if `\\inwsfs02\UDInstaller` is accessible.
 - If NOT accessible → invoke `sys-troubleshoot` agent (or follow `vpn-smb-access.skill.md`) to fix.
 - Once accessible → verify `WebgilityInstaller-BuildNo_<buildNumber>.exe` exists AND is complete (not still being written by Jenkins).
@@ -83,27 +83,44 @@ Check if `\\inwsfs02\UDInstaller` is accessible.
 
 Follow **§3** in the skill.
 
-### Step 5 — Copy Installer to QA Network Share
+### Step 6 — Copy Installer to QA Network Share
 Copy `WebgilityInstaller-BuildNo_<buildNumber>.exe` to `destination_path`.
 Follow **§4** in the skill.
 
-### Step 6 — Upload to Dropbox + Get Shareable Link (OPTIONAL)
+### Step 7 — Upload to Dropbox + Get Shareable Link (OPTIONAL)
 **Only execute if user explicitly requested `upload_to_dropbox = true`.**
-Upload to `/Customization Release/Krishna_Dev/` on Dropbox and get a shareable link.
+Upload to `/Customization Release/Krishna_Dev/` on Dropbox using chunked upload sessions (2MB via curl.exe).
+Uses refresh token flow (env vars: `DROPBOX_REFRESH_TOKEN`, `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`).
 Follow **§5** in the skill.
 
-### Step 7 — Post QA Testing Jira Comment + Slack Notification
-This is the most important notification step. The Jira comment must be a **structured QA Testing note**.
-
-**QA Testing Jira Comment must include:**
-1. Branch name
-2. Build number
-3. Customization node used (from `CustomizationConstant.cs` if determinable)
-4. Share folder location where build is uploaded
-5. Dropbox link (if uploaded)
-6. PR commits messages and code changes → **Impact Areas** (module/functionality wise)
-7. **Test Cases** — based on session chat history, customer requirements vs existing workflow. Minimum exact cases to cover the change.
-
-For template/format reference: check Confluence workspace folder public → template → QA Testing doc, or use `confluence-automation` / `jira-automation` agents for format guidance.
-
+### Step 8 — Change Jira Assignee + Transition to RFT
+Change Jira ticket assignee to QA tester (default: `alsok mendhe` — ask user if different).
+Transition ticket status to "Ready For Testing" (RFT).
 Follow **§6** in the skill.
+
+### Step 9 — Slack Notification
+Send full QA notification message to user's Slack channel with build details, share paths, and Dropbox link.
+Follow **§7** in the skill.
+
+### Step 10 — Post QA Testing Jira Comment (LAST STEP)
+This is the **FINAL** step. Post a structured QA Testing comment on the **Customer Issue** Jira ticket.
+
+**Data Collection (§8.3 in skill):**
+1. Fetch Jira issue → extract customization details, store, accounting, limitations, DB/QBD links, credentials
+2. Search Confluence personal space for CIM page (title matching Jira ID) → get additional links/notes
+3. Check branch commits (`git log --no-merges origin/develop..origin/<branch>`) → identify impacted modules
+4. Get CustomizationConstant.cs diff → extract node name
+
+**Template sections (§8.1 in skill):**
+- Customization Details (what it does, node, build, env, store, accounting)
+- Customization Workflow (how to enable, settings/setup, execute, expected result)
+- Limitations
+- Impacted Area (high-level modules only — NO file names, QA is non-technical)
+- QBD Items / Setup
+- Test Cases (happy path, edge cases, negative cases)
+- Links (DB backup, QBD backup, credentials, installer paths, Confluence, test orders)
+- CC: @Hitesh Devashrayee @Arvind Chavan
+
+**Rules:** NEVER fabricate data. ALWAYS draft in chat first for user review before posting. NO file names or code in the comment.
+
+Follow **§8** in the skill.
