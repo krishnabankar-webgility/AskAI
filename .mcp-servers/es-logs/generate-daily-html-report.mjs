@@ -683,16 +683,18 @@ async function main() {
 
   const link = (id, text) => `<a href="${linkMap.get(id) || KIBANA}" target="_blank">${esc(text)}</a>`;
 
-  // Hourly chart - align to IST hours from START
+  // Hourly chart — 24 slots from report start, assign ES hour buckets by offset
   const hourlyBuckets = q1.aggregations?.errors_hourly?.by_hour?.buckets ?? [];
-  const hourlyCounts = [];
   const startMs = new Date(START).getTime();
-  for (let i = 0; i < 24; i++) {
-    const hourMs = startMs + i * 3600000;
-    const bucket = hourlyBuckets.find((b) => Math.abs(new Date(b.key).getTime() - hourMs) < 1800000);
-    const count = bucket?.doc_count ?? 0;
-    const istHour = new Date(hourMs + 5.5 * 3600000).getUTCHours();
-    hourlyCounts.push({ istHour, count, label: String(istHour).padStart(2, "0") });
+  const hourlyCounts = Array.from({ length: 24 }, (_, i) => {
+    const slotMs = startMs + i * 3600000;
+    const label = String(new Date(slotMs + 5.5 * 3600000).getUTCHours()).padStart(2, "0");
+    return { label, count: 0 };
+  });
+  for (const b of hourlyBuckets) {
+    const t = new Date(b.key).getTime();
+    const idx = Math.floor((t - startMs) / 3600000);
+    if (idx >= 0 && idx < 24) hourlyCounts[idx].count += b.doc_count;
   }
   const maxHourly = Math.max(...hourlyCounts.map((h) => h.count), 1);
   const peakHour = hourlyCounts.reduce((a, b) => (b.count > a.count ? b : a), hourlyCounts[0]);
