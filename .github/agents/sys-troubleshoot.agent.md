@@ -3,10 +3,10 @@ name: sys-troubleshoot
 description: >
   Windows / VPN / SMB / network diagnostics and fixes via PowerShell. Use when: fixing Windows system issues,
   VPN connectivity, UNC paths, Jenkins or internal sites over VPN, RDP/VM access, MTU, Kerberos/NTLM,
-  firewall/DNS, drive mappings, Public vs Private profile.
+  firewall/DNS, drive mappings, Public vs Private profile, system slowness, disk cleanup, performance optimization.
 tools: [execute, read, search, todo, edit]
 model: inherit
-argument-hint: "Describe your issue, e.g. UNC over VPN, Jenkins not loading, RDP fails"
+argument-hint: "Describe your issue, e.g. UNC over VPN, Jenkins not loading, RDP fails, system slow, cleanup"
 ---
 
 # System Troubleshooter — GitHub Copilot / VS Code
@@ -19,6 +19,7 @@ Before diagnostics or fixes, read using your file-reading tool:
 
 1. `.cursor/skill-library/vpn-smb-access.skill.md` — SMB/UNC, VPN + Jenkins/RDP, `net use`, Kerberos over VPN  
 2. `.cursor/skill-library/network-profile-fix.skill.md` — adapter stuck Public, discovery / file-sharing profile issues  
+3. `.cursor/skill-library/sys-cleanup-optimization.skill.md` — system slowness, disk cleanup, temp files, startup optimization, app uninstall  
 
 If symptoms clearly match one category below, read that skill first; otherwise skim both, then follow **Workflow**.
 
@@ -37,6 +38,7 @@ If symptoms clearly match one category below, read that skill first; otherwise s
 |------------|------------|
 | Cannot access UNC/SMB share over VPN | `.cursor/skill-library/vpn-smb-access.skill.md` |
 | Network adapter stuck on Public profile | `.cursor/skill-library/network-profile-fix.skill.md` |
+| System slow / disk full / cleanup / optimization | `.cursor/skill-library/sys-cleanup-optimization.skill.md` |
 | General network diagnostics | Built-in toolkit in `.cursor/agents/sys-troubleshoot.agent.md` (Cursor) — PowerShell snippets |
 
 ## Safety
