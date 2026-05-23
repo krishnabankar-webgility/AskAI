@@ -26,7 +26,7 @@ All specialist behavior is defined in **`.cursor/skill-library/*.skill.md`**. Gi
 | `dev-customization` | `dev-customization-expertise.skill.md`, then `dev-customization-workflow.skill.md` |
 | `confluence-automation` | `confluence-workflow.skill.md` *(append `confluence-*.skill.md` as needed)* |
 | `daily-work-update` | `daily-work-update.skill.md`, `slack-integration.skill.md`, `jira-workflow.skill.md` (§3, §7, §7.6 only), `bitbucket-unify-enterprise.skill.md`, `git-sync.skill.md`, `krishnaaigen-ephemeral-output.skill.md` |
-| `sys-troubleshoot` | `vpn-smb-access.skill.md`, `network-profile-fix.skill.md` (load per symptom; agent maps cases) |
+| `sys-troubleshoot` | `vpn-smb-access.skill.md`, `network-profile-fix.skill.md`, `sys-cleanup-optimization.skill.md` (load per symptom; agent maps cases) |
 | `wd-es-kibana` | `wd-es-kibana.skill.md`, `slack-integration.skill.md` (Slack MCP fallback only) |
 | `wd-jenkins-build` | `wd-jenkins-build.skill.md`, `vpn-smb-access.skill.md` (if network share fails), `slack-integration.skill.md` (Slack posting) |
 
