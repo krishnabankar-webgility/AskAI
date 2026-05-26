@@ -107,7 +107,24 @@ Write-Host "✅ [Step 1 — Pre-Build Check] DONE — Ready to trigger new build
 
 ---
 
-## §1a Pre-Build Slack Notification
+## §1a (MANDATORY BLOCKING STEP) Pre-Build Slack Notification
+
+**⚠️ THIS STEP MUST EXECUTE BEFORE §2 (TRIGGER) — NON-SKIPPABLE**
+
+Posts a heads-up to the Slack channel. This is NOT optional — it must complete before Jenkins is triggered.
+
+### ENFORCEMENT RULES
+- MUST send notification before triggering build
+- MUST confirm Slack message posted successfully
+- NEVER skip this step
+- NEVER proceed to trigger until message sent
+
+### STOP CONDITIONS
+- If Slack token not configured → Log warning but proceed (optional fallback)
+- If network error → Retry 2 times, then continue
+- Other errors → Log and continue (try to send but don't block pipeline)
+
+## §1a Pre-Build Slack Notification (Updated)
 
 **MUST run BEFORE triggering the build.** Posts a heads-up to the Slack channel.
 
@@ -880,3 +897,4 @@ Write-Host "✅ [Step 9 — QA Testing Jira Comment] DONE"
 | UD-32305 | Copy to network share | §4 | To Do → In Progress → Done |
 | UD-32304 | Upload to Dropbox + get link | §5 | To Do → In Progress → Done |
 | UD-32303 | Assignee/RFT + Slack + Jira comment | §6, §7, §8 | To Do → In Progress → Done |
+
