@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WD Kibana Daily Log Report — 2026-05-27</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:#1e293b;font-size:.85rem}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+.page{max-width:1280px;margin:0 auto;padding:24px 16px}
+.rpt-header{background:linear-gradient(135deg,#1e3a5f 0%,#2d5a8e 100%);color:#fff;border-radius:12px;padding:24px 32px;margin-bottom:24px}
+.rpt-header h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
+.rpt-header .meta{font-size:.78rem;opacity:.8;display:flex;gap:24px;flex-wrap:wrap;margin-top:8px}
+.rpt-header .meta span{display:flex;align-items:center;gap:4px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);margin-bottom:20px;overflow:hidden}
+.card-header{padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-header h2{font-size:.92rem;font-weight:700;color:#0f172a}
+.card-header .subtitle{font-size:.72rem;color:#64748b}
+.card-body{padding:16px 20px}
+.exec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.exec-card{border-radius:8px;padding:14px 16px;border-left:4px solid #e2e8f0;background:#fafafa}
+.exec-card.total{border-color:#3b82f6}
+.exec-card.error{border-color:#ef4444}
+.exec-card.fatal{border-color:#7c3aed}
+.exec-card.warning{border-color:#f59e0b}
+.exec-card.info{border-color:#10b981}
+.exec-card.rate{border-color:#f97316}
+.exec-card .label{font-size:.68rem;font-weight:600;text-transform:uppercase;color:#64748b;letter-spacing:.05em;margin-bottom:6px}
+.exec-card .value{font-size:1.5rem;font-weight:800;color:#0f172a}
+.exec-card .value a{color:inherit}
+.exec-card .change{font-size:.7rem;margin-top:4px}
+.cb{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:9999px;font-size:.68rem;font-weight:600}
+.cb.down{background:#dcfce7;color:#166534}
+.cb.up{background:#fef2f2;color:#991b1b}
+.cb.new{background:#eff6ff;color:#1e40af}
+.cb.flat{background:#f3f4f6;color:#6b7280}
+.bar-chart{display:flex;align-items:stretch;gap:3px;height:180px;padding:0 4px;overflow:visible}
+.bar-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0;height:100%}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px}
+.bar-lbl{font-size:.6rem;color:#94a3b8;margin-top:4px;flex-shrink:0}
+.c1{background:#cbd5e1}.c2{background:#fbbf24}.c3{background:#f97316}.c4{background:#ef4444}
+.tbl{width:100%;border-collapse:collapse;font-size:.78rem}
+.tbl th{background:#f8fafc;padding:8px 12px;text-align:left;font-size:.7rem;color:#475569;font-weight:600;border-bottom:2px solid #e2e8f0}
+.tbl td{padding:7px 12px;border-bottom:1px solid #f8fafc;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fafafa}
+.r{text-align:right}
+.pct-bar-wrap{display:flex;align-items:center;gap:6px;min-width:100px}
+.pct-text{font-size:.7rem;font-weight:600;color:#334155;min-width:38px}
+.pct-bar{flex:1;background:#f1f5f9;border-radius:4px;height:8px;min-width:60px}
+.pct-bar-fill{height:100%;border-radius:4px}
+.pct-bar-fill.red{background:#ef4444}
+.pct-bar-fill.orange{background:#f97316}
+.pct-bar-fill.amber{background:#eab308}
+.pct-bar-fill.blue{background:#3b82f6}
+.pct-bar-fill.gray{background:#94a3b8}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
+.donut-wrap{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.donut{width:100px;height:100px;border-radius:50%;flex-shrink:0}
+.perf-table{width:100%;border-collapse:collapse;font-size:.78rem;margin:12px 0}
+.perf-table th{background:#f1f5f9;padding:7px 10px;text-align:left;font-size:.72rem;color:#475569;font-weight:600;border-bottom:2px solid #e2e8f0}
+.perf-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.perf-table tr:hover td{background:#fafafa}
+.perf-email{font-size:.68rem;color:#94a3b8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.perf-time{font-weight:700;color:#0f172a}
+.perf-step-max{font-size:.72rem;color:#dc2626;font-weight:600}
+.perf-step-ms{font-size:.68rem;color:#f97316;font-weight:400}
+.perf-step-detail{font-size:.65rem;color:#64748b;font-family:monospace;white-space:pre-wrap;max-width:220px}
+.step-chart{margin:16px 0 4px}
+.step-chart-title{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:10px}
+.step-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.step-label{font-size:.68rem;color:#475569;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;padding-right:4px}
+.step-bar-wrap{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.step-bar{height:16px;border-radius:4px;min-width:4px;flex-shrink:0}
+.step-bar.red{background:#ef4444}
+.step-bar.orange{background:#f97316}
+.step-bar.amber{background:#eab308}
+.step-bar.blue{background:#3b82f6}
+.step-bar-val{font-size:.65rem;color:#64748b;white-space:nowrap}
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.insight-card{border-radius:8px;padding:14px 16px;border-left:4px solid #e2e8f0}
+.insight-card.danger{border-color:#ef4444;background:#fff5f5}
+.insight-card.warning{border-color:#f97316;background:#fff7ed}
+.insight-card.spike{border-color:#eab308;background:#fefce8}
+.insight-card.healthy{border-color:#10b981;background:#f0fdf4}
+.insight-card .icon{font-size:1.1rem;margin-bottom:6px}
+.insight-card h4{font-size:.8rem;font-weight:700;color:#0f172a;margin-bottom:4px}
+.insight-card p{font-size:.73rem;color:#475569;line-height:1.5}
+.section-sep{height:8px}
+.placeholder{color:#64748b;font-style:italic;padding:12px 0}</style>
+</head>
+<body>
+<div class="page">
+
+<div class="rpt-header">
+  <h1>WD Kibana Daily Log Report — 2026-05-27</h1>
+  <div class="meta">
+    <span>📅 Period: 2026-05-26 09:00 IST → 2026-05-27 09:00 IST</span>
+    <span>📊 Index: 2026.05.26 / 2026.05.27</span>
+    <span>⚖️ Compared to: 2026-05-25 09:00 IST → 2026-05-26 09:00 IST</span>
+    <span>🕐 Generated: 2026-05-27 03:33 UTC</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>📋 Executive Summary</h2><span class="subtitle">Total docs: 158,829 vs 52,507 prev day</span></div>
+  <div class="card-body">
+    <div class="exec-grid">
+      <div class="exec-card total"><div class="label">Total Events</div><div class="value"><a href="https://kibana-wd.webgility.com/goto/17b6bff5acb7748bf1eff7d8bfa750e4" target="_blank">158,829</a></div><div class="change"><span class="cb up">↑202.5%</span> vs prev 52,507</div></div>
+      <div class="exec-card error"><div class="label">Errors</div><div class="value"><a href="https://kibana-wd.webgility.com/goto/5d505ce22c57490718de3d1076f245ef" target="_blank">38,500</a></div><div class="change"><span class="cb up">↑392.2%</span> vs prev 7,822</div></div>
+      <div class="exec-card fatal"><div class="label">Fatals</div><div class="value"><a href="https://kibana-wd.webgility.com/goto/1e7cc47a542d86a991ef6047f08dbcd9" target="_blank">5,051</a></div><div class="change"><span class="cb up">↑892.3%</span> vs prev 509</div></div>
+      <div class="exec-card warning"><div class="label">Warnings</div><div class="value"><a href="https://kibana-wd.webgility.com/goto/69c227f5e28c575d254195e6df82b77d" target="_blank">655</a></div><div class="change"><span class="cb up">↑652.9%</span> vs prev 87</div></div>
+      <div class="exec-card info"><div class="label">Info</div><div class="value"><a href="https://kibana-wd.webgility.com/goto/ce7cf82b5a06b1804a2d47bef20c1cfb" target="_blank">114,623</a></div><div class="change"><span class="cb up">↑160.0%</span> vs prev 44,089</div></div>
+      <div class="exec-card rate"><div class="label">Error Rate</div><div class="value">24.24%</div><div class="change"><span class="cb up">↑62.7%</span> vs prev 14.90%</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>⏱ Hourly Error Timeline (IST)</h2><span class="subtitle">Peak: 3,750 errors at 01:00 IST | 2026-05-26 09:00 IST → 2026-05-27 09:00 IST</span></div>
+  <div class="card-body">
+    <div class="bar-chart"><div class="bar-col"><div class="bar c1" style="height:0.1%" title="03:00 IST — 0 errors"></div><div class="bar-lbl">03</div></div>
+<div class="bar-col"><div class="bar c1" style="height:0.1%" title="04:00 IST — 0 errors"></div><div class="bar-lbl">04</div></div>
+<div class="bar-col"><div class="bar c1" style="height:0.4%" title="05:00 IST — 16 errors"></div><div class="bar-lbl">05</div></div>
+<div class="bar-col"><div class="bar c1" style="height:0.1%" title="06:00 IST — 5 errors"></div><div class="bar-lbl">06</div></div>
+<div class="bar-col"><div class="bar c1" style="height:0.1%" title="07:00 IST — 4 errors"></div><div class="bar-lbl">07</div></div>
+<div class="bar-col"><div class="bar c1" style="height:9.9%" title="08:00 IST — 371 errors"></div><div class="bar-lbl">08</div></div>
+<div class="bar-col"><div class="bar c1" style="height:3.5%" title="09:00 IST — 133 errors"></div><div class="bar-lbl">09</div></div>
+<div class="bar-col"><div class="bar c1" style="height:3.2%" title="10:00 IST — 121 errors"></div><div class="bar-lbl">10</div></div>
+<div class="bar-col"><div class="bar c1" style="height:6.8%" title="11:00 IST — 254 errors"></div><div class="bar-lbl">11</div></div>
+<div class="bar-col"><div class="bar c2" style="height:18.4%" title="12:00 IST — 691 errors"></div><div class="bar-lbl">12</div></div>
+<div class="bar-col"><div class="bar c3" style="height:35.0%" title="13:00 IST — 1312 errors"></div><div class="bar-lbl">13</div></div>
+<div class="bar-col"><div class="bar c3" style="height:55.0%" title="14:00 IST — 2062 errors"></div><div class="bar-lbl">14</div></div>
+<div class="bar-col"><div class="bar c3" style="height:53.2%" title="15:00 IST — 1995 errors"></div><div class="bar-lbl">15</div></div>
+<div class="bar-col"><div class="bar c4" style="height:87.7%" title="16:00 IST — 3290 errors"></div><div class="bar-lbl">16</div></div>
+<div class="bar-col"><div class="bar c4" style="height:73.5%" title="17:00 IST — 2758 errors"></div><div class="bar-lbl">17</div></div>
+<div class="bar-col"><div class="bar c4" style="height:76.6%" title="18:00 IST — 2871 errors"></div><div class="bar-lbl">18</div></div>
+<div class="bar-col"><div class="bar c4" style="height:83.9%" title="19:00 IST — 3145 errors"></div><div class="bar-lbl">19</div></div>
+<div class="bar-col"><div class="bar c4" style="height:90.2%" title="20:00 IST — 3382 errors"></div><div class="bar-lbl">20</div></div>
+<div class="bar-col"><div class="bar c4" style="height:86.1%" title="21:00 IST — 3228 errors"></div><div class="bar-lbl">21</div></div>
+<div class="bar-col"><div class="bar c4" style="height:72.9%" title="22:00 IST — 2733 errors"></div><div class="bar-lbl">22</div></div>
+<div class="bar-col"><div class="bar c4" style="height:62.2%" title="23:00 IST — 2332 errors"></div><div class="bar-lbl">23</div></div>
+<div class="bar-col"><div class="bar c3" style="height:56.4%" title="00:00 IST — 2114 errors"></div><div class="bar-lbl">00</div></div>
+<div class="bar-col"><div class="bar c4" style="height:100.0%" title="01:00 IST — 3750 errors"></div><div class="bar-lbl">01</div></div>
+<div class="bar-col"><div class="bar c3" style="height:51.5%" title="02:00 IST — 1933 errors"></div><div class="bar-lbl">02</div></div>
+<div class="bar-col"><div class="bar c1" style="height:0.1%" title="03:00 IST — 0 errors"></div><div class="bar-lbl">03</div></div></div>
+    <div style="font-size:.68rem;color:#94a3b8;margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#cbd5e1;border-radius:2px;display:inline-block"></span>&lt;10% of peak</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#fbbf24;border-radius:2px;display:inline-block"></span>10-25%</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#f97316;border-radius:2px;display:inline-block"></span>25-60%</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block"></span>&gt;60% (peak)</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>🔍 Error Breakdown</h2><span class="subtitle">38,500 total errors</span></div>
+  <div class="card-body">
+    <div class="grid-2">
+      <div><div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">By Module</div>
+      <table class="tbl"><thead><tr><th>Module</th><th class="r">Count</th><th>% of Errors</th><th>vs Prev</th></tr></thead><tbody><tr><td><a href="https://kibana-wd.webgility.com/goto/7e871f416ccc154d8e6bc3147b8939e6" target="_blank" title="level.keyword:&quot;Error&quot; AND NOT _exists_:module">Unknown</a></td><td class="r">33,693</td><td><div class="pct-bar-wrap"><span class="pct-text">87.5%</span><div class="pct-bar"><div class="pct-bar-fill red" style="width:87.5%"></div></div></div></td><td><span class="cb up">↑408.4%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/c1521067397f03acec54aaa907115dad" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;SchedulerJobKilled&quot;">SchedulerJobKilled</a></td><td class="r">2,651</td><td><div class="pct-bar-wrap"><span class="pct-text">6.9%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:6.9%"></div></div></div></td><td><span class="cb up">↑168.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/a59b147a7c3c38ff7cc9fd1423676341" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;PostOrderToAccounting&quot;">PostOrderToAccounting</a></td><td class="r">1,992</td><td><div class="pct-bar-wrap"><span class="pct-text">5.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:5.2%"></div></div></div></td><td><span class="cb up">↑942.9%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/95f9da63beaef28f7c4334f5d2c32b4e" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;SchedulerCrashed&quot;">SchedulerCrashed</a></td><td class="r">60</td><td><div class="pct-bar-wrap"><span class="pct-text">0.2%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.2%"></div></div></div></td><td><span class="cb up">↑566.7%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/e3dba133e2a1ede74f9ab4ac2161763c" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;InventorySync&quot;">InventorySync</a></td><td class="r">39</td><td><div class="pct-bar-wrap"><span class="pct-text">0.1%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.1%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/a3fc02642b70f99b28f01ac351b07896" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;QBOAPICallingLog&quot;">QBOAPICallingLog</a></td><td class="r">32</td><td><div class="pct-bar-wrap"><span class="pct-text">0.1%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.1%"></div></div></div></td><td><span class="cb up">↑540.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/4fb57eeef48383872a3fdee3405f30c7" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;StoreConnection&quot;">StoreConnection</a></td><td class="r">20</td><td><div class="pct-bar-wrap"><span class="pct-text">0.1%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.1%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/0a41d50f88ddbe463a01df29adfe8f06" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;PHPCart&quot;">PHPCart</a></td><td class="r">6</td><td><div class="pct-bar-wrap"><span class="pct-text">0.0%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/a810080b95e68971b16bca0534e0b34b" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;PayoutPosting&quot;">PayoutPosting</a></td><td class="r">5</td><td><div class="pct-bar-wrap"><span class="pct-text">0.0%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0%"></div></div></div></td><td><span class="cb up">↑400.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/c2ceabbc6250bd7dd47dc70e1736ab3f" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;AmazonSettlementReport&quot;">AmazonSettlementReport</a></td><td class="r">2</td><td><div class="pct-bar-wrap"><span class="pct-text">0.0%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr></tbody></table></div>
+      <div><div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">By Store</div>
+      <table class="tbl"><thead><tr><th>Store</th><th class="r">Count</th><th>%</th><th>vs Prev</th></tr></thead><tbody><tr><td><a href="https://kibana-wd.webgility.com/goto/875b1c26f8f485aff7a11b619cada2ef" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;XCartFive&quot;">XCartFive</a></td><td class="r">8,634</td><td><div class="pct-bar-wrap"><span class="pct-text">22.4%</span><div class="pct-bar"><div class="pct-bar-fill orange" style="width:22.4%"></div></div></div></td><td><span class="cb up">↑431600.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/f4f0c3e7aafdeb154eddb81d72616ec9" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;Shopify&quot;">Shopify</a></td><td class="r">7,829</td><td><div class="pct-bar-wrap"><span class="pct-text">20.3%</span><div class="pct-bar"><div class="pct-bar-fill orange" style="width:20.3%"></div></div></div></td><td><span class="cb up">↑350.2%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/0ed2f947c0597301ad87439768e59fe6" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;WooCommerce&quot;">WooCommerce</a></td><td class="r">4,873</td><td><div class="pct-bar-wrap"><span class="pct-text">12.7%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:12.7%"></div></div></div></td><td><span class="cb up">↑41.9%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/4153951acd9d9e9ed393185bdb1f845a" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;eBay&quot;">eBay</a></td><td class="r">4,035</td><td><div class="pct-bar-wrap"><span class="pct-text">10.5%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:10.5%"></div></div></div></td><td><span class="cb up">↑9070.5%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/5ed97cef80ef1db83d3cfc5d8dd505a3" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;Magento&quot;">Magento</a></td><td class="r">3,383</td><td><div class="pct-bar-wrap"><span class="pct-text">8.8%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:8.8%"></div></div></div></td><td><span class="cb up">↑112666.7%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/6c6035ea73bf9992c303566db6dc3512" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;Magento2&quot;">Magento2</a></td><td class="r">3,191</td><td><div class="pct-bar-wrap"><span class="pct-text">8.3%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:8.3%"></div></div></div></td><td><span class="cb up">↑39787.5%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/9f49886d3f467d357c0684f1afd852a9" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;BigCommerce&quot;">BigCommerce</a></td><td class="r">1,905</td><td><div class="pct-bar-wrap"><span class="pct-text">4.9%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:4.9%"></div></div></div></td><td><span class="cb up">↑82.6%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/140c6b0c16f2d34f9c8a2bdcaafbef89" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;AmazonMarketPlace&quot;">AmazonMarketPlace</a></td><td class="r">1,873</td><td><div class="pct-bar-wrap"><span class="pct-text">4.9%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:4.9%"></div></div></div></td><td><span class="cb up">↑1165.5%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/35f2a3a77ee26e301fb4c4dce0c0f5c7" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;ChannelAdvisor&quot;">ChannelAdvisor</a></td><td class="r">762</td><td><div class="pct-bar-wrap"><span class="pct-text">2.0%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:2%"></div></div></div></td><td><span class="cb up">↑786.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/8b164f994ea7dbcb831252d58ce1abba" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;OpenCart&quot;">OpenCart</a></td><td class="r">577</td><td><div class="pct-bar-wrap"><span class="pct-text">1.5%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:1.5%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/5bc54361cbd88f5b6ac18baffd940670" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;Walmart&quot;">Walmart</a></td><td class="r">405</td><td><div class="pct-bar-wrap"><span class="pct-text">1.1%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:1.1%"></div></div></div></td><td><span class="cb down">↓50.7%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/c4c73304fcbd3b6b82fae49ddd9cd4d6" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;Etsy&quot;">Etsy</a></td><td class="r">292</td><td><div class="pct-bar-wrap"><span class="pct-text">0.8%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.8%"></div></div></div></td><td><span class="cb down">↓25.1%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/3b7c2fff6e1bfe54b5ffa2489ae4fa23" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;eBayUK&quot;">eBayUK</a></td><td class="r">288</td><td><div class="pct-bar-wrap"><span class="pct-text">0.7%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.7%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/f69db74694858665bf1cbe181dde3f5f" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;YahooStore&quot;">YahooStore</a></td><td class="r">104</td><td><div class="pct-bar-wrap"><span class="pct-text">0.3%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.3%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/d9890fc5ffd0cbcda8c9a8e7d387ca38" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;&quot;"></a></td><td class="r">78</td><td><div class="pct-bar-wrap"><span class="pct-text">0.2%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.2%"></div></div></div></td><td><span class="cb up">↑766.7%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/09dd2c857b5a0003a265b2933f06ff56" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;Wix&quot;">Wix</a></td><td class="r">65</td><td><div class="pct-bar-wrap"><span class="pct-text">0.2%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.2%"></div></div></div></td><td><span class="cb up">↑364.3%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/43f001e4ee21b804fa693adeda8dd094" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;ShipStation&quot;">ShipStation</a></td><td class="r">45</td><td><div class="pct-bar-wrap"><span class="pct-text">0.1%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.1%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/73c25f97e1e1c11395356efb9c44e581" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;CSCart&quot;">CSCart</a></td><td class="r">31</td><td><div class="pct-bar-wrap"><span class="pct-text">0.1%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.1%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/200a70201195534873e0844c91f677cb" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;Shift4Shop&quot;">Shift4Shop</a></td><td class="r">25</td><td><div class="pct-bar-wrap"><span class="pct-text">0.1%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0.1%"></div></div></div></td><td><span class="cb up">↑1150.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/18ecf3070f8c97945e1dde2817ceac5d" target="_blank" title="level.keyword:&quot;Error&quot; AND store.keyword:&quot;CRELoaded&quot;">CRELoaded</a></td><td class="r">19</td><td><div class="pct-bar-wrap"><span class="pct-text">0.0%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:0%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr></tbody></table></div>
+    </div>
+    <div class="section-sep"></div>
+    <div class="grid-2" style="margin-top:16px">
+      <div><div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">By Tag</div>
+      <table class="tbl"><thead><tr><th>Tag</th><th class="r">Count</th><th>vs Prev</th></tr></thead><tbody><tr><td><a href="https://kibana-wd.webgility.com/goto/fae4f41066ef50fa92afcceaf38d7e96" target="_blank" title="level.keyword:&quot;Error&quot; AND NOT _exists_:tag">Unknown</a></td><td class="r">28,626</td><td><span class="cb up">↑481.8%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/4999bc5a0a752f0f7ea00da9a6ce11e3" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;SaveSettingError&quot;">SaveSettingError</a></td><td class="r">6,652</td><td><span class="cb up">↑253.3%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/0a814602ce97bf9624d9ea84b17bdcb0" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;StoreConnectionError&quot;">StoreConnectionError</a></td><td class="r">1,144</td><td><span class="cb up">↑39.2%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/3e8187677ea6d0738b06709836b951c2" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;QuickBooksConnection&quot;">QuickBooksConnection</a></td><td class="r">1,119</td><td><span class="cb up">↑936.1%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/43e4a0e34987dbb348111ae8ce9869fc" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;OrderPosting&quot;">OrderPosting</a></td><td class="r">773</td><td><span class="cb up">↑891.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/3b41e4ba7fe2ed6f2104e39df75b5675" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;ReturnPosting&quot;">ReturnPosting</a></td><td class="r">96</td><td><span class="cb up">↑2300.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/3e98897424c8c550434a652711cf928c" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;InventorySync&quot;">InventorySync</a></td><td class="r">39</td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/cec33604404efc631340bdfb38f9f178" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;QuickBooksOnline_API_CALL_LOG&quot;">QuickBooksOnline_API_CALL_LOG</a></td><td class="r">32</td><td><span class="cb up">↑540.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/d77fbe4a6d631cc85bb68544bb84cef0" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;RefundPosting&quot;">RefundPosting</a></td><td class="r">8</td><td><span class="cb up">↑700.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/3491c49626f25da49536893f7260406e" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;PayoutPaymentPosting&quot;">PayoutPaymentPosting</a></td><td class="r">4</td><td><span class="cb up">↑300.0%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/bbf9b55b9240d48ab3ba2af8bc811dbd" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;ShopifyAuthenticationError&quot;">ShopifyAuthenticationError</a></td><td class="r">4</td><td><span class="cb new">NEW</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/e796bd068040517ed5cfd2e19f15fe34" target="_blank" title="level.keyword:&quot;Error&quot; AND tag.keyword:&quot;Performance&quot;">Performance</a></td><td class="r">3</td><td><span class="cb new">NEW</span></td></tr></tbody></table></div>
+      <div><div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">By Process</div>
+      <table class="tbl"><thead><tr><th>Process</th><th class="r">Count</th><th>vs Prev</th></tr></thead><tbody><tr><td><a href="https://kibana-wd.webgility.com/goto/f9ab1d7cbef58199f3c13b83a87ec103" target="_blank" title="level.keyword:&quot;Error&quot; AND process.keyword:&quot;Unknown&quot;">Unknown</a></td><td class="r">31,572</td><td><span class="cb up">↑539.2%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/a32616d31f3c4e2f9a0502bee01345bb" target="_blank" title="level.keyword:&quot;Error&quot; AND process.keyword:&quot;Manual&quot;">Manual</a></td><td class="r">4,542</td><td><span class="cb up">↑135.6%</span></td></tr>
+<tr><td><a href="https://kibana-wd.webgility.com/goto/15e96bfb55333dc3731ef8ef1cdc0173" target="_blank" title="level.keyword:&quot;Error&quot; AND process.keyword:&quot;Scheduler&quot;">Scheduler</a></td><td class="r">2,386</td><td><span class="cb up">↑149.8%</span></td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>⚠️ Top Error Messages</h2><span class="subtitle">Top 15 by frequency</span></div>
+  <div class="card-body">
+    <table class="tbl"><thead><tr><th>#</th><th>Message</th><th class="r">Count</th><th>vs Prev</th></tr></thead><tbody><tr><td>1</td><td><a href="https://kibana-wd.webgility.com/goto/ccc46134328cabd019ff65e0e2c16561" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;SaveSettingError&quot;">SaveSettingError</a></td><td class="r">6,652</td><td><span class="cb up">↑253.3%</span></td></tr>,<tr><td>2</td><td><a href="https://kibana-wd.webgility.com/goto/2e1906b721e11fb4350cb1c638b9ab62" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;[DBNETLIB][ConnectionOpen (Connect()).]SQL Server does not exist or access denied.&quot;">[DBNETLIB][ConnectionOpen (Connect()).]SQL Server does not exist or access denie…</a></td><td class="r">5,816</td><td><span class="cb new">NEW</span></td></tr>,<tr><td>3</td><td><a href="https://kibana-wd.webgility.com/goto/0d4e93b22688ad274951e7a591dca9e7" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;System Matrix Get CPU Info Error : Invalid query&quot;">System Matrix Get CPU Info Error : Invalid query</a></td><td class="r">5,725</td><td><span class="cb up">↑6881.7%</span></td></tr>,<tr><td>4</td><td><a href="https://kibana-wd.webgility.com/goto/8f957db5c3f6533c866c7aac2c155189" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;System Matrix Get CPU Info Error : Invalid class&quot;">System Matrix Get CPU Info Error : Invalid class</a></td><td class="r">5,722</td><td><span class="cb up">↑6878.0%</span></td></tr>,<tr><td>5</td><td><a href="https://kibana-wd.webgility.com/goto/9c787987f2ab5d7a0877335a37b1285d" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;The transaction was rollbacked or commited, please provide an open transaction.
+Parameter name: transaction&quot;">The transaction was rollbacked or commited, please provide an open transaction.…</a></td><td class="r">2,659</td><td><span class="cb down">↓19.3%</span></td></tr>,<tr><td>6</td><td><a href="https://kibana-wd.webgility.com/goto/5bc287a8e4b805e4883bdcec3f8ce205" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;Job Killed&quot;">Job Killed</a></td><td class="r">2,651</td><td><span class="cb up">↑168.0%</span></td></tr>,<tr><td>7</td><td><a href="https://kibana-wd.webgility.com/goto/e5a3339302e5134b3e0423b78b96e721" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;Request has been submitted to Amazon server and waiting for a response. Please do not click on Get New Orders in the meantime. We appreciate your patience&quot;">Request has been submitted to Amazon server and waiting for a response. Please d…</a></td><td class="r">2,453</td><td><span class="cb new">NEW</span></td></tr>,<tr><td>8</td><td><a href="https://kibana-wd.webgility.com/goto/6265ed41d040f7dcf9b9e8ce6c52f7f9" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;StoreConnectionError&quot;">StoreConnectionError</a></td><td class="r">1,144</td><td><span class="cb up">↑39.2%</span></td></tr>,<tr><td>9</td><td><a href="https://kibana-wd.webgility.com/goto/667d8054ecdae7d64cf9f932417c67a9" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;QB Common Open connection problem&quot;">QB Common Open connection problem</a></td><td class="r">1,119</td><td><span class="cb up">↑936.1%</span></td></tr>,<tr><td>10</td><td><a href="https://kibana-wd.webgility.com/goto/90ed9f2419d2301905892f987108cb9c" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;Retrict SalesReceipt Posting&quot;">Retrict SalesReceipt Posting</a></td><td class="r">733</td><td><span class="cb new">NEW</span></td></tr>,<tr><td>11</td><td><a href="https://kibana-wd.webgility.com/goto/72e3a3964099072e12480e2f748c71f5" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;Thread was being aborted.&quot;">Thread was being aborted.</a></td><td class="r">465</td><td><span class="cb up">↑545.8%</span></td></tr>,<tr><td>12</td><td><a href="https://kibana-wd.webgility.com/goto/8ef3f2cdde87e049411426cd77976708" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;The fractional part of the provided time value overflows the scale of the corresponding SQL Server parameter or column. Increase bScale in DBPARAMBINDINFO or column scale to correct this error.&quot;">The fractional part of the provided time value overflows the scale of the corres…</a></td><td class="r">314</td><td><span class="cb up">↑630.2%</span></td></tr>,<tr><td>13</td><td><a href="https://kibana-wd.webgility.com/goto/dfd02d3076258dcfd9941c6155fd92bb" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;System Matrix Get Memory and CPU Info Error : Critical error&quot;">System Matrix Get Memory and CPU Info Error : Critical error</a></td><td class="r">274</td><td><span class="cb new">NEW</span></td></tr>,<tr><td>14</td><td><a href="https://kibana-wd.webgility.com/goto/1647fa5a415db2973dd09a7ae26919ac" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;System Matrix Get Memory and CPU Info Error : Call cancelled&quot;">System Matrix Get Memory and CPU Info Error : Call cancelled</a></td><td class="r">271</td><td><span class="cb new">NEW</span></td></tr>,<tr><td>15</td><td><a href="https://kibana-wd.webgility.com/goto/ecfa639e6dabffff2172fba9092d42c2" target="_blank" title="level.keyword:&quot;Error&quot; AND message.keyword:&quot;Could not start QuickBooks.&quot;">Could not start QuickBooks.</a></td><td class="r">225</td><td><span class="cb new">NEW</span></td></tr></tbody></table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>👥 Top Error Subscribers</h2><span class="subtitle">Top 10 by error count</span></div>
+  <div class="card-body">
+    <table class="tbl"><thead><tr><th>#</th><th>Subscriber ID</th><th class="r">Error Count</th><th>% of Errors</th><th>vs Prev</th></tr></thead><tbody><tr><td>1</td><td><a href="https://kibana-wd.webgility.com/goto/a5b6b88b53c6781e43630958e9ec581c" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:1879">1879</a></td><td class="r">8,624</td><td><div class="pct-bar-wrap"><span class="pct-text">22.4%</span><div class="pct-bar"><div class="pct-bar-fill orange" style="width:22.4%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>2</td><td><a href="https://kibana-wd.webgility.com/goto/9919d34d0c77b41bbbf788f39abfc832" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:17162">17162</a></td><td class="r">3,095</td><td><div class="pct-bar-wrap"><span class="pct-text">8.0%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:8%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>3</td><td><a href="https://kibana-wd.webgility.com/goto/e1ae94bcf6db886c25a199235c7bf84a" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:91206">91206</a></td><td class="r">2,812</td><td><div class="pct-bar-wrap"><span class="pct-text">7.3%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:7.3%"></div></div></div></td><td><span class="cb up">↑1544.4%</span></td></tr>,<tr><td>4</td><td><a href="https://kibana-wd.webgility.com/goto/efd48080f105bfb6831894ff04ed39ca" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:34806">34806</a></td><td class="r">2,789</td><td><div class="pct-bar-wrap"><span class="pct-text">7.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:7.2%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>5</td><td><a href="https://kibana-wd.webgility.com/goto/19f288f0af54c0a53d745b3a82b147ae" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:73243">73243</a></td><td class="r">2,722</td><td><div class="pct-bar-wrap"><span class="pct-text">7.1%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:7.1%"></div></div></div></td><td><span class="cb down">↓18.8%</span></td></tr>,<tr><td>6</td><td><a href="https://kibana-wd.webgility.com/goto/05f7aa31ac28c6fc62c8f438748a023c" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:95030">95030</a></td><td class="r">2,380</td><td><div class="pct-bar-wrap"><span class="pct-text">6.2%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:6.2%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>7</td><td><a href="https://kibana-wd.webgility.com/goto/210f1cef954c3ed04373014b72c57561" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:103773">103773</a></td><td class="r">1,122</td><td><div class="pct-bar-wrap"><span class="pct-text">2.9%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:2.9%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>8</td><td><a href="https://kibana-wd.webgility.com/goto/2e011353ee33705db800de77af8c44a5" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:97995">97995</a></td><td class="r">870</td><td><div class="pct-bar-wrap"><span class="pct-text">2.3%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:2.3%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>9</td><td><a href="https://kibana-wd.webgility.com/goto/decc8114bce157cfa6863fda043a22ff" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:56385">56385</a></td><td class="r">754</td><td><div class="pct-bar-wrap"><span class="pct-text">2.0%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:2%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>10</td><td><a href="https://kibana-wd.webgility.com/goto/d9cae72f87740fd0357a5c0c3475aa47" target="_blank" title="level.keyword:&quot;Error&quot; AND subscriberID:56483">56483</a></td><td class="r">750</td><td><div class="pct-bar-wrap"><span class="pct-text">1.9%</span><div class="pct-bar"><div class="pct-bar-fill gray" style="width:1.9%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr></tbody></table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>💀 Fatal Events</h2><span class="subtitle">5,051 fatal events <span class="cb up">↑892.3%</span></span></div>
+  <div class="card-body">
+    <div class="grid-2">
+      <div><div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">By Message</div>
+      <table class="tbl"><thead><tr><th>Message</th><th class="r">Count</th><th>vs Prev</th></tr></thead><tbody><tr><td><a href="https://kibana-wd.webgility.com/goto/9ec5c6a5de8052f0f0b47f3428795ac5" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;The remote server returned an error: (401) Unauthorized.&quot;">The remote server returned an error: (401) Unauthorized.</a></td><td class="r">2,145</td><td><span class="cb up">↑1017.2%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/63f13e7b70d775b6adc305d296556659" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;There is no row at position 0.&quot;">There is no row at position 0.</a></td><td class="r">664</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/aca078dbe8363b8c2a714cebcadfcd85" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;The fractional part of the provided time value overflows the scale of the corresponding SQL Server parameter or column. Increase bScale in DBPARAMBINDINFO or column scale to correct this error.&quot;">The fractional part of the provided time value overflows the…</a></td><td class="r">514</td><td><span class="cb up">↑634.3%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/403c7b5b8bb375029d9eb018be38784b" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;This application is not allowed to log into this QuickBooks company data file automatically. The QuickBooks administrator can grant permission for an automatic login through the Integrated Application preferences.&quot;">This application is not allowed to log into this QuickBooks …</a></td><td class="r">205</td><td><span class="cb up">↑1608.3%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/8e9313309e5ea62b4daff255657ef25f" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;Cannot access a closed Stream.&quot;">Cannot access a closed Stream.</a></td><td class="r">197</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/9597a77cb600c430b9b5771662b3b730" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;Could not start QuickBooks.&quot;">Could not start QuickBooks.</a></td><td class="r">115</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/6eb1565671e20a482c96fe1eea352e19" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;[DBNETLIB][ConnectionOpen (Connect()).]SQL Server does not exist or access denied.&quot;">[DBNETLIB][ConnectionOpen (Connect()).]SQL Server does not e…</a></td><td class="r">96</td><td><span class="cb up">↑3100.0%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/57ca1c0bbdc98e833905bb0afc405514" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;Object reference not set to an instance of an object.&quot;">Object reference not set to an instance of an object.</a></td><td class="r">90</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/3cf34d704b5d0d4be6f2fceeb9e47a4c" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;Unexpected character encountered while parsing value: T. Path '', line 0, position 0.&quot;">Unexpected character encountered while parsing value: T. Pat…</a></td><td class="r">66</td><td><span class="cb flat">≈</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/64c36e82dae4991b45421943864870b9" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;A QuickBooks company data file is already open and it is different from the one requested or there are multiple company files open.&quot;">A QuickBooks company data file is already open and it is dif…</a></td><td class="r">58</td><td><span class="cb up">↑866.7%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/d4b5056b35f427d320e0375ff8af3c52" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;A modal dialog box is showing in the QuickBooks user interface. Your application cannot access QuickBooks until the user dismisses the dialog box.&quot;">A modal dialog box is showing in the QuickBooks user interfa…</a></td><td class="r">56</td><td><span class="cb up">↑154.5%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/c126693c2d5fbfb6d493ad602d876791" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;The remote server returned an error: (501) Not Implemented.&quot;">The remote server returned an error: (501) Not Implemented.</a></td><td class="r">52</td><td><span class="cb up">↑940.0%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/67619f1bd187e321a823a5af4ca190bd" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;Unexpected error. Check the \&quot;qbsdklog.txt\&quot; file for possible additional information.&quot;">Unexpected error. Check the &quot;qbsdklog.txt&quot; file for possible…</a></td><td class="r">42</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/dec6138cba3d16ede69809921b398dbe" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;The RPC server is unavailable. (Exception from HRESULT: 0x800706BA)&quot;">The RPC server is unavailable. (Exception from HRESULT: 0x80…</a></td><td class="r">40</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/1caa46aed200caab35037576b8030202" target="_blank" title="level.keyword:&quot;Fatal&quot; AND message.keyword:&quot;The remote server returned an error: (400) Bad Request.&quot;">The remote server returned an error: (400) Bad Request.</a></td><td class="r">38</td><td><span class="cb up">↑322.2%</span></td></tr></tbody></table></div>
+      <div><div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">By Store</div>
+      <div class="donut-wrap"><div class="donut" style="background:conic-gradient(#96bf48 0deg 125.58305286081963deg, #7f54b3 125.58305286081963deg 220.51870916650165deg, #2196F3 220.51870916650165deg 263.78142941991683deg, #ff9900 263.78142941991683deg 302.2688576519501deg, #ee672d 302.2688576519501deg 322.4391209661453deg, #94a3b8 322.4391209661453deg 360deg)"></div><div style="flex:1;display:flex;flex-wrap:wrap;gap:4px;font-size:.65rem"><span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#96bf48;border-radius:50%;display:inline-block"></span>BigCommerce</span>
+<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#7f54b3;border-radius:50%;display:inline-block"></span>Shopify</span>
+<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#2196F3;border-radius:50%;display:inline-block"></span>eBay</span>
+<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#ff9900;border-radius:50%;display:inline-block"></span>WooCommerce</span>
+<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#ee672d;border-radius:50%;display:inline-block"></span>Magento</span></div></div>
+      <table class="tbl" style="margin-top:8px"><thead><tr><th>Store</th><th class="r">Count</th><th>%</th><th>vs Prev</th></tr></thead><tbody><tr><td><a href="https://kibana-wd.webgility.com/goto/6c39c9ef97f571936a5b3d671a5c0061" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;BigCommerce&quot;">BigCommerce</a></td><td class="r">1,762</td><td>34.9%</td><td><span class="cb up">↑5975.9%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/51681bf266f4694818ef9504f44f5f97" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;Shopify&quot;">Shopify</a></td><td class="r">1,332</td><td>26.4%</td><td><span class="cb up">↑408.4%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/4b4fdb076ddb03f713ebdaff5fa5fcec" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;eBay&quot;">eBay</a></td><td class="r">607</td><td>12.0%</td><td><span class="cb up">↑30250.0%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/4f9b018dff4bd0e8b8b2526f7a285389" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;WooCommerce&quot;">WooCommerce</a></td><td class="r">540</td><td>10.7%</td><td><span class="cb up">↑350.0%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/fd8ec7b7acaa57fd44b0f0af6fbf85a3" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;Magento&quot;">Magento</a></td><td class="r">283</td><td>5.6%</td><td><span class="cb up">↑28200.0%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/70933fa265dccd1be8bd88c157bd97e8" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;AmazonMarketPlace&quot;">AmazonMarketPlace</a></td><td class="r">237</td><td>4.7%</td><td><span class="cb up">↑664.5%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/70f88aa89d3a125decdaab2bfc704bf6" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;Magento2&quot;">Magento2</a></td><td class="r">56</td><td>1.1%</td><td><span class="cb up">↑600.0%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/78b57cb94a1bf4b2356db2486f2d6071" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;YahooStore&quot;">YahooStore</a></td><td class="r">51</td><td>1.0%</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/7ff87753884378042e3c3a973b0891da" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;ZenCart&quot;">ZenCart</a></td><td class="r">36</td><td>0.7%</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/562e4bc500cf663ef31ee8751cb067be" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;PinnacleCart&quot;">PinnacleCart</a></td><td class="r">32</td><td>0.6%</td><td><span class="cb up">↑357.1%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/fd5dcef0536553357fc57d2778958020" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;Wix&quot;">Wix</a></td><td class="r">21</td><td>0.4%</td><td><span class="cb up">↑2000.0%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/3219ed34ee969a345e39766605cb844a" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;CustomStore&quot;">CustomStore</a></td><td class="r">20</td><td>0.4%</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/1690274036ca6e9eb6de6c33c7c46101" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;Shift4Shop&quot;">Shift4Shop</a></td><td class="r">13</td><td>0.3%</td><td><span class="cb up">↑85.7%</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/d4ddf1a21fb264789d2d0a4cb80c2b39" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;XCart&quot;">XCart</a></td><td class="r">12</td><td>0.2%</td><td><span class="cb new">NEW</span></td></tr><tr><td><a href="https://kibana-wd.webgility.com/goto/0f50e89fdbbb904760db6f1c084198a3" target="_blank" title="level.keyword:&quot;Fatal&quot; AND store.keyword:&quot;ShipStation&quot;">ShipStation</a></td><td class="r">9</td><td>0.2%</td><td><span class="cb new">NEW</span></td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div class="card"><div class="card-header"><h2>💳 Shopify Payout Performance</h2><span class="subtitle">module=PayoutPosting, store=Shopify</span></div><div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+      <div class="exec-card" style="border-color:#3b82f6"><div class="label">Records Processed</div><div class="value" style="font-size:1.3rem"><a href="https://kibana-wd.webgility.com/goto/cead507322553f6071489bf11c30bb30" target="_blank">2,425</a></div><div class="change"><span class="cb down">↓46.0%</span> vs prev 4,487</div></div>
+      <div class="exec-card" style="border-color:#10b981"><div class="label">Batches</div><div class="value" style="font-size:1.1rem">67</div></div>
+      <div class="exec-card" style="border-color:#f97316"><div class="label">Min Time/Record</div><div class="value" style="font-size:1.1rem">3.3s</div></div>
+      <div class="exec-card" style="border-color:#ef4444"><div class="label">Max Time/Record</div><div class="value" style="font-size:1.1rem">16m 39s</div></div>
+      <div class="exec-card" style="border-color:#8b5cf6"><div class="label">Avg Time/Record</div><div class="value" style="font-size:1.1rem">8m 48s</div></div>
+      <div class="exec-card" style="border-color:#6366f1"><div class="label">Est. Total Time</div><div class="value" style="font-size:1.1rem">286h 48m</div></div>
+    </div>
+    <div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">Top 5 Subscribers by Records Processed</div>
+    <table class="tbl"><thead><tr><th>#</th><th>Subscriber ID</th><th class="r">Records</th><th class="r">Batches</th><th>% of Total</th><th>vs Prev</th></tr></thead><tbody><tr><td>1</td><td><a href="https://kibana-wd.webgility.com/goto/3dcb3b1c75986cd93b7490dc5abc4509" target="_blank">105202</a></td><td class="r">573</td><td class="r">1</td><td><div class="pct-bar-wrap"><span class="pct-text">23.6%</span><div class="pct-bar"><div class="pct-bar-fill orange" style="width:23.6%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>2</td><td><a href="https://kibana-wd.webgility.com/goto/017c5e58a418c98e2995649425e49bd4" target="_blank">105634</a></td><td class="r">426</td><td class="r">5</td><td><div class="pct-bar-wrap"><span class="pct-text">17.6%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:17.6%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>3</td><td><a href="https://kibana-wd.webgility.com/goto/8723d628f2e00547d7c6000e80a4a034" target="_blank">105795</a></td><td class="r">272</td><td class="r">7</td><td><div class="pct-bar-wrap"><span class="pct-text">11.2%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:11.2%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>4</td><td><a href="https://kibana-wd.webgility.com/goto/cbe6314172112640af22ae9ae8dfc9fe" target="_blank">106961</a></td><td class="r">237</td><td class="r">2</td><td><div class="pct-bar-wrap"><span class="pct-text">9.8%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:9.8%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr>,<tr><td>5</td><td><a href="https://kibana-wd.webgility.com/goto/0085abbee8763590caeb52dbb8c71f6f" target="_blank">103171</a></td><td class="r">232</td><td class="r">5</td><td><div class="pct-bar-wrap"><span class="pct-text">9.6%</span><div class="pct-bar"><div class="pct-bar-fill blue" style="width:9.6%"></div></div></div></td><td><span class="cb new">NEW</span></td></tr></tbody></table>
+    </div></div>
+<div class="card"><div class="card-header"><h2>🛒 Amazon Settlement Report</h2><span class="subtitle">module=AmazonSettlementReport</span></div><div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+      <div class="exec-card" style="border-color:#3b82f6"><div class="label">Total Events</div><div class="value" style="font-size:1.3rem"><a href="https://kibana-wd.webgility.com/goto/a93fbcfb4f3a9ac33565371fb559e4bf" target="_blank">350</a></div><div class="change"><span class="cb down">↓16.5%</span></div></div>
+      <div class="exec-card" style="border-color:#ef4444"><div class="label">Errors</div><div class="value" style="font-size:1.3rem"><a href="https://kibana-wd.webgility.com/goto/c2ceabbc6250bd7dd47dc70e1736ab3f" target="_blank">2</a></div><div class="change"><span class="cb new">NEW</span></div></div>
+      <div class="exec-card" style="border-color:#10b981"><div class="label">Settlements Processed</div><div class="value" style="font-size:1.3rem">348</div><div class="change"><span class="cb down">↓16.9%</span></div></div>
+      <div class="exec-card" style="border-color:#f97316"><div class="label">Affected Subscribers</div><div class="value" style="font-size:1.3rem">23</div><div class="change"><span class="cb up">↑155.6%</span></div></div>
+    </div>
+    <div style="font-size:.78rem;font-weight:700;color:#475569;margin-bottom:8px">Top Error Messages</div><table class="tbl"><thead><tr><th>Message</th><th class="r">Count</th><th>vs Prev</th></tr></thead><tbody><tr><td><a href="https://kibana-wd.webgility.com/goto/9ce2681e07071edc87834563d07ee55c" target="_blank" title="level.keyword:&quot;Error&quot; AND module.keyword:&quot;AmazonSettlementReport&quot; AND message.keyword:&quot;Performance&quot;">Performance</a></td><td class="r">2</td><td><span class="cb new">NEW</span></td></tr></tbody></table>
+    <div style="font-size:.78rem;font-weight:700;color:#475569;margin:16px 0 8px">Top 5 Subscribers by Total Events</div>
+    <table class="tbl"><thead><tr><th>#</th><th>Subscriber ID</th><th class="r">Total Events</th><th class="r">Errors</th><th class="r">Settlements</th><th>vs Prev</th></tr></thead><tbody><tr><td>1</td><td><a href="https://kibana-wd.webgility.com/goto/2d90fb664cd7706ab5984d30654c061d" target="_blank">1061</a></td><td class="r">50</td><td class="r">0</td><td class="r">0</td><td><span class="cb new">NEW</span></td></tr><tr><td>2</td><td><a href="https://kibana-wd.webgility.com/goto/af5c84e59ed8f087dab3a69d67863311" target="_blank">54553</a></td><td class="r">37</td><td class="r">2</td><td class="r">0</td><td><span class="cb new">NEW</span></td></tr><tr><td>3</td><td><a href="https://kibana-wd.webgility.com/goto/ad216e12122cc527912a85951f263f2a" target="_blank">107732</a></td><td class="r">35</td><td class="r">0</td><td class="r">0</td><td><span class="cb new">NEW</span></td></tr><tr><td>4</td><td><a href="https://kibana-wd.webgility.com/goto/742d2f6e2569d616104561506dd6eb3f" target="_blank">105538</a></td><td class="r">30</td><td class="r">0</td><td class="r">0</td><td><span class="cb new">NEW</span></td></tr><tr><td>5</td><td><a href="https://kibana-wd.webgility.com/goto/e2fbc2a7d1814dc1c094d1301472058d" target="_blank">102906</a></td><td class="r">25</td><td class="r">0</td><td class="r">0</td><td><span class="cb new">NEW</span></td></tr></tbody></table>
+    </div></div>
+<div class="card"><div class="card-header"><h2>🏃 Shopify Payout — Performance Deep-Dive</h2><span class="subtitle">tag=Performance — 200 runs in period</span></div><div class="card-body">
+    <div style="font-size:.8rem;font-weight:700;color:#334155;margin-bottom:12px">Sub-section A: Top 5 Clients by Total Processing Time</div>
+    <div style="overflow-x:auto"><table class="perf-table"><thead><tr><th>#</th><th>Subscriber ID</th><th>Email</th><th>Runs</th><th>Transactions</th><th>Total Time</th><th>% of Max</th><th>Slowest Step</th><th>Top 3 Steps by Time</th><th>vs Prev</th></tr></thead><tbody><tr>
+        <td>1</td>
+        <td><a href="https://kibana-wd.webgility.com/goto/b47eab4e70875aed0617f8215777ffcd" target="_blank">85776</a></td>
+        <td class="perf-email">dridge@round2corp.com</td>
+        <td class="r">15</td>
+        <td class="r">277</td>
+        <td class="r perf-time">1h 20m 2s</td>
+        <td><div class="pct-bar-wrap"><span class="pct-text">100.0%</span><div class="pct-bar"><div class="pct-bar-fill red" style="width:100%"></div></div></div></td>
+        <td class="perf-step-max">Post Orders<br><span class="perf-step-ms">17m 23s</span></td>
+        <td class="perf-step-detail">S5: Post Orders: 1h 17m 0s<br>S7: Post Refunds: 1m 22s<br>S6: Post Payments: 41.3s</td>
+        <td><span class="cb new">NEW</span></td>
+      </tr><tr>
+        <td>2</td>
+        <td><a href="https://kibana-wd.webgility.com/goto/2ef7bb73eacaecbbbe00debfe578192c" target="_blank">5630</a></td>
+        <td class="perf-email">alayton@ppsproductsales.com</td>
+        <td class="r">2</td>
+        <td class="r">0</td>
+        <td class="r perf-time">32m 43s</td>
+        <td><div class="pct-bar-wrap"><span class="pct-text">40.9%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:40.895543273804954%"></div></div></div></td>
+        <td class="perf-step-max">Post Payments<br><span class="perf-step-ms">31m 38s</span></td>
+        <td class="perf-step-detail">S6: Post Payments: 31m 44s<br>S7: Post Refunds: 49.6s<br>S4: Download Partially Settled Refunds: 4.0s</td>
+        <td><span class="cb new">NEW</span></td>
+      </tr><tr>
+        <td>3</td>
+        <td><a href="https://kibana-wd.webgility.com/goto/78bd5d7b13463c35ccb8ebdb5184291e" target="_blank">105634</a></td>
+        <td class="perf-email">alex.heeks@arccosgolf.com</td>
+        <td class="r">9</td>
+        <td class="r">792</td>
+        <td class="r perf-time">26m 8s</td>
+        <td><div class="pct-bar-wrap"><span class="pct-text">32.7%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:32.660460821777804%"></div></div></div></td>
+        <td class="perf-step-max">Post Refunds<br><span class="perf-step-ms">12m 9s</span></td>
+        <td class="perf-step-detail">S7: Post Refunds: 21m 12s<br>S6: Post Payments: 4m 26s<br>S8: Post Adjustments: 13.4s</td>
+        <td><span class="cb new">NEW</span></td>
+      </tr><tr>
+        <td>4</td>
+        <td><a href="https://kibana-wd.webgility.com/goto/a46e24408fc38314da8319a403e0365b" target="_blank">63003</a></td>
+        <td class="perf-email">webgility@mybkr.com</td>
+        <td class="r">3</td>
+        <td class="r">147</td>
+        <td class="r perf-time">20m 14s</td>
+        <td><div class="pct-bar-wrap"><span class="pct-text">25.3%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:25.29982318693728%"></div></div></div></td>
+        <td class="perf-step-max">Download Partially Settled Refunds<br><span class="perf-step-ms">20m 0s</span></td>
+        <td class="perf-step-detail">S4: Download Partially Settled Refunds: 20m 0s<br>S1: Download Orders: 6.3s<br>S5: Post Orders: 5.0s</td>
+        <td><span class="cb new">NEW</span></td>
+      </tr><tr>
+        <td>5</td>
+        <td><a href="https://kibana-wd.webgility.com/goto/68345417e6737bf6d9d187f3df6afbbe" target="_blank">106708</a></td>
+        <td class="perf-email">junovaes@rgcosmetics.com</td>
+        <td class="r">42</td>
+        <td class="r">105</td>
+        <td class="r perf-time">20m 1s</td>
+        <td><div class="pct-bar-wrap"><span class="pct-text">25.0%</span><div class="pct-bar"><div class="pct-bar-fill amber" style="width:25.029533049841042%"></div></div></div></td>
+        <td class="perf-step-max">Post Payment Fees<br><span class="perf-step-ms">12m 31s</span></td>
+        <td class="perf-step-detail">S9: Post Payment Fees: 16m 20s<br>S6: Post Payments: 3m 33s<br>S5: Post Orders: 2.5s</td>
+        <td><span class="cb new">NEW</span></td>
+      </tr></tbody></table></div>
+    <div style="font-size:.8rem;font-weight:700;color:#334155;margin:20px 0 12px">Sub-section B: Step Performance Bar Chart (200 runs)</div>
+    <div class="step-chart"><div class="step-chart-title">Avg Step Processing Time — PayoutPosting (2026-05-26 09:00 IST → 2026-05-27 09:00 IST)</div><div class="step-row"><div class="step-label" title="S1: Download Orders">S1: Download Order.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.5%"></div><span class="step-bar-val">511ms avg &nbsp;/&nbsp; 8.1s max &nbsp;(200 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S2: Re-download Partially Settled Orders">S2: Re-download Pa.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">337ms avg &nbsp;/&nbsp; 7.0s max &nbsp;(200 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S3: Download Refunds">S3: Download Refun.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">91ms avg &nbsp;/&nbsp; 3.8s max &nbsp;(189 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S4: Download Partially Settled Refunds">S4: Download Parti.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:20.2%"></div><span class="step-bar-val">6.9s avg &nbsp;/&nbsp; 20m 0s max &nbsp;(182 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S5: Post Orders">S5: Post Orders</div><div class="step-bar-wrap"><div class="step-bar red" style="width:100.0%"></div><span class="step-bar-val">34.2s avg &nbsp;/&nbsp; 17m 23s max &nbsp;(180 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S6: Post Payments">S6: Post Payments</div><div class="step-bar-wrap"><div class="step-bar red" style="width:88.4%"></div><span class="step-bar-val">30.2s avg &nbsp;/&nbsp; 31m 38s max &nbsp;(169 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S7: Post Refunds">S7: Post Refunds</div><div class="step-bar-wrap"><div class="step-bar amber" style="width:34.6%"></div><span class="step-bar-val">11.8s avg &nbsp;/&nbsp; 12m 9s max &nbsp;(152 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S8: Post Adjustments">S8: Post Adjustmen.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.3%"></div><span class="step-bar-val">459ms avg &nbsp;/&nbsp; 7.1s max &nbsp;(151 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S9: Post Payment Fees">S9: Post Payment F.</div><div class="step-bar-wrap"><div class="step-bar orange" style="width:55.7%"></div><span class="step-bar-val">19.0s avg &nbsp;/&nbsp; 12m 31s max &nbsp;(151 runs)</span></div></div></div>
+    </div></div>
+<div class="card"><div class="card-header"><h2>🏃 Amazon Settlement — Performance Deep-Dive</h2><span class="subtitle">tag=Performance — 4 runs in period</span></div><div class="card-body">
+    <div style="font-size:.8rem;font-weight:700;color:#334155;margin-bottom:12px">Sub-section A: Top 5 Clients by Total Processing Time</div>
+    <div style="overflow-x:auto"><table class="perf-table"><thead><tr><th>#</th><th>Subscriber ID</th><th>Email</th><th>Runs</th><th>Transactions</th><th>Total Time</th><th>% of Max</th><th>Slowest Step</th><th>Top 3 Steps by Time</th><th>vs Prev</th></tr></thead><tbody><tr>
+        <td>1</td>
+        <td><a href="https://kibana-wd.webgility.com/goto/45dd2c082592ff42ccba2d3d6e6fbdea" target="_blank">54553</a></td>
+        <td class="perf-email">office@stabriteinsignia.com</td>
+        <td class="r">4</td>
+        <td class="r">0</td>
+        <td class="r perf-time">8h 58m 11s</td>
+        <td><div class="pct-bar-wrap"><span class="pct-text">100.0%</span><div class="pct-bar"><div class="pct-bar-fill red" style="width:100%"></div></div></div></td>
+        <td class="perf-step-max">Post Payments<br><span class="perf-step-ms">3h 0m 11s</span></td>
+        <td class="perf-step-detail">S10: Post Payments: 8h 55m 21s<br>S5: Post Orders: 2m 3s<br>S6: Post Expenses and Fees: 21.7s</td>
+        <td><span class="cb new">NEW</span></td>
+      </tr></tbody></table></div>
+    <div style="font-size:.8rem;font-weight:700;color:#334155;margin:20px 0 12px">Sub-section B: Step Performance Bar Chart (4 runs)</div>
+    <div class="step-chart"><div class="step-chart-title">Avg Step Processing Time — AmazonSettlementReport (2026-05-26 09:00 IST → 2026-05-27 09:00 IST)</div><div class="step-row"><div class="step-label" title="S1: Download Orders">S1: Download Order.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">2.8s avg &nbsp;/&nbsp; 3.3s max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S2: Re-download Partially Settled Orders">S2: Re-download Pa.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">2.1s avg &nbsp;/&nbsp; 2.2s max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S3: Download Refunds">S3: Download Refun.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">251ms avg &nbsp;/&nbsp; 499ms max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S4: Download Partially Settled Refunds">S4: Download Parti.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">646ms avg &nbsp;/&nbsp; 1.3s max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S5: Post Orders">S5: Post Orders</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">30.8s avg &nbsp;/&nbsp; 58.5s max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S6: Post Expenses and Fees">S6: Post Expenses .</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">5.4s avg &nbsp;/&nbsp; 10.5s max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S7: Post Refunds">S7: Post Refunds</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">69ms avg &nbsp;/&nbsp; 75ms max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S8: Post Other Transactions">S8: Post Other Tra.</div><div class="step-bar-wrap"><div class="step-bar blue" style="width:1.0%"></div><span class="step-bar-val">433ms avg &nbsp;/&nbsp; 477ms max &nbsp;(4 runs)</span></div></div>
+<div class="step-row"><div class="step-label" title="S10: Post Payments">S10: Post Payments</div><div class="step-bar-wrap"><div class="step-bar red" style="width:100.0%"></div><span class="step-bar-val">2h 13m 50s avg &nbsp;/&nbsp; 3h 0m 11s max &nbsp;(4 runs)</span></div></div></div>
+    </div></div>
+
+<div class="card">
+  <div class="card-header"><h2>💡 Actionable Insights</h2><span class="subtitle">Key findings and recommended actions</span></div>
+  <div class="card-body"><div class="insights-grid"><div class="insight-card danger"><div class="icon">!</div><h4>Subscriber 1879 — Top Error Source</h4><p>1879 generated 8,624 errors (22.4% of all errors). <span class="cb new">NEW</span> vs previous day.</p></div>
+<div class="insight-card warning"><div class="icon">↑</div><h4>Top Module: Unknown</h4><p>Unknown accounts for 33,693 errors (87.5% of total).</p></div>
+<div class="insight-card warning"><div class="icon">↑</div><h4>Error Rate Increased</h4><p>Error rate is 24.24% vs 14.90% previous period despite <span class="cb up">↑202.5%</span> total volume change.</p></div>
+<div class="insight-card spike"><div class="icon">⚡</div><h4>Top Error: SaveSettingError</h4><p>6,652 occurrences. <span class="cb new">NEW</span> vs prev.</p></div>
+<div class="insight-card healthy"><div class="icon">✓</div><h4>Shopify Payout Activity</h4><p>Processed 2,425 payout records. <span class="cb new">NEW</span> vs prev.</p></div>
+<div class="insight-card healthy"><div class="icon">✓</div><h4>Amazon Settlement Activity</h4><p>350 settlement events across 23 subscribers.</p></div></div></div>
+</div>
+
+<div class="card" style="background:#f8fafc">
+  <div class="card-body" style="padding:12px 20px;font-size:.72rem;color:#94a3b8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <span>📊 Source: Kibana WD — <a href="https://kibana-wd.webgility.com" target="_blank">kibana-wd.webgility.com</a> | Index: 2026.05.26 / 2026.05.27</span>
+    <span>⏰ Generated: 2026-05-27 03:33 UTC | Report Period: 2026-05-26T03:30:00.000Z → 2026-05-27T03:30:00.000Z</span>
+    <span>🤖 Automated by WD ES Kibana Cloud Agent</span>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
