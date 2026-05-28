@@ -647,12 +647,12 @@ async function main() {
     if (slot >= 0 && slot < 24) hourCounts[slot] += b.doc_count;
   }
   const maxHour = Math.max(...hourCounts, 1);
-  let peakHour = 0;
+  let peakSlot = 0;
   let peakCount = 0;
   hourCounts.forEach((c, i) => {
     if (c > peakCount) {
       peakCount = c;
-      peakHour = i;
+      peakSlot = i;
     }
   });
   const hourLabels = [];
@@ -660,6 +660,7 @@ async function main() {
     const h = (9 + i) % 24;
     hourLabels.push(String(h).padStart(2, "0"));
   }
+  const peakHourLabel = hourLabels[peakSlot] ?? "00";
 
   const prevMod = bucketMap(prevAg?.by_module, "items");
   const prevStore = bucketMap(prevAg?.by_store, "items");
@@ -708,7 +709,7 @@ async function main() {
 </div>
 
 <div class="card">
-  <div class="card-header"><h2>⏱ Hourly Error Timeline (IST)</h2><span class="subtitle">Peak: ${peakCount.toLocaleString()} errors at ${String(peakHour).padStart(2, "0")}:00 IST</span></div>
+  <div class="card-header"><h2>⏱ Hourly Error Timeline (IST)</h2><span class="subtitle">Peak: ${peakCount.toLocaleString()} errors at ${peakHourLabel}:00 IST</span></div>
   <div class="card-body">
     <div class="bar-chart">`;
 
@@ -1015,7 +1016,7 @@ async function main() {
     insights.push({
       type: "spike",
       icon: "⚡",
-      title: `Peak hour: ${String(peakHour).padStart(2, "0")}:00 IST`,
+      title: `Peak hour: ${peakHourLabel}:00 IST`,
       text: `${peakCount.toLocaleString()} errors in the peak hour — review hourly timeline.`,
     });
   const topMod = modBuckets[0];
