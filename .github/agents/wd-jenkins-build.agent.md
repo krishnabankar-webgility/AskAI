@@ -111,10 +111,15 @@ Follow **§1a** in the skill.
 ### Step 2 — Trigger Jenkins Build
 **ONLY EXECUTE AFTER STEP 1.0 PASSES**
 
-**Trigger the build EXACTLY ONCE.** Record `nextBuildNumber` before triggering, then call `buildWithParameters` a single time. NEVER trigger twice.
-Follow **§1** in the skill.
+**Trigger the build EXACTLY ONCE.** Record `nextBuildNumber` before triggering. NEVER trigger twice.
 
-### Step 2 — Pre-Build Slack Notification
+**CRITICAL Jenkins trigger rules (failures seen in production):**
+- **Push branch to remote FIRST** — `git ls-remote --heads origin $branch`; if empty, push before triggering
+- **Param name**: `Branch` (capital B, Git Parameter plugin) — NOT `BRANCH`
+- **Param value**: `origin/BranchName` URL-encoded: `Branch=origin%2FBranchName&PostSharp=Yes`
+- **Body format**: `application/x-www-form-urlencoded` — NOT a JSON or hashtable body
+- **Null result**: means still running — poll with `while (-not $b.result)`, do not exit early
+
 BEFORE triggering the build, send a message to the user's Slack channel:
 ```
 @here creating installer from <branch>
@@ -152,10 +157,10 @@ Transition ticket status to "Ready For Testing" (RFT).
 Follow **§6** in the skill.
 
 ### Step 9 — Slack Notification
-Send full QA notification message to user's Slack channel with build details, share paths, and Dropbox link.
-Follow **§7** in the skill.
-
-### Step 10 — Post QA Testing Jira Comment (LAST STEP)
+Send QA notification to user's Slack channel.
+- **Only show QA share path** (never show source share `\\inwsfs02` when installer is on QA share)
+- **Send only once** — guard with a flag; do not re-send if pipeline is resumed mid-run
+- Append Dropbox link only if upload step succeeded
 This is the **FINAL** step. Post a structured QA Testing comment on the **Customer Issue** Jira ticket.
 
 **Data Collection (§8.3 in skill):**
@@ -172,9 +177,9 @@ This is the **FINAL** step. Post a structured QA Testing comment on the **Custom
 - QBD Items / Setup
 - Test Cases (happy path, edge cases, negative cases)
 - Links (DB backup, QBD backup, credentials, installer paths, Confluence, test orders)
-- CC: @Hitesh Devashrayee @Arvind Chavan
+- CC: @QA @Hitesh Devashrayee
 
-**Rules:** NEVER fabricate data. ALWAYS draft in chat first for user review before posting. NO file names or code in the comment.
+**Rules:** NEVER fabricate data. Post immediately — no confirmation required unless user explicitly asks. NO file names or code in the comment.
 
 Follow **§8** in the skill.
 

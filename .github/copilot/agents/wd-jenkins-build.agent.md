@@ -38,9 +38,11 @@ upload_to_dropbox — default: false
 
 ### STEP 3 — Trigger Jenkins Build
 - If $skipTrigger = true → skip trigger, log reason, continue to STEP 4
-- Otherwise trigger ONCE using buildWithParameters (branch + PostSharp=Yes)
-- Record $buildNumber = nextBuildNumber
-
+- **PUSH BRANCH TO REMOTE FIRST** — run `git ls-remote --heads origin $branch`; if empty, push before triggering
+- **Correct parameter**: param name = `Branch` (capital B, Git Parameter plugin, NOT `BRANCH`)
+- **Correct value**: `origin/BranchName` URL-encoded as `origin%2FBranchName`
+- **Trigger body**: `"Branch=origin%2F$branch&PostSharp=Yes"` via `application/x-www-form-urlencoded`
+- Trigger ONCE using buildWithParameters — record $buildNumber = nextBuildNumber
 ### STEP 4 — Autonomous Polling [NO USER INPUT]
 - Poll every 10 seconds
 - Display progress board after each poll
@@ -74,7 +76,8 @@ upload_to_dropbox — default: false
 - Fetch commits: git log --no-merges origin/develop..origin/<branch>
 - Include ONLY sections where real data exists — NO placeholders
 - Always include: build #, branch, download path, test cases, CC
-- Post automatically — no user review
+- CC: `@QA @Hitesh Devashrayee` (use @QA group — covers all QA testers)
+- Post automatically — no user review, no confirmation required
 
 ### FINAL SUMMARY — Always print at end
 - Show all 10 steps with ✅/⏭️/❌ status
