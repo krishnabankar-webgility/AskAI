@@ -61,7 +61,7 @@
         "links": [],
         "options": {
           "mode": "markdown",
-          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Pick any window with the **time-range picker** (top-right); default = report window *yesterday 09:00 \u2192 today 09:00 IST*. Every panel deep-links to the matching **Kibana Discover** view.\n\n**Expand a section below to load it.** Detail sections are collapsed by default so the cluster isn't hit by all panels at once. *For an always-open, instant dashboard, a Grafana admin should set the Elasticsearch-WD datasource to a time-based index pattern (`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 see `docs/grafana-wd-dashboard.md`.*"
+          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Pick any window with the **time-range picker** (top-right); default = report window *yesterday 09:00 \u2192 today 09:00 IST*. Every panel deep-links to the matching **Kibana Discover** view.\n\n**Expand a section below to load it.** Detail sections are collapsed by default because the Elasticsearch-WD datasource uses a wildcard index (`webgilitydesktop-*`); running every panel at once overwhelms the cluster. *Permanent fix (admin): set the datasource to a daily index pattern (`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 then every panel loads instantly and sections can stay open. See `grafana/apply_datasource_fix.py` and `docs/grafana-wd-dashboard.md`.*"
         },
         "fieldConfig": {
           "defaults": {},
@@ -83,9 +83,9 @@
       },
       {
         "id": 3,
-        "title": "Events by Level",
+        "title": "Total Events",
         "type": "stat",
-        "description": "Counts per level (Total = sum of tiles). Single query over all events.",
+        "description": "",
         "datasource": {
           "type": "elasticsearch",
           "uid": "QEYi3BIDz"
@@ -93,7 +93,7 @@
         "gridPos": {
           "x": 0,
           "y": 5,
-          "w": 18,
+          "w": 4,
           "h": 5
         },
         "links": [
@@ -106,15 +106,15 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
-            "fields": "/^Count$/",
-            "values": true
+            "fields": "",
+            "values": false
           },
-          "orientation": "horizontal",
-          "textMode": "value_and_name",
+          "orientation": "auto",
+          "textMode": "value",
           "colorMode": "background",
-          "graphMode": "none",
+          "graphMode": "area",
           "justifyMode": "auto"
         },
         "fieldConfig": {
@@ -145,12 +145,10 @@
             "bucketAggs": [
               {
                 "id": "2",
-                "type": "terms",
-                "field": "level.keyword",
+                "type": "date_histogram",
+                "field": "timestamp",
                 "settings": {
-                  "size": "10",
-                  "order": "desc",
-                  "orderBy": "1",
+                  "interval": "1h",
                   "min_doc_count": "1"
                 }
               }
@@ -162,17 +160,17 @@
       },
       {
         "id": 4,
-        "title": "Error Subscribers",
+        "title": "Errors",
         "type": "stat",
-        "description": "Distinct subscriberID with at least one Error",
+        "description": "",
         "datasource": {
           "type": "elasticsearch",
           "uid": "QEYi3BIDz"
         },
         "gridPos": {
-          "x": 18,
+          "x": 4,
           "y": 5,
-          "w": 6,
+          "w": 5,
           "h": 5
         },
         "links": [
@@ -185,15 +183,15 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "count"
+              "sum"
             ],
-            "fields": "/^Count$/",
+            "fields": "",
             "values": false
           },
-          "orientation": "horizontal",
+          "orientation": "auto",
           "textMode": "value",
           "colorMode": "background",
-          "graphMode": "none",
+          "graphMode": "area",
           "justifyMode": "auto"
         },
         "fieldConfig": {
@@ -201,7 +199,7 @@
             "unit": "short",
             "color": {
               "mode": "fixed",
-              "fixedColor": "purple"
+              "fixedColor": "orange"
             },
             "mappings": []
           },
@@ -224,12 +222,10 @@
             "bucketAggs": [
               {
                 "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
+                "type": "date_histogram",
+                "field": "timestamp",
                 "settings": {
-                  "size": "5000",
-                  "order": "desc",
-                  "orderBy": "1",
+                  "interval": "1h",
                   "min_doc_count": "1"
                 }
               }
@@ -241,6 +237,237 @@
       },
       {
         "id": 5,
+        "title": "Fatals",
+        "type": "stat",
+        "description": "",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "QEYi3BIDz"
+        },
+        "gridPos": {
+          "x": 9,
+          "y": 5,
+          "w": 5,
+          "h": 5
+        },
+        "links": [
+          {
+            "title": "Open in Kibana (synced time range)",
+            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
+            "targetBlank": true
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "sum"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "orientation": "auto",
+          "textMode": "value",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "fixed",
+              "fixedColor": "red"
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "query": "level.keyword:\"Fatal\"",
+            "alias": "",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
+            "timeField": "timestamp",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Warnings",
+        "type": "stat",
+        "description": "",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "QEYi3BIDz"
+        },
+        "gridPos": {
+          "x": 14,
+          "y": 5,
+          "w": 5,
+          "h": 5
+        },
+        "links": [
+          {
+            "title": "Open in Kibana (synced time range)",
+            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Warning%22'),sort:!(!(timestamp,desc)))",
+            "targetBlank": true
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "sum"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "orientation": "auto",
+          "textMode": "value",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "fixed",
+              "fixedColor": "yellow"
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "query": "level.keyword:\"Warning\"",
+            "alias": "",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
+            "timeField": "timestamp",
+            "refId": "D"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Info",
+        "type": "stat",
+        "description": "",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "QEYi3BIDz"
+        },
+        "gridPos": {
+          "x": 19,
+          "y": 5,
+          "w": 5,
+          "h": 5
+        },
+        "links": [
+          {
+            "title": "Open in Kibana (synced time range)",
+            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Info%22'),sort:!(!(timestamp,desc)))",
+            "targetBlank": true
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "sum"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "orientation": "auto",
+          "textMode": "value",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "fixed",
+              "fixedColor": "green"
+            },
+            "mappings": []
+          },
+          "overrides": []
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "query": "level.keyword:\"Info\"",
+            "alias": "",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
+            "timeField": "timestamp",
+            "refId": "E"
+          }
+        ]
+      },
+      {
+        "id": 8,
         "type": "row",
         "title": "\u23f1 Error / Fatal / Warning Timeline",
         "collapsed": true,
@@ -252,7 +479,7 @@
         },
         "panels": [
           {
-            "id": 6,
+            "id": 9,
             "title": "Events over time by level",
             "type": "timeseries",
             "description": "Stacked counts by level across the selected window.",
@@ -439,7 +666,7 @@
         ]
       },
       {
-        "id": 7,
+        "id": 10,
         "type": "row",
         "title": "\ud83e\udde9 Error Breakdown",
         "collapsed": true,
@@ -451,7 +678,7 @@
         },
         "panels": [
           {
-            "id": 8,
+            "id": 11,
             "title": "Errors by Module",
             "type": "bargauge",
             "description": "",
@@ -532,12 +759,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "C"
+                "refId": "F"
               }
             ]
           },
           {
-            "id": 9,
+            "id": 12,
             "title": "Errors by Store",
             "type": "bargauge",
             "description": "",
@@ -618,12 +845,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "D"
+                "refId": "G"
               }
             ]
           },
           {
-            "id": 10,
+            "id": 13,
             "title": "Errors by Tag",
             "type": "bargauge",
             "description": "",
@@ -704,12 +931,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "E"
+                "refId": "H"
               }
             ]
           },
           {
-            "id": 11,
+            "id": 14,
             "title": "Errors by Process",
             "type": "bargauge",
             "description": "",
@@ -790,14 +1017,14 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "F"
+                "refId": "I"
               }
             ]
           }
         ]
       },
       {
-        "id": 12,
+        "id": 15,
         "type": "row",
         "title": "\ud83d\udd1d Top Error Messages & Subscribers",
         "collapsed": true,
@@ -809,7 +1036,7 @@
         },
         "panels": [
           {
-            "id": 13,
+            "id": 16,
             "title": "Top Error Messages",
             "type": "table",
             "description": "",
@@ -893,7 +1120,7 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "G"
+                "refId": "J"
               }
             ],
             "transformations": [
@@ -911,7 +1138,7 @@
             ]
           },
           {
-            "id": 14,
+            "id": 17,
             "title": "Top Error Subscribers",
             "type": "table",
             "description": "",
@@ -995,7 +1222,7 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "H"
+                "refId": "K"
               }
             ],
             "transformations": [
@@ -1015,7 +1242,7 @@
         ]
       },
       {
-        "id": 15,
+        "id": 18,
         "type": "row",
         "title": "\ud83d\udc80 Fatal Events",
         "collapsed": true,
@@ -1027,7 +1254,7 @@
         },
         "panels": [
           {
-            "id": 16,
+            "id": 19,
             "title": "Fatal by Message",
             "type": "table",
             "description": "",
@@ -1111,7 +1338,7 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "I"
+                "refId": "L"
               }
             ],
             "transformations": [
@@ -1129,7 +1356,7 @@
             ]
           },
           {
-            "id": 17,
+            "id": 20,
             "title": "Fatal by Store",
             "type": "piechart",
             "description": "",
@@ -1214,14 +1441,14 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "J"
+                "refId": "M"
               }
             ]
           }
         ]
       },
       {
-        "id": 18,
+        "id": 21,
         "type": "row",
         "title": "\ud83d\udcb3 Shopify Payout Performance",
         "collapsed": true,
@@ -1233,7 +1460,7 @@
         },
         "panels": [
           {
-            "id": 19,
+            "id": 22,
             "title": "Payouts Processed",
             "type": "stat",
             "description": "Sum of processedRecords for Shopify PayoutPosting",
@@ -1262,10 +1489,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1306,12 +1533,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "K"
+                "refId": "N"
               }
             ]
           },
           {
-            "id": 20,
+            "id": 23,
             "title": "Payout Log Events",
             "type": "stat",
             "description": "",
@@ -1340,10 +1567,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1383,12 +1610,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "L"
+                "refId": "O"
               }
             ]
           },
           {
-            "id": 21,
+            "id": 24,
             "title": "Payout Subscribers",
             "type": "stat",
             "description": "",
@@ -1417,10 +1644,10 @@
                 "fields": "/^Count$/",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1462,12 +1689,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "M"
+                "refId": "P"
               }
             ]
           },
           {
-            "id": 22,
+            "id": 25,
             "title": "Avg Rate (rec/s)",
             "type": "stat",
             "description": "Mean of per-hour averagePerSecond",
@@ -1496,10 +1723,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1540,12 +1767,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "N"
+                "refId": "Q"
               }
             ]
           },
           {
-            "id": 23,
+            "id": 26,
             "title": "Top Payout Subscribers (by records)",
             "type": "table",
             "description": "",
@@ -1630,7 +1857,7 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "O"
+                "refId": "R"
               }
             ],
             "transformations": [
@@ -1650,7 +1877,7 @@
         ]
       },
       {
-        "id": 24,
+        "id": 27,
         "type": "row",
         "title": "\ud83d\uded2 Amazon Settlement Report",
         "collapsed": true,
@@ -1662,7 +1889,7 @@
         },
         "panels": [
           {
-            "id": 25,
+            "id": 28,
             "title": "Settlement Events",
             "type": "stat",
             "description": "",
@@ -1691,10 +1918,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1734,12 +1961,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "P"
+                "refId": "S"
               }
             ]
           },
           {
-            "id": 26,
+            "id": 29,
             "title": "Settlement Errors",
             "type": "stat",
             "description": "",
@@ -1768,10 +1995,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1811,12 +2038,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "Q"
+                "refId": "T"
               }
             ]
           },
           {
-            "id": 27,
+            "id": 30,
             "title": "Records Processed",
             "type": "stat",
             "description": "",
@@ -1845,10 +2072,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1889,12 +2116,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "R"
+                "refId": "U"
               }
             ]
           },
           {
-            "id": 28,
+            "id": 31,
             "title": "Affected Subscribers",
             "type": "stat",
             "description": "",
@@ -1923,10 +2150,10 @@
                 "fields": "/^Count$/",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -1968,12 +2195,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "S"
+                "refId": "V"
               }
             ]
           },
           {
-            "id": 29,
+            "id": 32,
             "title": "Top Settlement Subscribers",
             "type": "table",
             "description": "",
@@ -2057,7 +2284,7 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "T"
+                "refId": "W"
               }
             ],
             "transformations": [
@@ -2077,7 +2304,7 @@
         ]
       },
       {
-        "id": 30,
+        "id": 33,
         "type": "row",
         "title": "\ud83c\udfc3 Performance Deep-Dive (run logs)",
         "collapsed": true,
@@ -2089,7 +2316,7 @@
         },
         "panels": [
           {
-            "id": 31,
+            "id": 34,
             "title": "note",
             "type": "text",
             "description": "",
@@ -2110,7 +2337,7 @@
             }
           },
           {
-            "id": 32,
+            "id": 35,
             "title": "Shopify Payout Perf Runs",
             "type": "stat",
             "description": "",
@@ -2139,10 +2366,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -2182,12 +2409,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "U"
+                "refId": "X"
               }
             ]
           },
           {
-            "id": 33,
+            "id": 36,
             "title": "Amazon Settlement Perf Runs",
             "type": "stat",
             "description": "",
@@ -2216,10 +2443,10 @@
                 "fields": "",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -2259,12 +2486,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "V"
+                "refId": "Y"
               }
             ]
           },
           {
-            "id": 34,
+            "id": 37,
             "title": "Payout Perf Subscribers",
             "type": "stat",
             "description": "",
@@ -2293,10 +2520,10 @@
                 "fields": "/^Count$/",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -2338,12 +2565,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "W"
+                "refId": "Z"
               }
             ]
           },
           {
-            "id": 35,
+            "id": 38,
             "title": "Settlement Perf Subscribers",
             "type": "stat",
             "description": "",
@@ -2372,10 +2599,10 @@
                 "fields": "/^Count$/",
                 "values": false
               },
-              "orientation": "horizontal",
+              "orientation": "auto",
               "textMode": "value",
               "colorMode": "background",
-              "graphMode": "none",
+              "graphMode": "area",
               "justifyMode": "auto"
             },
             "fieldConfig": {
@@ -2417,12 +2644,12 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "X"
+                "refId": "A1"
               }
             ]
           },
           {
-            "id": 36,
+            "id": 39,
             "title": "Top Payout Perf Subscribers (runs)",
             "type": "table",
             "description": "",
@@ -2506,7 +2733,7 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "Y"
+                "refId": "B1"
               }
             ],
             "transformations": [
@@ -2524,7 +2751,7 @@
             ]
           },
           {
-            "id": 37,
+            "id": 40,
             "title": "Top Settlement Perf Subscribers (runs)",
             "type": "table",
             "description": "",
@@ -2608,7 +2835,7 @@
                   }
                 ],
                 "timeField": "timestamp",
-                "refId": "Z"
+                "refId": "C1"
               }
             ],
             "transformations": [
@@ -2628,7 +2855,7 @@
         ]
       },
       {
-        "id": 38,
+        "id": 41,
         "type": "row",
         "title": "\ud83d\uddc2 Legacy panels (pre-existing)",
         "collapsed": true,

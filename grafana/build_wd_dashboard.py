@@ -18,18 +18,20 @@ Push reads:
 PERFORMANCE NOTE (important):
   The `Elasticsearch-WD` datasource points at the WILDCARD index
   `webgilitydesktop-*`. A wildcard fans every query out across *all* historical
-  daily indices, so a single 24h query is fast in isolation (~0.3-1.5s) but a
-  whole dashboard firing ~35 panels at once overwhelms the cluster and every
-  query hits the 30s timeout. Querying explicit daily indices
-  (`webgilitydesktop-YYYY.MM.DD`) returns in ~0.3s even at high concurrency.
+  daily indices. In isolation a 24h query is fast, but:
+    * `date_histogram` aggregations scale OK (5+ concurrent ~10s), while
+    * `terms` aggregations build global ordinals across every index and time
+      out even 2-concurrent.
+  So the always-open Executive Summary uses only date_histogram count tiles,
+  and every terms-based detail section is COLLAPSED by default (a collapsed
+  Grafana row does not run its panels until expanded).
 
-  The clean fix is to set the datasource to a time-based index pattern
-  (Index name `[webgilitydesktop-]YYYY.MM.DD`, Pattern `Daily`) — see
-  docs/grafana-wd-dashboard.md. That requires Grafana `datasources:write`
-  (admin). Until then, this generator keeps the dashboard usable by
-  consolidating the executive summary and collapsing every detail section by
-  default (a collapsed Grafana row does not run its panels' queries until
-  expanded), so only a small batch runs at a time.
+  The clean, permanent fix is to set the datasource to a time-based index
+  pattern (Index name `[webgilitydesktop-]YYYY.MM.DD`, Pattern `Daily`) so each
+  query only touches the relevant day(s) — then every panel, terms included,
+  loads in ~0.3s and the sections can be left open. That requires Grafana
+  `datasources:write`; run grafana/apply_datasource_fix.py as an admin, or set
+  it in the Grafana UI. See docs/grafana-wd-dashboard.md.
 
 Verified quirks of this Grafana 9.2 Elasticsearch backend:
   * A `terms` bucket MUST order by a metric id ("1"), NOT "_count" (500 error).
@@ -53,7 +55,6 @@ KIBANA_INDEX = "61237d60-0ed9-11eb-816a-cde07dc15a1f"
 KIBANA_BASE = "https://kibana-wd.webgility.com"
 UNIQUE_TERMS_SIZE = "5000"
 
-# Section rows kept expanded on initial load (everything else loads on expand).
 ALWAYS_OPEN = {"\U0001F4CA Executive Summary"}
 
 _pid = [0]
@@ -119,18 +120,12 @@ def base(panel_id, title, ptype, x, y, w, h, links=None, desc=""):
 
 def stat_panel(title, kql, x, y, w=4, h=4, color="blue", unit="short",
                agg="count", field=None, desc=""):
-    """agg in {count, sum, avg, unique, levels}."""
+    """agg in {count, sum, avg, unique}."""
     p = base(pid(), title, "stat", x, y, w, h, links=[kibana_link(kql)], desc=desc)
-    text_mode = "value"
     if agg == "unique":
         p["targets"] = [es_target(kql, metrics=[{"id": "1", "type": "count"}],
                                   buckets=terms_bucket(field, UNIQUE_TERMS_SIZE))]
         reduce = {"calcs": ["count"], "fields": "/^Count$/", "values": False}
-    elif agg == "levels":
-        p["targets"] = [es_target(kql, metrics=[{"id": "1", "type": "count"}],
-                                  buckets=terms_bucket("level.keyword", 10))]
-        reduce = {"calcs": ["lastNotNull"], "fields": "/^Count$/", "values": True}
-        text_mode = "value_and_name"
     else:
         if agg == "sum":
             metrics, calc = [{"id": "1", "type": "sum", "field": field}], "sum"
@@ -141,8 +136,8 @@ def stat_panel(title, kql, x, y, w=4, h=4, color="blue", unit="short",
         p["targets"] = [es_target(kql, metrics=metrics, buckets=date_hist("1h", "1"))]
         reduce = {"calcs": [calc], "fields": "", "values": False}
     p["fieldConfig"]["defaults"] = {"unit": unit, "color": {"mode": "fixed", "fixedColor": color}, "mappings": []}
-    p["options"] = {"reduceOptions": reduce, "orientation": "horizontal", "textMode": text_mode,
-                    "colorMode": "background", "graphMode": "none", "justifyMode": "auto"}
+    p["options"] = {"reduceOptions": reduce, "orientation": "auto", "textMode": "value",
+                    "colorMode": "background", "graphMode": "area", "justifyMode": "auto"}
     return p
 
 
@@ -226,17 +221,20 @@ def build_flat():
         "**`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. "
         "Pick any window with the **time-range picker** (top-right); default = report window "
         "*yesterday 09:00 \u2192 today 09:00 IST*. Every panel deep-links to the matching **Kibana Discover** view.\n\n"
-        "**Expand a section below to load it.** Detail sections are collapsed by default so the cluster "
-        "isn't hit by all panels at once. *For an always-open, instant dashboard, a Grafana admin should set "
-        "the Elasticsearch-WD datasource to a time-based index pattern "
-        "(`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 see `docs/grafana-wd-dashboard.md`.*"))
+        "**Expand a section below to load it.** Detail sections are collapsed by default because the "
+        "Elasticsearch-WD datasource uses a wildcard index (`webgilitydesktop-*`); running every panel at "
+        "once overwhelms the cluster. *Permanent fix (admin): set the datasource to a daily index pattern "
+        "(`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 then every panel loads instantly and sections "
+        "can stay open. See `grafana/apply_datasource_fix.py` and `docs/grafana-wd-dashboard.md`.*"))
     y += 4
 
+    # Always-open summary: date_histogram count tiles only (scale to 5 concurrent).
     panels.append(row("\U0001F4CA Executive Summary", y)); y += 1
-    panels.append(stat_panel("Events by Level", "*", 0, y, 18, 5, "blue", agg="levels",
-        desc="Counts per level (Total = sum of tiles). Single query over all events."))
-    panels.append(stat_panel("Error Subscribers", 'level.keyword:"Error"', 18, y, 6, 5, "purple",
-        agg="unique", field="subscriberID", desc="Distinct subscriberID with at least one Error"))
+    panels.append(stat_panel("Total Events", "*", 0, y, 4, 5, "blue"))
+    panels.append(stat_panel("Errors", 'level.keyword:"Error"', 4, y, 5, 5, "orange"))
+    panels.append(stat_panel("Fatals", 'level.keyword:"Fatal"', 9, y, 5, 5, "red"))
+    panels.append(stat_panel("Warnings", 'level.keyword:"Warning"', 14, y, 5, 5, "yellow"))
+    panels.append(stat_panel("Info", 'level.keyword:"Info"', 19, y, 5, 5, "green"))
     y += 5
 
     panels.append(row("\u23F1 Error / Fatal / Warning Timeline", y)); y += 1
@@ -336,7 +334,6 @@ def collapse_sections(flat):
         if p.get("type") != "row":
             out.append(p); i += 1; continue
         if p.get("panels"):
-            # already-nested row (e.g. legacy) — pass through untouched
             out.append(p); i += 1; continue
         j = i + 1
         children = []
