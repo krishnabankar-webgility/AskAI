@@ -9,6 +9,38 @@ This skill is referenced by the agent files at:
 
 ---
 
+## Pipeline Checklist (Session State)
+
+Initialize these flags at the START of every pipeline run:
+```powershell
+# Session state — prevents double-send and double-trigger across retries
+$preSlackSent = $false   # Step 2 pre-build Slack  — send ONCE only
+$triggerFired = $false   # Step 3 Jenkins trigger   — fire ONCE only
+$buildNumber  = $null    # Step 3/4 build# tracking — survives retries
+$qaSlackSent  = $false   # Step 9 QA Slack notify   — send ONCE only
+```
+
+**Resume rule:** If pipeline must restart mid-run, restore these flags from last known state before continuing. Never re-run a step whose flag is $true.
+
+**Print this checklist after every step:**
+```
+[ ] Step 1  Pre-Flight Check
+[ ] Step 2  Pre-Build Slack
+[ ] Step 3  Trigger Jenkins
+[ ] Step 4  Poll for Completion
+[ ] Step 5  Verify Artifact
+[ ] Step 6  Copy to QA Share
+[ ] Step 7  Dropbox Upload      (SKIP if not requested)
+[ ] Step 8  Jira RFT + Assign   (SKIP if not requested)
+[ ] Step 9  Slack QA Notify
+[ ] Step 10 QA Jira Comment     (SKIP if not requested)
+```
+Mark: [ ] pending | [v] done | [x] failed | [-] skipped
+
+---
+
+---
+
 ## §0 Pre-flight: Extract Jira Ticket ID from Branch
 
 Branch naming convention: `<number>/<JiraID>-<user>/<name>` or `<JiraID>_<name>`.
@@ -52,12 +84,12 @@ function Set-JiraStatus($issueKey, $transitionId) {
 
 ---
 
-## §1.0 Pre-Build Check: Is a Jenkins Build Already Running?
+## §1 Pre-Flight Check: Is a Jenkins Build Already Running?
 
 **MUST run before triggering.** If a build is already in progress, WAIT for it to finish.
 
 ```powershell
-Write-Host "🔄 [Step 1 — Pre-Build Check] IN PROGRESS..."
+Write-Host "🔄 [Step 1 — Pre-Flight Check] IN PROGRESS..."
 
 $jenkinsUrl   = "http://jenkins.webgility.com:8080"
 $jenkinsUser  = $env:JENKINS_USERNAME
@@ -98,23 +130,26 @@ if ($lastBuild) {
     }
 }
 
-Write-Host "✅ [Step 1 — Pre-Build Check] DONE — Ready to trigger new build"
+Write-Host "✅ [Step 1 — Pre-Flight Check] DONE — Ready to trigger new build"
 ```
 
 ---
 
-## §1a Pre-Build Slack Notification
+## §2 Pre-Build Slack Notification
 
 **MUST run BEFORE triggering the build.** Posts a heads-up to the Slack channel.
 
 ```powershell
-Write-Host "🔄 [Step 1.5 — Pre-Build Slack Notification] IN PROGRESS..."
+Write-Host "🔄 [Step 2 — Pre-Build Slack Notification] IN PROGRESS..."
 
 $slackToken = $env:SLACK_BOT_TOKEN
 if (-not $slackToken) {
     $slackToken = [System.Environment]::GetEnvironmentVariable("SLACK_BOT_TOKEN","User")
 }
 
+if ($preSlackSent -eq $true) {
+    Write-Host "  Skip: pre-build Slack already sent this run — no duplicate"
+} else {
 if ($slackToken -and $slackChannel) {
     $preMsg = "@here creating installer from $branch"
     $preBody = @{ channel = $slackChannel; text = $preMsg } | ConvertTo-Json -Compress
@@ -131,17 +166,19 @@ if ($slackToken -and $slackChannel) {
     Write-Warning "  ⚠️ Skipping pre-build Slack (no token or channel)"
 }
 
-Write-Host "✅ [Step 1.5 — Pre-Build Slack Notification] DONE"
+}  # end $preSlackSent guard
+$preSlackSent = $true
+Write-Host "✅ [Step 2 — Pre-Build Slack Notification] DONE"
 ```
 
 ---
 
-## §1 Jenkins Build Trigger
+## §3 Jenkins Build Trigger
 
 **CRITICAL: Trigger exactly ONCE. Never call buildWithParameters more than once per pipeline run.**
 
 ```powershell
-Write-Host "🔄 [Step 2 — Trigger Jenkins Build] IN PROGRESS..."
+Write-Host "🔄 [Step 3 — Trigger Jenkins Build] IN PROGRESS..."
 
 # Record nextBuildNumber BEFORE triggering — this is the build we expect to create
 $jobInfo = Invoke-RestMethod `
@@ -150,12 +187,23 @@ $jobInfo = Invoke-RestMethod `
 $expectedBuildNumber = $jobInfo.nextBuildNumber
 Write-Host "  Expected build number: $expectedBuildNumber"
 
+# Fix: ensure branch has origin/ prefix required by Git Parameter plugin
+if ($branch -notmatch "^origin/") { $branch = "origin/$branch" }
+$branchEncoded = [uri]::EscapeDataString($branch)
+Write-Host "  Branch for Jenkins: $branch  (encoded: $branchEncoded)"
+
+# Guard: trigger exactly ONCE per pipeline run
+if ($triggerFired -eq $true) {
+    Write-Host "  Skip: trigger already fired this run — no duplicate build"
+} else {
 # Trigger build EXACTLY ONCE
 $buildUri = "$jenkinsUrl/job/UnifyEnterprise/buildWithParameters"
 $body = @{ Branch = $branch; PostSharp = "Yes" }
 
 Invoke-RestMethod -Uri $buildUri -Method Post -Headers $headers -Body $body
 Write-Host "  ✅ Build triggered for branch: $branch (expected #$expectedBuildNumber)"
+$triggerFired = $true
+}  # end triggerFired guard
 
 # IMPORTANT: Do NOT call buildWithParameters again. The build is now queued/running.
 ```
@@ -166,10 +214,10 @@ Write-Host "  ✅ Build triggered for branch: $branch (expected #$expectedBuildN
 
 ---
 
-## §2 Build Status Polling
+## §4 Build Status Polling
 
 ```powershell
-Write-Host "🔄 [Step 3 — Poll Build Completion] IN PROGRESS..."
+Write-Host "🔄 [Step 4 — Poll Build Completion] IN PROGRESS..."
 
 Start-Sleep -Seconds 8
 
@@ -216,14 +264,14 @@ if ($buildResult -ne "SUCCESS") {
     exit 1
 }
 
-Write-Host "✅ [Step 3 — Poll Build Completion] DONE — Build $buildNumber SUCCESS"
+Write-Host "✅ [Step 4 — Poll Build Completion] DONE — Build $buildNumber SUCCESS"
 ```
 
 > **IMPORTANT:** `$buildNumber` is a plain integer (e.g. `6275`). File names use it directly: `WebgilityInstaller-BuildNo_6275.exe` — NO `#` prefix in file names.
 
 ---
 
-## §3 Verify Network Share & Locate Artifact
+## §5 Verify Network Share & Locate Artifact
 
 **If the share is NOT accessible:**
 1. First check if VPN (Sophos or OpenVPN GUI) is connected
@@ -231,7 +279,7 @@ Write-Host "✅ [Step 3 — Poll Build Completion] DONE — Build $buildNumber S
 3. If VPN IS connected but share still inaccessible → invoke `sys-troubleshoot` agent
 
 ```powershell
-Write-Host "🔄 [Step 4 — Verify Network Share & Locate Artifact] IN PROGRESS..."
+Write-Host "🔄 [Step 5 — Verify Network Share & Locate Artifact] IN PROGRESS..."
 
 $sourceShare = "\\inwsfs02\UDInstaller"
 $sourcePath  = "$sourceShare\WebgilityInstaller-BuildNo_$buildNumber.exe"
@@ -327,15 +375,15 @@ if ($fileInfo.Length -eq 0) {
 }
 
 Write-Host "  ✅ Artifact verified: $sourcePath ($([math]::Round($fileInfo.Length/1MB,1)) MB, $($fileInfo.LastWriteTime))"
-Write-Host "✅ [Step 4 — Verify Network Share & Locate Artifact] DONE"
+Write-Host "✅ [Step 5 — Verify Network Share & Locate Artifact] DONE"
 ```
 
 ---
 
-## §4 Copy Installer to QA Network Share
+## §6 Copy Installer to QA Network Share
 
 ```powershell
-Write-Host "🔄 [Step 5 — Copy to QA Network Share] IN PROGRESS..."
+Write-Host "🔄 [Step 6 — Copy to QA Network Share] IN PROGRESS..."
 
 $destinationDir = $env:BUILD_DESTINATION_PATH
 if (-not $destinationDir) { $destinationDir = "\\192.168.0.95\Kits\Unify\Customization" }
@@ -356,12 +404,12 @@ if (-not (Test-Path $destinationFile)) {
 }
 
 Write-Host "  ✅ Copied: $destinationFile ($([math]::Round((Get-Item $destinationFile).Length/1MB,1)) MB)"
-Write-Host "✅ [Step 5 — Copy to QA Network Share] DONE"
+Write-Host "✅ [Step 6 — Copy to QA Network Share] DONE"
 ```
 
 ---
 
-## §5 Upload to Dropbox + Get Shareable Link (OPTIONAL)
+## §7 Upload to Dropbox + Get Shareable Link (OPTIONAL)
 
 **Only execute when user explicitly requests `upload_to_dropbox = true`.**
 
@@ -417,7 +465,7 @@ $dropboxToken = $tokenResp.access_token
 **WHY chunked upload:** Single-request uploads fail for files >10MB over corporate VPN (connection forcibly closed). Use Dropbox upload sessions with 2-4MB chunks via `curl.exe --http1.1` for reliability.
 
 ```powershell
-Write-Host "🔄 [Step 6 — Dropbox Upload] IN PROGRESS..."
+Write-Host "🔄 [Step 7 — Dropbox Upload] IN PROGRESS..."
 
 # Step 0: Get fresh access token
 $refreshToken = [System.Environment]::GetEnvironmentVariable("DROPBOX_REFRESH_TOKEN","User")
@@ -426,7 +474,7 @@ $appSecret    = [System.Environment]::GetEnvironmentVariable("DROPBOX_APP_SECRET
 
 if (-not $refreshToken -or -not $appKey -or -not $appSecret) {
     Write-Error "❌ Dropbox env vars not set (DROPBOX_REFRESH_TOKEN, DROPBOX_APP_KEY, DROPBOX_APP_SECRET). Skipping."
-    Write-Host "⏭️ [Step 6 — Dropbox Upload] SKIPPED — no credentials"
+    Write-Host "⏭️ [Step 7 — Dropbox Upload] SKIPPED — no credentials"
     $dropboxLink = $null
 } else {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -538,7 +586,7 @@ if (-not $refreshToken -or -not $appKey -or -not $appSecret) {
 
     # Cleanup temp chunks
     Remove-Item $chunkDir -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Host "✅ [Step 6 — Dropbox Upload] DONE"
+    Write-Host "✅ [Step 7 — Dropbox Upload] DONE"
 }
 ```
 
@@ -554,14 +602,14 @@ if (-not $refreshToken -or -not $appKey -or -not $appSecret) {
 
 ---
 
-## §6 Change Jira Assignee + Transition to RFT
+## §8 Change Jira Assignee + Transition to RFT
 
 **Execute AFTER Dropbox upload (or after copy to QA if no upload), BEFORE Slack notification.**
 
 Change the Jira ticket assignee to the QA tester and transition the ticket to "Ready For Testing" (RFT).
 
 ```powershell
-Write-Host "🔄 [Step 7 — Jira Assignee + RFT] IN PROGRESS..."
+Write-Host "🔄 [Step 8 — Jira Assignee + RFT] IN PROGRESS..."
 
 $base64Auth = [Convert]::ToBase64String(
     [Text.Encoding]::ASCII.GetBytes("$($env:JIRA_EMAIL):$($env:JIRA_API_TOKEN)")
@@ -610,17 +658,17 @@ if ($rftTransition) {
     Write-Host "  → Ask user which transition to use, or skip."
 }
 
-Write-Host "✅ [Step 7 — Jira Assignee + RFT] DONE"
+Write-Host "✅ [Step 8 — Jira Assignee + RFT] DONE"
 ```
 
 ---
 
-## §7 Slack Notification
+## §9 Slack Notification
 
 **Execute AFTER Jira assignee/RFT change, BEFORE Jira comment.**
 
 ```powershell
-Write-Host "🔄 [Step 8 — Slack Notification] IN PROGRESS..."
+Write-Host "🔄 [Step 9 — Slack Notification] IN PROGRESS..."
 
 $slackToken   = $env:SLACK_BOT_TOKEN
 if (-not $slackToken) {
@@ -629,6 +677,10 @@ if (-not $slackToken) {
 $slackChannel = "<USER_PROVIDED_CHANNEL>"   # e.g. "#my-daily-update" — from user input
 
 if (-not $slackToken) {
+# Guard: send QA Slack notification ONCE only
+if ($qaSlackSent -eq $true) {
+    Write-Host "  Skip: QA Slack already sent this run — no duplicate"
+} else {
     Write-Error "❌ SLACK_BOT_TOKEN not set. Printing message for manual post:"
 } else {
     $slackText = @"
@@ -660,12 +712,14 @@ $jiraLink
     }
 }
 
-Write-Host "✅ [Step 8 — Slack Notification] DONE"
+}  # end qaSlackSent guard
+$qaSlackSent = $true
+Write-Host "✅ [Step 9 — Slack Notification] DONE"
 ```
 
 ---
 
-## §8 Structured QA Testing Jira Comment (LAST STEP)
+## §10 Structured QA Testing Jira Comment (LAST STEP)
 
 **This is the FINAL step in the pipeline. Execute AFTER Slack notification.**
 
@@ -780,7 +834,7 @@ CC: @Hitesh Devashrayee @Arvind Chavan
 ### 8.5 — PowerShell Fallback (posting)
 
 ```powershell
-Write-Host "🔄 [Step 9 — QA Testing Jira Comment] IN PROGRESS..."
+Write-Host "🔄 [Step 10 — QA Testing Jira Comment] IN PROGRESS..."
 
 $base64Auth = [Convert]::ToBase64String(
     [Text.Encoding]::ASCII.GetBytes("$($env:JIRA_EMAIL):$($env:JIRA_API_TOKEN)")
@@ -806,7 +860,7 @@ Invoke-RestMethod `
     -Body $body
 
 Write-Host "  ✅ QA Testing Jira comment posted on $jiraTicketId"
-Write-Host "✅ [Step 9 — QA Testing Jira Comment] DONE"
+Write-Host "✅ [Step 10 — QA Testing Jira Comment] DONE"
 ```
 
 ---

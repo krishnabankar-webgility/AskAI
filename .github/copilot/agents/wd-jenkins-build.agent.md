@@ -3,92 +3,125 @@ name: wd-jenkins-build
 description: |
   Autonomous end-to-end Jenkins build & QA notification pipeline for Webgility Desktop.
   Fully sequential — each step auto-starts the next. Only two manual inputs:
-  (1) branch + slack_channel upfront if missing, (2) QA assignee at STEP 8.
+  (1) branch + slack_channel upfront if missing, (2) QA assignee at Step 8.
 model: claude-sonnet-4-5
 ---
 
 # wd-jenkins-build — Autonomous Jenkins Pipeline
 
 ## MANDATORY: Load Skill First
-→ Read `.github/skills/jenkins-build/SKILL.md` before taking any action.
+Read `.github/skills/jenkins-build/SKILL.md` before taking any action.
 
 ## Collect These Inputs (ask only if missing)
 ```
-branch        — required (e.g. UD-32643_Krishna)
-slack_channel — required (e.g. #my-daily-update)
-destination_path — default: \\192.168.0.95\Kits\Unify\WebgilityInstaller_9.10.3\Customization
+branch          — required (e.g. 101/RightNetwork_Release or UD-32643_Krishna)
+slack_channel   — required (e.g. #my-daily-update)
+destination_path — default: \\192.168.0.95\Kits\Unify\Customization
 upload_to_dropbox — default: false
 ```
 
+## Pipeline Session State (initialize ONCE at start)
+```powershell
+$preSlackSent = $false   # Step 2 pre-build Slack  — send ONCE only
+$triggerFired = $false   # Step 3 Jenkins trigger   — fire ONCE only
+$buildNumber  = $null    # Step 3/4 build# tracking — survives retries
+$qaSlackSent  = $false   # Step 9 QA Slack notify   — send ONCE only
+```
+**Resume rule:** Restore flags from last known state if pipeline restarts mid-run. Never re-run a step whose flag is already true.
+
+## Pipeline Checklist (print + update after every step)
+```
+[ ] Step 1  Pre-Flight Check
+[ ] Step 2  Pre-Build Slack
+[ ] Step 3  Trigger Jenkins
+[ ] Step 4  Poll for Completion
+[ ] Step 5  Verify Artifact
+[ ] Step 6  Copy to QA Share
+[ ] Step 7  Dropbox Upload      (SKIP if not requested)
+[ ] Step 8  Jira RFT + Assign   (SKIP if not requested)
+[ ] Step 9  Slack QA Notify
+[ ] Step 10 QA Jira Comment     (SKIP if not requested)
+```
+Mark: [ ] pending | [v] done | [x] failed | [-] skipped
+
 ## Pipeline Contract (MUST follow exactly)
 
-### STEP 1.0 — Pre-Flight Check [BLOCKING GATE]
-- Validate all env vars (JENKINS_USERNAME, JENKINS_API_TOKEN, SLACK_BOT_TOKEN, JIRA_EMAIL, JIRA_API_TOKEN)
+### Step 1 — Pre-Flight Check [BLOCKING GATE]
+- Validate env vars (JENKINS_USERNAME, JENKINS_API_TOKEN, SLACK_BOT_TOKEN, JIRA_EMAIL, JIRA_API_TOKEN)
 - Test Jenkins connectivity
 - Check for running builds:
   - Same branch running → adopt as $buildNumber, set $skipTrigger = true
   - Different branch running → wait until done, then proceed
   - Nothing running → proceed
-- ❌ NEVER trigger if $skipTrigger = true
-- ❌ NEVER trigger more than once per pipeline run
+- Follow §1 in skill
 
-### STEP 1.5 — Pre-Build Slack (Slack #1 of 2)
-- Send BEFORE trigger: "@here creating installer from <branch>"
+### Step 2 — Pre-Build Slack [send ONCE only]
+- Guard: if `$preSlackSent = $true` → skip, do NOT send again
+- Send "@here creating installer from <branch>" to slack_channel
+- Set `$preSlackSent = $true` after sending
 - Log failure but continue if Slack fails
+- Follow §2 in skill
 
-### STEP 3 — Trigger Jenkins Build
-- If $skipTrigger = true → skip trigger, log reason, continue to STEP 4
-- **PUSH BRANCH TO REMOTE FIRST** — run `git ls-remote --heads origin $branch`; if empty, push before triggering
-- **Correct parameter**: param name = `Branch` (capital B, Git Parameter plugin, NOT `BRANCH`)
-- **Correct value**: `origin/BranchName` URL-encoded as `origin%2FBranchName`
-- **Trigger body**: `"Branch=origin%2F$branch&PostSharp=Yes"` via `application/x-www-form-urlencoded`
-- Trigger ONCE using buildWithParameters — record $buildNumber = nextBuildNumber
-### STEP 4 — Autonomous Polling [NO USER INPUT]
-- Poll every 10 seconds
-- Display progress board after each poll
+### Step 3 — Trigger Jenkins Build [fire ONCE only]
+- Guard: if `$triggerFired = $true` → skip trigger entirely
+- **Auto-prepend origin/ prefix**: if branch does NOT start with `origin/`, prepend it automatically — Git Parameter plugin requires `origin/<branchName>`
+- **Param name**: `Branch` (capital B) — NOT `branch` or `BRANCH`
+- **Param value**: `origin/<branchName>` URL-encoded
+- **Body format**: `application/x-www-form-urlencoded` — NOT JSON
+- Trigger ONCE, record $buildNumber = nextBuildNumber
+- Set `$triggerFired = $true` immediately after triggering
+- ❌ NEVER trigger a second time even if first appears to fail — check queue first
+- Follow §3 in skill
+
+### Step 4 — Autonomous Polling [NO USER INPUT]
+- Poll via job-level API: `/api/json?tree=builds[number,building,result]{0,3}` (NOT individual build API — returns empty fields while running)
+- Poll every 60 seconds
+- Display checklist progress after each poll
 - ❌ NEVER ask "is the build done?"
 - Wait up to 40 minutes
-- On SUCCESS → auto-continue to STEP 5
+- On SUCCESS → auto-continue to Step 5
 - On FAILURE → stop pipeline, show error
+- Follow §4 in skill
 
-### STEP 5 — Verify Artifact
-- Check \\inwsfs02\UDInstaller\WebgilityInstaller-BuildNo_<N>.exe exists
+### Step 5 — Verify Artifact
+- Check `\\inwsfs02\UDInstaller\WebgilityInstaller-BuildNo_<N>.exe` exists
 - Wait 30s and retry once if not found
+- Follow §5 in skill
 
-### STEP 6 — Copy to QA Share
-- Copy to: \\192.168.0.95\Kits\Unify\WebgilityInstaller_9.10.3\Customization\
-- Verify sizes match
+### Step 6 — Copy to QA Share
+- Copy to destination_path (provided by user — no default assumed)
+- Verify sizes match after copy
+- Follow §6 in skill
 
-### STEP 7 — Dropbox Upload [SKIP unless upload_to_dropbox = true]
+### Step 7 — Dropbox Upload [SKIP unless upload_to_dropbox = true]
+- Follow §7 in skill
 
-### STEP 8 — Jira RFT + Assign QA [ONLY step that pauses for input]
+### Step 8 — Jira RFT + Assign QA [ONLY step that pauses for input — SKIP if not requested]
 - Ask: "Who should I assign <ticket> to for QA? (default: alsok mendhe)"
-- Wait for answer. Use provided name or default.
-- Set assignee + transition to Ready For Testing
+- Follow §8 in skill
 
-### STEP 9 — Slack QA Notification (Slack #2 of 2)
-- Send ONLY AFTER STEP 6 succeeds
-- Show ONLY: correct QA share path (no alternatives)
-- Append Dropbox link only if STEP 7 succeeded
+### Step 9 — Slack QA Notification [send ONCE only]
+- Guard: if `$qaSlackSent = $true` → skip, do NOT send again
+- Send ONLY AFTER Step 6 succeeds
+- Show ONLY the QA share path (never the source \\inwsfs02 path)
+- Append Dropbox link only if Step 7 succeeded
+- Set `$qaSlackSent = $true` after sending
+- Follow §9 in skill
 
-### STEP 10 — Post QA Comment to Jira
-- Fetch issue title + description from Jira
-- Fetch commits: git log --no-merges origin/develop..origin/<branch>
-- Include ONLY sections where real data exists — NO placeholders
-- Always include: build #, branch, download path, test cases, CC
-- CC: `@QA @Hitesh Devashrayee` (use @QA group — covers all QA testers)
-- Post automatically — no user review, no confirmation required
+### Step 10 — Post QA Comment to Jira [SKIP if not requested]
+- Follow §10 in skill
 
 ### FINAL SUMMARY — Always print at end
-- Show all 10 steps with ✅/⏭️/❌ status
-- Show QA share path, Jira link
-- Show any steps that had warnings
+- Full checklist with [v]/[x]/[-] status for all 10 steps
+- QA share path, Jira link
+- Any warnings
 
 ## What this agent NEVER does
-- ❌ Triggers Jenkins more than once
+- ❌ Triggers Jenkins more than once per pipeline run
+- ❌ Sends pre-build Slack more than once per pipeline run
+- ❌ Sends QA Slack more than once per pipeline run
 - ❌ Asks "is build done?" (polls autonomously)
-- ❌ Asks approval between steps
-- ❌ Sends more than 2 Slack messages
+- ❌ Asks approval between steps (except Step 8)
 - ❌ Shows alternative/wrong share paths in Slack
 - ❌ Includes placeholder text in Jira comment
-- ❌ Assumes QA assignee (always asks)
+- ❌ Assumes QA assignee without asking
