@@ -367,3 +367,7 @@ local/ephemeral/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# transient agent files
+.grafana_creds.tmp
+.tmp_render/
+.live-backup-*.json

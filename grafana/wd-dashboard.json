@@ -56,12 +56,12 @@
           "x": 0,
           "y": 0,
           "w": 24,
-          "h": 3
+          "h": 4
         },
         "links": [],
         "options": {
           "mode": "markdown",
-          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Use the **time-range picker** (top-right); default is the report window *yesterday 09:00 \u2192 today 09:00 IST*. Error Rate = *Errors / Total*. Every panel deep-links to the matching **Kibana Discover** view with the same time range."
+          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Pick any window with the **time-range picker** (top-right); default = report window *yesterday 09:00 \u2192 today 09:00 IST*. Every panel deep-links to the matching **Kibana Discover** view.\n\n**Expand a section below to load it.** Detail sections are collapsed by default so the cluster isn't hit by all panels at once. *For an always-open, instant dashboard, a Grafana admin should set the Elasticsearch-WD datasource to a time-based index pattern (`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 see `docs/grafana-wd-dashboard.md`.*"
         },
         "fieldConfig": {
           "defaults": {},
@@ -75,7 +75,7 @@
         "collapsed": false,
         "gridPos": {
           "x": 0,
-          "y": 3,
+          "y": 4,
           "w": 24,
           "h": 1
         },
@@ -83,18 +83,18 @@
       },
       {
         "id": 3,
-        "title": "Total Events",
+        "title": "Events by Level",
         "type": "stat",
-        "description": "",
+        "description": "Counts per level (Total = sum of tiles). Single query over all events.",
         "datasource": {
           "type": "elasticsearch",
           "uid": "QEYi3BIDz"
         },
         "gridPos": {
           "x": 0,
-          "y": 4,
-          "w": 4,
-          "h": 4
+          "y": 5,
+          "w": 18,
+          "h": 5
         },
         "links": [
           {
@@ -106,15 +106,15 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "sum"
+              "lastNotNull"
             ],
-            "fields": "",
-            "values": false
+            "fields": "/^Count$/",
+            "values": true
           },
-          "orientation": "auto",
-          "textMode": "value",
+          "orientation": "horizontal",
+          "textMode": "value_and_name",
           "colorMode": "background",
-          "graphMode": "area",
+          "graphMode": "none",
           "justifyMode": "auto"
         },
         "fieldConfig": {
@@ -145,10 +145,12 @@
             "bucketAggs": [
               {
                 "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
+                "type": "terms",
+                "field": "level.keyword",
                 "settings": {
-                  "interval": "1h",
+                  "size": "10",
+                  "order": "desc",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -160,18 +162,18 @@
       },
       {
         "id": 4,
-        "title": "Errors",
+        "title": "Error Subscribers",
         "type": "stat",
-        "description": "",
+        "description": "Distinct subscriberID with at least one Error",
         "datasource": {
           "type": "elasticsearch",
           "uid": "QEYi3BIDz"
         },
         "gridPos": {
-          "x": 4,
-          "y": 4,
-          "w": 4,
-          "h": 4
+          "x": 18,
+          "y": 5,
+          "w": 6,
+          "h": 5
         },
         "links": [
           {
@@ -183,15 +185,15 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "sum"
+              "count"
             ],
-            "fields": "",
+            "fields": "/^Count$/",
             "values": false
           },
-          "orientation": "auto",
+          "orientation": "horizontal",
           "textMode": "value",
           "colorMode": "background",
-          "graphMode": "area",
+          "graphMode": "none",
           "justifyMode": "auto"
         },
         "fieldConfig": {
@@ -199,7 +201,7 @@
             "unit": "short",
             "color": {
               "mode": "fixed",
-              "fixedColor": "orange"
+              "fixedColor": "purple"
             },
             "mappings": []
           },
@@ -222,10 +224,12 @@
             "bucketAggs": [
               {
                 "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
+                "type": "terms",
+                "field": "subscriberID",
                 "settings": {
-                  "interval": "1h",
+                  "size": "5000",
+                  "order": "desc",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -237,2703 +241,2400 @@
       },
       {
         "id": 5,
-        "title": "Fatals",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
+        "type": "row",
+        "title": "\u23f1 Error / Fatal / Warning Timeline",
+        "collapsed": true,
         "gridPos": {
-          "x": 8,
-          "y": 4,
-          "w": 4,
-          "h": 4
+          "x": 0,
+          "y": 10,
+          "w": 24,
+          "h": 1
         },
-        "links": [
+        "panels": [
           {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "red"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
+            "id": 6,
+            "title": "Events over time by level",
+            "type": "timeseries",
+            "description": "Stacked counts by level across the selected window.",
             "datasource": {
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "level.keyword:\"Fatal\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "C"
-          }
-        ]
-      },
-      {
-        "id": 6,
-        "title": "Warnings",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 4,
-          "w": 4,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Warning%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "yellow"
+            "gridPos": {
+              "x": 0,
+              "y": 11,
+              "w": 24,
+              "h": 8
             },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20or%20level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "legend": {
+                "calcs": [
+                  "sum"
+                ],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "multi",
+                "sort": "desc"
+              }
             },
-            "query": "level.keyword:\"Warning\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "drawStyle": "bars",
+                  "fillOpacity": 70,
+                  "lineWidth": 1,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "normal"
+                  },
+                  "axisPlacement": "auto"
+                },
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "unit": "short"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byFrameRefID",
+                    "options": "A"
+                  },
+                  "properties": [
+                    {
+                      "id": "color",
+                      "value": {
+                        "mode": "fixed",
+                        "fixedColor": "orange"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byFrameRefID",
+                    "options": "B"
+                  },
+                  "properties": [
+                    {
+                      "id": "color",
+                      "value": {
+                        "mode": "fixed",
+                        "fixedColor": "red"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byFrameRefID",
+                    "options": "C"
+                  },
+                  "properties": [
+                    {
+                      "id": "color",
+                      "value": {
+                        "mode": "fixed",
+                        "fixedColor": "yellow"
+                      }
+                    }
+                  ]
                 }
+              ]
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Error\"",
+                "alias": "Error",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "auto",
+                      "min_doc_count": "0"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "A"
+              },
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Fatal\"",
+                "alias": "Fatal",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "auto",
+                      "min_doc_count": "0"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "B"
+              },
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Warning\"",
+                "alias": "Warning",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "auto",
+                      "min_doc_count": "0"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "C"
               }
-            ],
-            "timeField": "timestamp",
-            "refId": "D"
+            ]
           }
         ]
       },
       {
         "id": 7,
-        "title": "Info",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 16,
-          "y": 4,
-          "w": 4,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Info%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "green"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Info\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "E"
-          }
-        ]
-      },
-      {
-        "id": 8,
-        "title": "Error Subscribers",
-        "type": "stat",
-        "description": "Distinct subscriberID with at least one Error",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 20,
-          "y": 4,
-          "w": 4,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "count"
-            ],
-            "fields": "/^Count$/",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "purple"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "5000",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "F"
-          }
-        ]
-      },
-      {
-        "id": 9,
-        "type": "row",
-        "title": "\u23f1 Error / Fatal / Warning Timeline",
-        "collapsed": false,
-        "gridPos": {
-          "x": 0,
-          "y": 8,
-          "w": 24,
-          "h": 1
-        },
-        "panels": []
-      },
-      {
-        "id": 10,
-        "title": "Events over time by level",
-        "type": "timeseries",
-        "description": "Stacked counts by level across the selected window (bucketed automatically).",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 0,
-          "y": 9,
-          "w": 24,
-          "h": 8
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20or%20level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "legend": {
-            "calcs": [
-              "sum"
-            ],
-            "displayMode": "table",
-            "placement": "right",
-            "showLegend": true
-          },
-          "tooltip": {
-            "mode": "multi",
-            "sort": "desc"
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "drawStyle": "bars",
-              "fillOpacity": 70,
-              "lineWidth": 1,
-              "stacking": {
-                "group": "A",
-                "mode": "normal"
-              },
-              "axisPlacement": "auto"
-            },
-            "color": {
-              "mode": "palette-classic"
-            },
-            "unit": "short"
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byFrameRefID",
-                "options": "A"
-              },
-              "properties": [
-                {
-                  "id": "color",
-                  "value": {
-                    "mode": "fixed",
-                    "fixedColor": "orange"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byFrameRefID",
-                "options": "B"
-              },
-              "properties": [
-                {
-                  "id": "color",
-                  "value": {
-                    "mode": "fixed",
-                    "fixedColor": "red"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byFrameRefID",
-                "options": "C"
-              },
-              "properties": [
-                {
-                  "id": "color",
-                  "value": {
-                    "mode": "fixed",
-                    "fixedColor": "yellow"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Error\"",
-            "alias": "Error",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "auto",
-                  "min_doc_count": "0"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Fatal\"",
-            "alias": "Fatal",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "auto",
-                  "min_doc_count": "0"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "B"
-          },
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Warning\"",
-            "alias": "Warning",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "auto",
-                  "min_doc_count": "0"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "C"
-          }
-        ]
-      },
-      {
-        "id": 11,
         "type": "row",
         "title": "\ud83e\udde9 Error Breakdown",
-        "collapsed": false,
+        "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 17,
+          "y": 19,
           "w": 24,
           "h": 1
         },
-        "panels": []
+        "panels": [
+          {
+            "id": 8,
+            "title": "Errors by Module",
+            "type": "bargauge",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 0,
+              "y": 20,
+              "w": 6,
+              "h": 9
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "displayMode": "gradient",
+              "orientation": "horizontal",
+              "showUnfilled": true,
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": true
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                },
+                "unit": "short",
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "orange",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Error\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "module.keyword",
+                    "settings": {
+                      "size": "12",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "C"
+              }
+            ]
+          },
+          {
+            "id": 9,
+            "title": "Errors by Store",
+            "type": "bargauge",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 6,
+              "y": 20,
+              "w": 6,
+              "h": 9
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "displayMode": "gradient",
+              "orientation": "horizontal",
+              "showUnfilled": true,
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": true
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                },
+                "unit": "short",
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "purple",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Error\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "store.keyword",
+                    "settings": {
+                      "size": "12",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "D"
+              }
+            ]
+          },
+          {
+            "id": 10,
+            "title": "Errors by Tag",
+            "type": "bargauge",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 12,
+              "y": 20,
+              "w": 6,
+              "h": 9
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "displayMode": "gradient",
+              "orientation": "horizontal",
+              "showUnfilled": true,
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": true
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                },
+                "unit": "short",
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "blue",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Error\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "tag.keyword",
+                    "settings": {
+                      "size": "12",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "E"
+              }
+            ]
+          },
+          {
+            "id": 11,
+            "title": "Errors by Process",
+            "type": "bargauge",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 18,
+              "y": 20,
+              "w": 6,
+              "h": 9
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "displayMode": "gradient",
+              "orientation": "horizontal",
+              "showUnfilled": true,
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": true
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                },
+                "unit": "short",
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Error\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "process.keyword",
+                    "settings": {
+                      "size": "12",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "F"
+              }
+            ]
+          }
+        ]
       },
       {
         "id": 12,
-        "title": "Errors by Module",
-        "type": "bargauge",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
+        "type": "row",
+        "title": "\ud83d\udd1d Top Error Messages & Subscribers",
+        "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 18,
-          "w": 6,
-          "h": 9
+          "y": 29,
+          "w": 24,
+          "h": 1
         },
-        "links": [
+        "panels": [
           {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "displayMode": "gradient",
-          "orientation": "horizontal",
-          "showUnfilled": true,
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": true
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "orange"
-            },
-            "unit": "short",
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "orange",
-                  "value": null
-                }
-              ]
-            }
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
+            "id": 13,
+            "title": "Top Error Messages",
+            "type": "table",
+            "description": "",
             "datasource": {
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "module.keyword",
-                "settings": {
-                  "size": "12",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "G"
-          }
-        ]
-      },
-      {
-        "id": 13,
-        "title": "Errors by Store",
-        "type": "bargauge",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 6,
-          "y": 18,
-          "w": 6,
-          "h": 9
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "displayMode": "gradient",
-          "orientation": "horizontal",
-          "showUnfilled": true,
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": true
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "purple"
+            "gridPos": {
+              "x": 0,
+              "y": 30,
+              "w": 12,
+              "h": 10
             },
-            "unit": "short",
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "showHeader": true,
+              "footer": {
+                "show": false
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "filterable": true
+                },
+                "mappings": []
+              },
+              "overrides": [
                 {
-                  "color": "purple",
-                  "value": null
+                  "matcher": {
+                    "id": "byName",
+                    "options": "message.keyword"
+                  },
+                  "properties": [
+                    {
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                          "targetBlank": true
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
-            }
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Error\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "message.keyword",
+                    "settings": {
+                      "size": "15",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "G"
+              }
+            ],
+            "transformations": [
+              {
+                "id": "sortBy",
+                "options": {
+                  "sort": [
+                    {
+                      "field": "Count",
+                      "desc": true
+                    }
+                  ]
+                }
+              }
+            ]
           },
-          "overrides": []
-        },
-        "targets": [
           {
+            "id": 14,
+            "title": "Top Error Subscribers",
+            "type": "table",
+            "description": "",
             "datasource": {
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "store.keyword",
-                "settings": {
-                  "size": "12",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "H"
-          }
-        ]
-      },
-      {
-        "id": 14,
-        "title": "Errors by Tag",
-        "type": "bargauge",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 18,
-          "w": 6,
-          "h": 9
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "displayMode": "gradient",
-          "orientation": "horizontal",
-          "showUnfilled": true,
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": true
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "blue"
+            "gridPos": {
+              "x": 12,
+              "y": 30,
+              "w": 12,
+              "h": 10
             },
-            "unit": "short",
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "showHeader": true,
+              "footer": {
+                "show": false
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "filterable": true
+                },
+                "mappings": []
+              },
+              "overrides": [
                 {
-                  "color": "blue",
-                  "value": null
+                  "matcher": {
+                    "id": "byName",
+                    "options": "subscriberID"
+                  },
+                  "properties": [
+                    {
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open this row in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
+                          "targetBlank": true
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
-            }
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
             },
-            "query": "level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
+            "targets": [
               {
-                "id": "1",
-                "type": "count"
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Error\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "15",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "H"
               }
             ],
-            "bucketAggs": [
+            "transformations": [
               {
-                "id": "2",
-                "type": "terms",
-                "field": "tag.keyword",
-                "settings": {
-                  "size": "12",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
+                "id": "sortBy",
+                "options": {
+                  "sort": [
+                    {
+                      "field": "Count",
+                      "desc": true
+                    }
+                  ]
                 }
               }
-            ],
-            "timeField": "timestamp",
-            "refId": "I"
+            ]
           }
         ]
       },
       {
         "id": 15,
-        "title": "Errors by Process",
-        "type": "bargauge",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
+        "type": "row",
+        "title": "\ud83d\udc80 Fatal Events",
+        "collapsed": true,
         "gridPos": {
-          "x": 18,
-          "y": 18,
-          "w": 6,
-          "h": 9
+          "x": 0,
+          "y": 40,
+          "w": 24,
+          "h": 1
         },
-        "links": [
+        "panels": [
           {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "displayMode": "gradient",
-          "orientation": "horizontal",
-          "showUnfilled": true,
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": true
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "green"
-            },
-            "unit": "short",
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            }
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
+            "id": 16,
+            "title": "Fatal by Message",
+            "type": "table",
+            "description": "",
             "datasource": {
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "process.keyword",
-                "settings": {
-                  "size": "12",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "J"
-          }
-        ]
-      },
-      {
-        "id": 16,
-        "type": "row",
-        "title": "\ud83d\udd1d Top Error Messages & Subscribers",
-        "collapsed": false,
-        "gridPos": {
-          "x": 0,
-          "y": 27,
-          "w": 24,
-          "h": 1
-        },
-        "panels": []
-      },
-      {
-        "id": 17,
-        "title": "Top Error Messages",
-        "type": "table",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 0,
-          "y": 28,
-          "w": 12,
-          "h": 10
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "showHeader": true,
-          "footer": {
-            "show": false
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "filterable": true
+            "gridPos": {
+              "x": 0,
+              "y": 41,
+              "w": 12,
+              "h": 8
             },
-            "mappings": []
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "message.keyword"
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "showHeader": true,
+              "footer": {
+                "show": false
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "filterable": true
+                },
+                "mappings": []
               },
-              "properties": [
+              "overrides": [
                 {
-                  "id": "links",
-                  "value": [
+                  "matcher": {
+                    "id": "byName",
+                    "options": "message.keyword"
+                  },
+                  "properties": [
                     {
-                      "title": "Open in Kibana",
-                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-                      "targetBlank": true
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
+                          "targetBlank": true
+                        }
+                      ]
                     }
                   ]
                 }
               ]
-            }
-          ]
-        },
-        "targets": [
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Fatal\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "message.keyword",
+                    "settings": {
+                      "size": "15",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "I"
+              }
+            ],
+            "transformations": [
+              {
+                "id": "sortBy",
+                "options": {
+                  "sort": [
+                    {
+                      "field": "Count",
+                      "desc": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
           {
+            "id": 17,
+            "title": "Fatal by Store",
+            "type": "piechart",
+            "description": "",
             "datasource": {
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
+            "gridPos": {
+              "x": 12,
+              "y": 41,
+              "w": 12,
+              "h": 8
+            },
+            "links": [
               {
-                "id": "1",
-                "type": "count"
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
               }
             ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "message.keyword",
-                "settings": {
-                  "size": "15",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "K"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "sortBy",
             "options": {
-              "sort": [
-                {
-                  "field": "Count",
-                  "desc": true
+              "pieType": "donut",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "values": true
+              },
+              "legend": {
+                "displayMode": "table",
+                "placement": "right",
+                "values": [
+                  "value",
+                  "percent"
+                ]
+              },
+              "tooltip": {
+                "mode": "single"
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "mappings": [],
+                "custom": {
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  }
                 }
-              ]
-            }
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "level.keyword:\"Fatal\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "store.keyword",
+                    "settings": {
+                      "size": "10",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "J"
+              }
+            ]
           }
         ]
       },
       {
         "id": 18,
-        "title": "Top Error Subscribers",
-        "type": "table",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 28,
-          "w": 12,
-          "h": 10
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "showHeader": true,
-          "footer": {
-            "show": false
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "filterable": true
-            },
-            "mappings": []
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "subscriberID"
-              },
-              "properties": [
-                {
-                  "id": "links",
-                  "value": [
-                    {
-                      "title": "Open this row in Kibana",
-                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
-                      "targetBlank": true
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "15",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "L"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "sortBy",
-            "options": {
-              "sort": [
-                {
-                  "field": "Count",
-                  "desc": true
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": 19,
-        "type": "row",
-        "title": "\ud83d\udc80 Fatal Events",
-        "collapsed": false,
-        "gridPos": {
-          "x": 0,
-          "y": 38,
-          "w": 24,
-          "h": 1
-        },
-        "panels": []
-      },
-      {
-        "id": 20,
-        "title": "Fatal by Message",
-        "type": "table",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 0,
-          "y": 39,
-          "w": 12,
-          "h": 8
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "showHeader": true,
-          "footer": {
-            "show": false
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "filterable": true
-            },
-            "mappings": []
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "message.keyword"
-              },
-              "properties": [
-                {
-                  "id": "links",
-                  "value": [
-                    {
-                      "title": "Open in Kibana",
-                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
-                      "targetBlank": true
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Fatal\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "message.keyword",
-                "settings": {
-                  "size": "15",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "M"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "sortBy",
-            "options": {
-              "sort": [
-                {
-                  "field": "Count",
-                  "desc": true
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": 21,
-        "title": "Fatal by Store",
-        "type": "piechart",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 39,
-          "w": 12,
-          "h": 8
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "pieType": "donut",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "values": true
-          },
-          "legend": {
-            "displayMode": "table",
-            "placement": "right",
-            "values": [
-              "value",
-              "percent"
-            ]
-          },
-          "tooltip": {
-            "mode": "single"
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "mappings": [],
-            "custom": {
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              }
-            }
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "level.keyword:\"Fatal\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "store.keyword",
-                "settings": {
-                  "size": "10",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "N"
-          }
-        ]
-      },
-      {
-        "id": 22,
         "type": "row",
         "title": "\ud83d\udcb3 Shopify Payout Performance",
-        "collapsed": false,
+        "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 47,
+          "y": 49,
           "w": 24,
           "h": 1
         },
-        "panels": []
-      },
-      {
-        "id": 23,
-        "title": "Payouts Processed",
-        "type": "stat",
-        "description": "Sum of processedRecords for Shopify PayoutPosting",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 0,
-          "y": 48,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
+        "panels": [
           {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "green"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
+            "id": 19,
+            "title": "Payouts Processed",
+            "type": "stat",
+            "description": "Sum of processedRecords for Shopify PayoutPosting",
             "datasource": {
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
-            "alias": "",
-            "metrics": [
+            "gridPos": {
+              "x": 0,
+              "y": 50,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
               {
-                "id": "1",
-                "type": "sum",
-                "field": "processedRecords"
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
               }
             ],
-            "bucketAggs": [
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "sum"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
               {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "sum",
+                    "field": "processedRecords"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "K"
+              }
+            ]
+          },
+          {
+            "id": 20,
+            "title": "Payout Log Events",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 6,
+              "y": 50,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "sum"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "L"
+              }
+            ]
+          },
+          {
+            "id": 21,
+            "title": "Payout Subscribers",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 12,
+              "y": 50,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "count"
+                ],
+                "fields": "/^Count$/",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "5000",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "M"
+              }
+            ]
+          },
+          {
+            "id": 22,
+            "title": "Avg Rate (rec/s)",
+            "type": "stat",
+            "description": "Mean of per-hour averagePerSecond",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 18,
+              "y": 50,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22%20AND%20averagePerSecond%3A%3E0'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "mean"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\" AND averagePerSecond:>0",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "avg",
+                    "field": "averagePerSecond"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "N"
+              }
+            ]
+          },
+          {
+            "id": 23,
+            "title": "Top Payout Subscribers (by records)",
+            "type": "table",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 0,
+              "y": 54,
+              "w": 24,
+              "h": 8
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "showHeader": true,
+              "footer": {
+                "show": false
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "filterable": true
+                },
+                "mappings": []
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "subscriberID"
+                  },
+                  "properties": [
+                    {
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open this row in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
+                          "targetBlank": true
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "sum",
+                    "field": "processedRecords"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "10",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "O"
+              }
+            ],
+            "transformations": [
+              {
+                "id": "sortBy",
+                "options": {
+                  "sort": [
+                    {
+                      "field": "Sum",
+                      "desc": true
+                    }
+                  ]
                 }
               }
-            ],
-            "timeField": "timestamp",
-            "refId": "O"
+            ]
           }
         ]
       },
       {
         "id": 24,
-        "title": "Payout Log Events",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 6,
-          "y": 48,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "blue"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "P"
-          }
-        ]
-      },
-      {
-        "id": 25,
-        "title": "Payout Subscribers",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 48,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "count"
-            ],
-            "fields": "/^Count$/",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "purple"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "5000",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "Q"
-          }
-        ]
-      },
-      {
-        "id": 26,
-        "title": "Avg Rate (rec/s)",
-        "type": "stat",
-        "description": "Mean of per-hour averagePerSecond",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 18,
-          "y": 48,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22%20AND%20averagePerSecond%3A%3E0'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "mean"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "orange"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\" AND averagePerSecond:>0",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "avg",
-                "field": "averagePerSecond"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "R"
-          }
-        ]
-      },
-      {
-        "id": 27,
-        "title": "Top Payout Subscribers (by records)",
-        "type": "table",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
+        "type": "row",
+        "title": "\ud83d\uded2 Amazon Settlement Report",
+        "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 52,
+          "y": 62,
           "w": 24,
-          "h": 8
+          "h": 1
         },
-        "links": [
+        "panels": [
           {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'store.keyword%3A%22Shopify%22%20AND%20module.keyword%3A%22PayoutPosting%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "showHeader": true,
-          "footer": {
-            "show": false
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "filterable": true
+            "id": 25,
+            "title": "Settlement Events",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
             },
-            "mappings": []
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "subscriberID"
+            "gridPos": {
+              "x": 0,
+              "y": 63,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "sum"
+                ],
+                "fields": "",
+                "values": false
               },
-              "properties": [
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "P"
+              }
+            ]
+          },
+          {
+            "id": 26,
+            "title": "Settlement Errors",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 6,
+              "y": 63,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "sum"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\" AND level.keyword:\"Error\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "Q"
+              }
+            ]
+          },
+          {
+            "id": 27,
+            "title": "Records Processed",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 12,
+              "y": 63,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "sum"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "sum",
+                    "field": "processedRecords"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "R"
+              }
+            ]
+          },
+          {
+            "id": 28,
+            "title": "Affected Subscribers",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 18,
+              "y": 63,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "count"
+                ],
+                "fields": "/^Count$/",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "5000",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "S"
+              }
+            ]
+          },
+          {
+            "id": 29,
+            "title": "Top Settlement Subscribers",
+            "type": "table",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 0,
+              "y": 67,
+              "w": 24,
+              "h": 8
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "showHeader": true,
+              "footer": {
+                "show": false
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "filterable": true
+                },
+                "mappings": []
+              },
+              "overrides": [
                 {
-                  "id": "links",
-                  "value": [
+                  "matcher": {
+                    "id": "byName",
+                    "options": "subscriberID"
+                  },
+                  "properties": [
                     {
-                      "title": "Open this row in Kibana",
-                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
-                      "targetBlank": true
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open this row in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
+                          "targetBlank": true
+                        }
+                      ]
                     }
                   ]
                 }
               ]
-            }
-          ]
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
             },
-            "query": "store.keyword:\"Shopify\" AND module.keyword:\"PayoutPosting\"",
-            "alias": "",
-            "metrics": [
+            "targets": [
               {
-                "id": "1",
-                "type": "sum",
-                "field": "processedRecords"
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "10",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "T"
               }
             ],
-            "bucketAggs": [
+            "transformations": [
               {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "10",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
+                "id": "sortBy",
+                "options": {
+                  "sort": [
+                    {
+                      "field": "Count",
+                      "desc": true
+                    }
+                  ]
                 }
               }
-            ],
-            "timeField": "timestamp",
-            "refId": "S"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "sortBy",
-            "options": {
-              "sort": [
-                {
-                  "field": "Sum",
-                  "desc": true
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": 28,
-        "type": "row",
-        "title": "\ud83d\uded2 Amazon Settlement Report",
-        "collapsed": false,
-        "gridPos": {
-          "x": 0,
-          "y": 60,
-          "w": 24,
-          "h": 1
-        },
-        "panels": []
-      },
-      {
-        "id": 29,
-        "title": "Settlement Events",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 0,
-          "y": 61,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "blue"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"AmazonSettlementReport\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "T"
+            ]
           }
         ]
       },
       {
         "id": 30,
-        "title": "Settlement Errors",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 6,
-          "y": 61,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "red"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"AmazonSettlementReport\" AND level.keyword:\"Error\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "U"
-          }
-        ]
-      },
-      {
-        "id": 31,
-        "title": "Records Processed",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 61,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "green"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"AmazonSettlementReport\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "sum",
-                "field": "processedRecords"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "V"
-          }
-        ]
-      },
-      {
-        "id": 32,
-        "title": "Affected Subscribers",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 18,
-          "y": 61,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "count"
-            ],
-            "fields": "/^Count$/",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "purple"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"AmazonSettlementReport\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "5000",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "W"
-          }
-        ]
-      },
-      {
-        "id": 33,
-        "title": "Top Settlement Subscribers",
-        "type": "table",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
+        "type": "row",
+        "title": "\ud83c\udfc3 Performance Deep-Dive (run logs)",
+        "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 65,
+          "y": 75,
           "w": 24,
-          "h": 8
+          "h": 1
         },
-        "links": [
+        "panels": [
           {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "showHeader": true,
-          "footer": {
-            "show": false
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "filterable": true
+            "id": 31,
+            "title": "note",
+            "type": "text",
+            "description": "",
+            "gridPos": {
+              "x": 0,
+              "y": 76,
+              "w": 24,
+              "h": 2
             },
-            "mappings": []
+            "links": [],
+            "options": {
+              "mode": "markdown",
+              "content": "Per-step timing bars in the HTML report come from regex-parsing the free-text `detail` field (`Step N: \u2026 ms`) \u2014 not natively reproducible in a Grafana panel. The panels below show performance-summary run counts and per-subscriber runs; use the Kibana links for the step breakdown."
+            },
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            }
           },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "subscriberID"
+          {
+            "id": 32,
+            "title": "Shopify Payout Perf Runs",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 0,
+              "y": 78,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "sum"
+                ],
+                "fields": "",
+                "values": false
               },
-              "properties": [
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"PayoutPosting\" AND tag.keyword:\"Performance\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "U"
+              }
+            ]
+          },
+          {
+            "id": 33,
+            "title": "Amazon Settlement Perf Runs",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 6,
+              "y": 78,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "sum"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\" AND tag.keyword:\"Performance\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "date_histogram",
+                    "field": "timestamp",
+                    "settings": {
+                      "interval": "1h",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "V"
+              }
+            ]
+          },
+          {
+            "id": 34,
+            "title": "Payout Perf Subscribers",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 12,
+              "y": 78,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "count"
+                ],
+                "fields": "/^Count$/",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"PayoutPosting\" AND tag.keyword:\"Performance\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "5000",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "W"
+              }
+            ]
+          },
+          {
+            "id": 35,
+            "title": "Settlement Perf Subscribers",
+            "type": "stat",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 18,
+              "y": 78,
+              "w": 6,
+              "h": 4
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "reduceOptions": {
+                "calcs": [
+                  "count"
+                ],
+                "fields": "/^Count$/",
+                "values": false
+              },
+              "orientation": "horizontal",
+              "textMode": "value",
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "color": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                },
+                "mappings": []
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\" AND tag.keyword:\"Performance\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "5000",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "X"
+              }
+            ]
+          },
+          {
+            "id": 36,
+            "title": "Top Payout Perf Subscribers (runs)",
+            "type": "table",
+            "description": "",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "gridPos": {
+              "x": 0,
+              "y": 82,
+              "w": 12,
+              "h": 8
+            },
+            "links": [
+              {
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
+              }
+            ],
+            "options": {
+              "showHeader": true,
+              "footer": {
+                "show": false
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "filterable": true
+                },
+                "mappings": []
+              },
+              "overrides": [
                 {
-                  "id": "links",
-                  "value": [
+                  "matcher": {
+                    "id": "byName",
+                    "options": "subscriberID"
+                  },
+                  "properties": [
                     {
-                      "title": "Open this row in Kibana",
-                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
-                      "targetBlank": true
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open this row in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
+                          "targetBlank": true
+                        }
+                      ]
                     }
                   ]
                 }
               ]
-            }
-          ]
-        },
-        "targets": [
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"PayoutPosting\" AND tag.keyword:\"Performance\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "15",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "Y"
+              }
+            ],
+            "transformations": [
+              {
+                "id": "sortBy",
+                "options": {
+                  "sort": [
+                    {
+                      "field": "Count",
+                      "desc": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
           {
+            "id": 37,
+            "title": "Top Settlement Perf Subscribers (runs)",
+            "type": "table",
+            "description": "",
             "datasource": {
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "module.keyword:\"AmazonSettlementReport\"",
-            "alias": "",
-            "metrics": [
+            "gridPos": {
+              "x": 12,
+              "y": 82,
+              "w": 12,
+              "h": 8
+            },
+            "links": [
               {
-                "id": "1",
-                "type": "count"
+                "title": "Open in Kibana (synced time range)",
+                "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+                "targetBlank": true
               }
             ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "10",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "X"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "sortBy",
             "options": {
-              "sort": [
+              "showHeader": true,
+              "footer": {
+                "show": false
+              }
+            },
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "filterable": true
+                },
+                "mappings": []
+              },
+              "overrides": [
                 {
-                  "field": "Count",
-                  "desc": true
+                  "matcher": {
+                    "id": "byName",
+                    "options": "subscriberID"
+                  },
+                  "properties": [
+                    {
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open this row in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
+                          "targetBlank": true
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
-            }
-          }
-        ]
-      },
-      {
-        "id": 34,
-        "type": "row",
-        "title": "\ud83c\udfc3 Performance Deep-Dive (run logs)",
-        "collapsed": false,
-        "gridPos": {
-          "x": 0,
-          "y": 73,
-          "w": 24,
-          "h": 1
-        },
-        "panels": []
-      },
-      {
-        "id": 35,
-        "title": "note",
-        "type": "text",
-        "description": "",
-        "gridPos": {
-          "x": 0,
-          "y": 74,
-          "w": 24,
-          "h": 2
-        },
-        "links": [],
-        "options": {
-          "mode": "markdown",
-          "content": "Per-step timing bars in the HTML report come from regex-parsing the free-text `detail` field (`Step N: \u2026 ms`) \u2014 not natively reproducible in a Grafana panel. The panels below show performance-summary run counts and per-subscriber runs; use the Kibana links for the step breakdown."
-        },
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        }
-      },
-      {
-        "id": 36,
-        "title": "Shopify Payout Perf Runs",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 0,
-          "y": 76,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "blue"
             },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"PayoutPosting\" AND tag.keyword:\"Performance\"",
-            "alias": "",
-            "metrics": [
+            "targets": [
               {
-                "id": "1",
-                "type": "count"
+                "datasource": {
+                  "type": "elasticsearch",
+                  "uid": "QEYi3BIDz"
+                },
+                "query": "module.keyword:\"AmazonSettlementReport\" AND tag.keyword:\"Performance\"",
+                "alias": "",
+                "metrics": [
+                  {
+                    "id": "1",
+                    "type": "count"
+                  }
+                ],
+                "bucketAggs": [
+                  {
+                    "id": "2",
+                    "type": "terms",
+                    "field": "subscriberID",
+                    "settings": {
+                      "size": "15",
+                      "order": "desc",
+                      "orderBy": "1",
+                      "min_doc_count": "1"
+                    }
+                  }
+                ],
+                "timeField": "timestamp",
+                "refId": "Z"
               }
             ],
-            "bucketAggs": [
+            "transformations": [
               {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
+                "id": "sortBy",
+                "options": {
+                  "sort": [
+                    {
+                      "field": "Count",
+                      "desc": true
+                    }
+                  ]
                 }
               }
-            ],
-            "timeField": "timestamp",
-            "refId": "Y"
-          }
-        ]
-      },
-      {
-        "id": 37,
-        "title": "Amazon Settlement Perf Runs",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 6,
-          "y": 76,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "sum"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "blue"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"AmazonSettlementReport\" AND tag.keyword:\"Performance\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "date_histogram",
-                "field": "timestamp",
-                "settings": {
-                  "interval": "1h",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "Z"
+            ]
           }
         ]
       },
       {
         "id": 38,
-        "title": "Payout Perf Subscribers",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 76,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "count"
-            ],
-            "fields": "/^Count$/",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "purple"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"PayoutPosting\" AND tag.keyword:\"Performance\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "5000",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "A1"
-          }
-        ]
-      },
-      {
-        "id": 39,
-        "title": "Settlement Perf Subscribers",
-        "type": "stat",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 18,
-          "y": 76,
-          "w": 6,
-          "h": 4
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "reduceOptions": {
-            "calcs": [
-              "count"
-            ],
-            "fields": "/^Count$/",
-            "values": false
-          },
-          "orientation": "auto",
-          "textMode": "value",
-          "colorMode": "background",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "short",
-            "color": {
-              "mode": "fixed",
-              "fixedColor": "purple"
-            },
-            "mappings": []
-          },
-          "overrides": []
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"AmazonSettlementReport\" AND tag.keyword:\"Performance\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "5000",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "B1"
-          }
-        ]
-      },
-      {
-        "id": 40,
-        "title": "Top Payout Perf Subscribers (runs)",
-        "type": "table",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 0,
-          "y": 80,
-          "w": 12,
-          "h": 8
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "showHeader": true,
-          "footer": {
-            "show": false
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "filterable": true
-            },
-            "mappings": []
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "subscriberID"
-              },
-              "properties": [
-                {
-                  "id": "links",
-                  "value": [
-                    {
-                      "title": "Open this row in Kibana",
-                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
-                      "targetBlank": true
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"PayoutPosting\" AND tag.keyword:\"Performance\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "15",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "C1"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "sortBy",
-            "options": {
-              "sort": [
-                {
-                  "field": "Count",
-                  "desc": true
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": 41,
-        "title": "Top Settlement Perf Subscribers (runs)",
-        "type": "table",
-        "description": "",
-        "datasource": {
-          "type": "elasticsearch",
-          "uid": "QEYi3BIDz"
-        },
-        "gridPos": {
-          "x": 12,
-          "y": 80,
-          "w": 12,
-          "h": 8
-        },
-        "links": [
-          {
-            "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
-            "targetBlank": true
-          }
-        ],
-        "options": {
-          "showHeader": true,
-          "footer": {
-            "show": false
-          }
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "align": "auto",
-              "filterable": true
-            },
-            "mappings": []
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "subscriberID"
-              },
-              "properties": [
-                {
-                  "id": "links",
-                  "value": [
-                    {
-                      "title": "Open this row in Kibana",
-                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
-                      "targetBlank": true
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "module.keyword:\"AmazonSettlementReport\" AND tag.keyword:\"Performance\"",
-            "alias": "",
-            "metrics": [
-              {
-                "id": "1",
-                "type": "count"
-              }
-            ],
-            "bucketAggs": [
-              {
-                "id": "2",
-                "type": "terms",
-                "field": "subscriberID",
-                "settings": {
-                  "size": "15",
-                  "order": "desc",
-                  "orderBy": "1",
-                  "min_doc_count": "1"
-                }
-              }
-            ],
-            "timeField": "timestamp",
-            "refId": "D1"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "sortBy",
-            "options": {
-              "sort": [
-                {
-                  "field": "Count",
-                  "desc": true
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": 42,
         "type": "row",
         "title": "\ud83d\uddc2 Legacy panels (pre-existing)",
         "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 88,
+          "y": 90,
           "w": 24,
           "h": 1
         },
@@ -3004,7 +2705,7 @@
             },
             "gridPos": {
               "x": 0,
-              "y": 89,
+              "y": 91,
               "w": 12,
               "h": 8
             },
@@ -3132,7 +2833,7 @@
             },
             "gridPos": {
               "x": 12,
-              "y": 89,
+              "y": 91,
               "w": 12,
               "h": 8
             },

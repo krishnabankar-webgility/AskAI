@@ -15,14 +15,29 @@ Push reads:
     GRAFANA_URL        (default https://systems.webgility.com/graph)
     GRAFANA_AUTH       (default $KIBANA_WD_AUTH -> "user:pass" basic auth)
 
+PERFORMANCE NOTE (important):
+  The `Elasticsearch-WD` datasource points at the WILDCARD index
+  `webgilitydesktop-*`. A wildcard fans every query out across *all* historical
+  daily indices, so a single 24h query is fast in isolation (~0.3-1.5s) but a
+  whole dashboard firing ~35 panels at once overwhelms the cluster and every
+  query hits the 30s timeout. Querying explicit daily indices
+  (`webgilitydesktop-YYYY.MM.DD`) returns in ~0.3s even at high concurrency.
+
+  The clean fix is to set the datasource to a time-based index pattern
+  (Index name `[webgilitydesktop-]YYYY.MM.DD`, Pattern `Daily`) — see
+  docs/grafana-wd-dashboard.md. That requires Grafana `datasources:write`
+  (admin). Until then, this generator keeps the dashboard usable by
+  consolidating the executive summary and collapsing every detail section by
+  default (a collapsed Grafana row does not run its panels' queries until
+  expanded), so only a small batch runs at a time.
+
 Verified quirks of this Grafana 9.2 Elasticsearch backend:
-  * A `terms` bucket MUST order by a metric id (e.g. "1"), NOT "_count"
-    (the latter returns a 500 "downstream" error).
-  * A `terms` bucket with a nested `date_histogram` times out, so the level
+  * A `terms` bucket MUST order by a metric id ("1"), NOT "_count" (500 error).
+  * A `terms` bucket nested with a `date_histogram` times out — the level
     timeline uses one `date_histogram` target per level instead.
-  * A metric with NO bucket agg returns no frames, so single-value stats use
-    a coarse `date_histogram` (reducer=sum/mean) for counts/averages and a
-    large `terms` bucket (reducer=count of rows) for exact unique counts.
+  * A metric with NO bucket agg returns no frames, so single-value stats use a
+    `date_histogram` (reducer=sum/mean) and unique counts use a large `terms`
+    bucket (number of rows == unique count).
 """
 import base64
 import json
@@ -37,6 +52,9 @@ DASH_TITLE = "WD-Dashboard"
 KIBANA_INDEX = "61237d60-0ed9-11eb-816a-cde07dc15a1f"
 KIBANA_BASE = "https://kibana-wd.webgility.com"
 UNIQUE_TERMS_SIZE = "5000"
+
+# Section rows kept expanded on initial load (everything else loads on expand).
+ALWAYS_OPEN = {"\U0001F4CA Executive Summary"}
 
 _pid = [0]
 _qid = [0]
@@ -69,29 +87,22 @@ def kibana_link(kql, title="Open in Kibana (synced time range)"):
 
 
 def kibana_cell_link(kql_prefix, title="Open this row in Kibana"):
-    """Deep-link whose KQL ends with the clicked table cell value (integer IDs)."""
     enc = urllib.parse.quote(kql_prefix, safe="")
     return {"title": title, "url": _kibana_url(enc + "${__value.raw}"), "targetBlank": True}
 
 
 def es_target(query="*", metrics=None, buckets=None, ref=None, alias=""):
     return {
-        "datasource": DS,
-        "query": query,
-        "alias": alias,
+        "datasource": DS, "query": query, "alias": alias,
         "metrics": metrics or [{"id": "1", "type": "count"}],
         "bucketAggs": buckets if buckets is not None else [],
-        "timeField": "timestamp",
-        "refId": ref or qref(),
+        "timeField": "timestamp", "refId": ref or qref(),
     }
 
 
 def terms_bucket(field, size=10, order_by="1"):
-    # order_by must be a metric id ("1"), "_term", or "_key" — never "_count".
-    return [{
-        "id": "2", "type": "terms", "field": field,
-        "settings": {"size": str(size), "order": "desc", "orderBy": order_by, "min_doc_count": "1"},
-    }]
+    return [{"id": "2", "type": "terms", "field": field,
+             "settings": {"size": str(size), "order": "desc", "orderBy": order_by, "min_doc_count": "1"}}]
 
 
 def date_hist(interval="auto", min_doc_count="0"):
@@ -100,39 +111,38 @@ def date_hist(interval="auto", min_doc_count="0"):
 
 
 def base(panel_id, title, ptype, x, y, w, h, links=None, desc=""):
-    return {
-        "id": panel_id, "title": title, "type": ptype, "description": desc,
-        "datasource": DS, "gridPos": {"x": x, "y": y, "w": w, "h": h},
-        "links": links or [], "options": {},
-        "fieldConfig": {"defaults": {}, "overrides": []}, "targets": [],
-    }
+    return {"id": panel_id, "title": title, "type": ptype, "description": desc,
+            "datasource": DS, "gridPos": {"x": x, "y": y, "w": w, "h": h},
+            "links": links or [], "options": {},
+            "fieldConfig": {"defaults": {}, "overrides": []}, "targets": []}
 
 
 def stat_panel(title, kql, x, y, w=4, h=4, color="blue", unit="short",
                agg="count", field=None, desc=""):
-    """agg in {count, sum, avg, unique}. count/sum/avg use a coarse hourly
-    date_histogram; unique counts distinct values of `field` via a large terms
-    bucket (number of rows == unique count)."""
+    """agg in {count, sum, avg, unique, levels}."""
     p = base(pid(), title, "stat", x, y, w, h, links=[kibana_link(kql)], desc=desc)
+    text_mode = "value"
     if agg == "unique":
         p["targets"] = [es_target(kql, metrics=[{"id": "1", "type": "count"}],
                                   buckets=terms_bucket(field, UNIQUE_TERMS_SIZE))]
         reduce = {"calcs": ["count"], "fields": "/^Count$/", "values": False}
+    elif agg == "levels":
+        p["targets"] = [es_target(kql, metrics=[{"id": "1", "type": "count"}],
+                                  buckets=terms_bucket("level.keyword", 10))]
+        reduce = {"calcs": ["lastNotNull"], "fields": "/^Count$/", "values": True}
+        text_mode = "value_and_name"
     else:
         if agg == "sum":
-            metrics = [{"id": "1", "type": "sum", "field": field}]
-            calc = "sum"
+            metrics, calc = [{"id": "1", "type": "sum", "field": field}], "sum"
         elif agg == "avg":
-            metrics = [{"id": "1", "type": "avg", "field": field}]
-            calc = "mean"
+            metrics, calc = [{"id": "1", "type": "avg", "field": field}], "mean"
         else:
-            metrics = [{"id": "1", "type": "count"}]
-            calc = "sum"
-        p["targets"] = [es_target(kql, metrics=metrics, buckets=date_hist(interval="1h", min_doc_count="1"))]
+            metrics, calc = [{"id": "1", "type": "count"}], "sum"
+        p["targets"] = [es_target(kql, metrics=metrics, buckets=date_hist("1h", "1"))]
         reduce = {"calcs": [calc], "fields": "", "values": False}
     p["fieldConfig"]["defaults"] = {"unit": unit, "color": {"mode": "fixed", "fixedColor": color}, "mappings": []}
-    p["options"] = {"reduceOptions": reduce, "orientation": "auto", "textMode": "value",
-                    "colorMode": "background", "graphMode": "area", "justifyMode": "auto"}
+    p["options"] = {"reduceOptions": reduce, "orientation": "horizontal", "textMode": text_mode,
+                    "colorMode": "background", "graphMode": "none", "justifyMode": "auto"}
     return p
 
 
@@ -163,7 +173,6 @@ def table_panel(title, kql, field, x, y, w, h, size=15, metrics=None,
 
 
 def timeseries_levels(title, x, y, w, h, desc=""):
-    """Stacked level timeline from one date_histogram target per level."""
     p = base(pid(), title, "timeseries", x, y, w, h,
              links=[kibana_link('level.keyword:"Error" or level.keyword:"Fatal"')], desc=desc)
     p["targets"] = [
@@ -207,61 +216,55 @@ def row(title, y, collapsed=False, panels=None):
             "gridPos": {"x": 0, "y": y, "w": 24, "h": 1}, "panels": panels or []}
 
 
-def build_panels():
+def build_flat():
     panels = []
     y = 0
 
-    panels.append(text_panel("About", 0, y, 24, 3,
-        "## WD Kibana Daily Report — Grafana edition\n"
+    panels.append(text_panel("About", 0, y, 24, 4,
+        "## WD Kibana Daily Report \u2014 Grafana edition\n"
         "Same insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over "
-        "**`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource — **no LLM cost**. "
-        "Use the **time-range picker** (top-right); default is the report window *yesterday 09:00 → "
-        "today 09:00 IST*. Error Rate = *Errors / Total*. Every panel deep-links to the matching "
-        "**Kibana Discover** view with the same time range."))
-    y += 3
-
-    # 1. Executive Summary
-    panels.append(row("📊 Executive Summary", y)); y += 1
-    panels.append(stat_panel("Total Events", "*", 0, y, color="blue"))
-    panels.append(stat_panel("Errors", 'level.keyword:"Error"', 4, y, color="orange"))
-    panels.append(stat_panel("Fatals", 'level.keyword:"Fatal"', 8, y, color="red"))
-    panels.append(stat_panel("Warnings", 'level.keyword:"Warning"', 12, y, color="yellow"))
-    panels.append(stat_panel("Info", 'level.keyword:"Info"', 16, y, color="green"))
-    panels.append(stat_panel("Error Subscribers", 'level.keyword:"Error"', 20, y, color="purple",
-        agg="unique", field="subscriberID", desc="Distinct subscriberID with at least one Error"))
+        "**`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. "
+        "Pick any window with the **time-range picker** (top-right); default = report window "
+        "*yesterday 09:00 \u2192 today 09:00 IST*. Every panel deep-links to the matching **Kibana Discover** view.\n\n"
+        "**Expand a section below to load it.** Detail sections are collapsed by default so the cluster "
+        "isn't hit by all panels at once. *For an always-open, instant dashboard, a Grafana admin should set "
+        "the Elasticsearch-WD datasource to a time-based index pattern "
+        "(`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 see `docs/grafana-wd-dashboard.md`.*"))
     y += 4
 
-    # 2. Timeline
-    panels.append(row("⏱ Error / Fatal / Warning Timeline", y)); y += 1
+    panels.append(row("\U0001F4CA Executive Summary", y)); y += 1
+    panels.append(stat_panel("Events by Level", "*", 0, y, 18, 5, "blue", agg="levels",
+        desc="Counts per level (Total = sum of tiles). Single query over all events."))
+    panels.append(stat_panel("Error Subscribers", 'level.keyword:"Error"', 18, y, 6, 5, "purple",
+        agg="unique", field="subscriberID", desc="Distinct subscriberID with at least one Error"))
+    y += 5
+
+    panels.append(row("\u23F1 Error / Fatal / Warning Timeline", y)); y += 1
     panels.append(timeseries_levels("Events over time by level", 0, y, 24, 8,
-        desc="Stacked counts by level across the selected window (bucketed automatically)."))
+        desc="Stacked counts by level across the selected window."))
     y += 8
 
-    # 3. Error breakdown
-    panels.append(row("🧩 Error Breakdown", y)); y += 1
+    panels.append(row("\U0001F9E9 Error Breakdown", y)); y += 1
     panels.append(bargauge_panel("Errors by Module", 'level.keyword:"Error"', "module.keyword", 0, y, 6, 9, 12, "orange"))
     panels.append(bargauge_panel("Errors by Store", 'level.keyword:"Error"', "store.keyword", 6, y, 6, 9, 12, "purple"))
     panels.append(bargauge_panel("Errors by Tag", 'level.keyword:"Error"', "tag.keyword", 12, y, 6, 9, 12, "blue"))
     panels.append(bargauge_panel("Errors by Process", 'level.keyword:"Error"', "process.keyword", 18, y, 6, 9, 12, "green"))
     y += 9
 
-    # 4/5 Top messages + subscribers
-    panels.append(row("🔝 Top Error Messages & Subscribers", y)); y += 1
+    panels.append(row("\U0001F51D Top Error Messages & Subscribers", y)); y += 1
     panels.append(table_panel("Top Error Messages", 'level.keyword:"Error"', "message.keyword", 0, y, 12, 10, 15,
         drilldown_kql='level.keyword:"Error"'))
     panels.append(table_panel("Top Error Subscribers", 'level.keyword:"Error"', "subscriberID", 12, y, 12, 10, 15,
         cell_prefix='level.keyword:"Error" AND subscriberID:'))
     y += 10
 
-    # 6. Fatal events
-    panels.append(row("💀 Fatal Events", y)); y += 1
+    panels.append(row("\U0001F480 Fatal Events", y)); y += 1
     panels.append(table_panel("Fatal by Message", 'level.keyword:"Fatal"', "message.keyword", 0, y, 12, 8, 15,
         drilldown_kql='level.keyword:"Fatal"'))
     panels.append(piechart_panel("Fatal by Store", 'level.keyword:"Fatal"', "store.keyword", 12, y, 12, 8, 10))
     y += 8
 
-    # 7. Shopify payout
-    panels.append(row("💳 Shopify Payout Performance", y)); y += 1
+    panels.append(row("\U0001F4B3 Shopify Payout Performance", y)); y += 1
     payout_q = 'store.keyword:"Shopify" AND module.keyword:"PayoutPosting"'
     panels.append(stat_panel("Payouts Processed", payout_q, 0, y, 6, 4, "green", "short",
         agg="sum", field="processedRecords", desc="Sum of processedRecords for Shopify PayoutPosting"))
@@ -276,8 +279,7 @@ def build_panels():
         cell_prefix='module.keyword:"PayoutPosting" AND subscriberID:', sort_by="Sum"))
     y += 8
 
-    # 8. Amazon settlement
-    panels.append(row("🛒 Amazon Settlement Report", y)); y += 1
+    panels.append(row("\U0001F6D2 Amazon Settlement Report", y)); y += 1
     amz_q = 'module.keyword:"AmazonSettlementReport"'
     panels.append(stat_panel("Settlement Events", amz_q, 0, y, 6, 4, "blue"))
     panels.append(stat_panel("Settlement Errors", amz_q + ' AND level.keyword:"Error"', 6, y, 6, 4, "red"))
@@ -290,11 +292,10 @@ def build_panels():
         cell_prefix='module.keyword:"AmazonSettlementReport" AND subscriberID:'))
     y += 8
 
-    # 9. Performance deep-dive
-    panels.append(row("🏃 Performance Deep-Dive (run logs)", y)); y += 1
+    panels.append(row("\U0001F3C3 Performance Deep-Dive (run logs)", y)); y += 1
     panels.append(text_panel("note", 0, y, 24, 2,
         "Per-step timing bars in the HTML report come from regex-parsing the free-text `detail` field "
-        "(`Step N: … ms`) — not natively reproducible in a Grafana panel. The panels below show "
+        "(`Step N: \u2026 ms`) \u2014 not natively reproducible in a Grafana panel. The panels below show "
         "performance-summary run counts and per-subscriber runs; use the Kibana links for the step breakdown."))
     y += 2
     perf_payout = 'module.keyword:"PayoutPosting" AND tag.keyword:"Performance"'
@@ -321,13 +322,43 @@ def attach_legacy(panels, y, existing):
         return panels
     for i, p in enumerate(legacy):
         p["gridPos"] = {"x": (i % 2) * 12, "y": y + 1 + (i // 2) * 8, "w": 12, "h": 8}
-    panels.append(row("🗂 Legacy panels (pre-existing)", y, collapsed=True, panels=legacy))
+    panels.append(row("\U0001F5C2 Legacy panels (pre-existing)", y, collapsed=True, panels=legacy))
     return panels
 
 
+def collapse_sections(flat):
+    """Nest each section's panels inside its row; collapse all rows except those
+    in ALWAYS_OPEN. A collapsed Grafana row does not run its panels' queries
+    until expanded, which keeps concurrent query load low on initial load."""
+    out, i = [], 0
+    while i < len(flat):
+        p = flat[i]
+        if p.get("type") != "row":
+            out.append(p); i += 1; continue
+        if p.get("panels"):
+            # already-nested row (e.g. legacy) — pass through untouched
+            out.append(p); i += 1; continue
+        j = i + 1
+        children = []
+        while j < len(flat) and flat[j].get("type") != "row":
+            children.append(flat[j]); j += 1
+        if p["title"] in ALWAYS_OPEN:
+            p["collapsed"] = False
+            p["panels"] = []
+            out.append(p)
+            out.extend(children)
+        else:
+            p["collapsed"] = True
+            p["panels"] = children
+            out.append(p)
+        i = j
+    return out
+
+
 def build(existing_panels=None):
-    panels, y = build_panels()
-    panels = attach_legacy(panels, y, existing_panels)
+    flat, y = build_flat()
+    flat = attach_legacy(flat, y, existing_panels)
+    panels = collapse_sections(flat)
     return {
         "uid": DASH_UID, "title": DASH_TITLE,
         "tags": ["wd", "kibana", "daily-report", "logs"],
@@ -369,7 +400,8 @@ def main():
                "message": "WD daily report panels (generated)"}
     with open(out_path, "w") as f:
         json.dump(payload, f, indent=2)
-    print("wrote", out_path, "panels:", len(dash["panels"]))
+    n_rows = sum(1 for p in dash["panels"] if p.get("type") == "row")
+    print("wrote", out_path, "top-level items:", len(dash["panels"]), "rows:", n_rows)
 
     if "--push" in sys.argv:
         status, body = http("POST", f"{gurl}/api/dashboards/db", auth, json.dumps(payload).encode())
