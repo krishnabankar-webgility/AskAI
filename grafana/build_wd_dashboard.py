@@ -14,6 +14,15 @@ Usage:
 Push reads:
     GRAFANA_URL        (default https://systems.webgility.com/graph)
     GRAFANA_AUTH       (default $KIBANA_WD_AUTH -> "user:pass" basic auth)
+
+Verified quirks of this Grafana 9.2 Elasticsearch backend:
+  * A `terms` bucket MUST order by a metric id (e.g. "1"), NOT "_count"
+    (the latter returns a 500 "downstream" error).
+  * A `terms` bucket with a nested `date_histogram` times out, so the level
+    timeline uses one `date_histogram` target per level instead.
+  * A metric with NO bucket agg returns no frames, so single-value stats use
+    a coarse `date_histogram` (reducer=sum/mean) for counts/averages and a
+    large `terms` bucket (reducer=count of rows) for exact unique counts.
 """
 import base64
 import json
@@ -27,6 +36,7 @@ DASH_UID = "UpKNy11vk"
 DASH_TITLE = "WD-Dashboard"
 KIBANA_INDEX = "61237d60-0ed9-11eb-816a-cde07dc15a1f"
 KIBANA_BASE = "https://kibana-wd.webgility.com"
+UNIQUE_TERMS_SIZE = "5000"
 
 _pid = [0]
 _qid = [0]
@@ -55,26 +65,20 @@ def _kibana_url(encoded_query):
 
 
 def kibana_link(kql, title="Open in Kibana (synced time range)"):
-    """Kibana 7.6.2 Discover deep-link whose time range follows the Grafana picker."""
     return {"title": title, "url": _kibana_url(urllib.parse.quote(kql, safe="")), "targetBlank": True}
 
 
 def kibana_cell_link(kql_prefix, title="Open this row in Kibana"):
-    """Deep-link whose KQL ends with the clicked table cell value.
-
-    `kql_prefix` is everything before the dynamic value, e.g.
-    'level.keyword:"Error" AND subscriberID:'. The cell value is appended via
-    the Grafana data-link variable ${__value.raw}, kept literal (subscriber IDs
-    are integers, so no URL-encoding is needed)."""
+    """Deep-link whose KQL ends with the clicked table cell value (integer IDs)."""
     enc = urllib.parse.quote(kql_prefix, safe="")
     return {"title": title, "url": _kibana_url(enc + "${__value.raw}"), "targetBlank": True}
 
 
-def es_target(query="*", metrics=None, buckets=None, ref=None):
+def es_target(query="*", metrics=None, buckets=None, ref=None, alias=""):
     return {
         "datasource": DS,
         "query": query,
-        "alias": "",
+        "alias": alias,
         "metrics": metrics or [{"id": "1", "type": "count"}],
         "bucketAggs": buckets if buckets is not None else [],
         "timeField": "timestamp",
@@ -82,56 +86,53 @@ def es_target(query="*", metrics=None, buckets=None, ref=None):
     }
 
 
-def terms_bucket(field, size=10, order_by="_count"):
+def terms_bucket(field, size=10, order_by="1"):
+    # order_by must be a metric id ("1"), "_term", or "_key" — never "_count".
     return [{
-        "id": "2",
-        "type": "terms",
-        "field": field,
+        "id": "2", "type": "terms", "field": field,
         "settings": {"size": str(size), "order": "desc", "orderBy": order_by, "min_doc_count": "1"},
     }]
 
 
-def date_hist(level_split=False):
-    dh = {"id": "2", "type": "date_histogram", "field": "timestamp",
-          "settings": {"interval": "auto", "min_doc_count": "0"}}
-    if level_split:
-        return [{"id": "3", "type": "terms", "field": "level.keyword",
-                 "settings": {"size": "5", "order": "desc", "orderBy": "_count", "min_doc_count": "1"}}, dh]
-    return [dh]
+def date_hist(interval="auto", min_doc_count="0"):
+    return [{"id": "2", "type": "date_histogram", "field": "timestamp",
+             "settings": {"interval": interval, "min_doc_count": min_doc_count}}]
 
 
 def base(panel_id, title, ptype, x, y, w, h, links=None, desc=""):
     return {
-        "id": panel_id,
-        "title": title,
-        "type": ptype,
-        "description": desc,
-        "datasource": DS,
-        "gridPos": {"x": x, "y": y, "w": w, "h": h},
-        "links": links or [],
-        "options": {},
-        "fieldConfig": {"defaults": {}, "overrides": []},
-        "targets": [],
+        "id": panel_id, "title": title, "type": ptype, "description": desc,
+        "datasource": DS, "gridPos": {"x": x, "y": y, "w": w, "h": h},
+        "links": links or [], "options": {},
+        "fieldConfig": {"defaults": {}, "overrides": []}, "targets": [],
     }
 
 
 def stat_panel(title, kql, x, y, w=4, h=4, color="blue", unit="short",
-               metrics=None, reducer="lastNotNull", desc=""):
+               agg="count", field=None, desc=""):
+    """agg in {count, sum, avg, unique}. count/sum/avg use a coarse hourly
+    date_histogram; unique counts distinct values of `field` via a large terms
+    bucket (number of rows == unique count)."""
     p = base(pid(), title, "stat", x, y, w, h, links=[kibana_link(kql)], desc=desc)
-    p["targets"] = [es_target(kql, metrics=metrics)]
-    p["fieldConfig"]["defaults"] = {
-        "unit": unit,
-        "color": {"mode": "fixed", "fixedColor": color},
-        "mappings": [],
-    }
-    p["options"] = {
-        "reduceOptions": {"calcs": [reducer], "fields": "", "values": False},
-        "orientation": "auto",
-        "textMode": "value",
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-    }
+    if agg == "unique":
+        p["targets"] = [es_target(kql, metrics=[{"id": "1", "type": "count"}],
+                                  buckets=terms_bucket(field, UNIQUE_TERMS_SIZE))]
+        reduce = {"calcs": ["count"], "fields": "/^Count$/", "values": False}
+    else:
+        if agg == "sum":
+            metrics = [{"id": "1", "type": "sum", "field": field}]
+            calc = "sum"
+        elif agg == "avg":
+            metrics = [{"id": "1", "type": "avg", "field": field}]
+            calc = "mean"
+        else:
+            metrics = [{"id": "1", "type": "count"}]
+            calc = "sum"
+        p["targets"] = [es_target(kql, metrics=metrics, buckets=date_hist(interval="1h", min_doc_count="1"))]
+        reduce = {"calcs": [calc], "fields": "", "values": False}
+    p["fieldConfig"]["defaults"] = {"unit": unit, "color": {"mode": "fixed", "fixedColor": color}, "mappings": []}
+    p["options"] = {"reduceOptions": reduce, "orientation": "auto", "textMode": "value",
+                    "colorMode": "background", "graphMode": "area", "justifyMode": "auto"}
     return p
 
 
@@ -139,53 +140,45 @@ def bargauge_panel(title, kql, field, x, y, w, h, size=10, color="orange", desc=
     p = base(pid(), title, "bargauge", x, y, w, h, links=[kibana_link(kql)], desc=desc)
     p["targets"] = [es_target(kql, buckets=terms_bucket(field, size))]
     p["fieldConfig"]["defaults"] = {
-        "color": {"mode": "fixed", "fixedColor": color},
-        "unit": "short",
-        "mappings": [],
-        "thresholds": {"mode": "absolute", "steps": [{"color": color, "value": None}]},
-    }
-    p["options"] = {
-        "displayMode": "gradient",
-        "orientation": "horizontal",
-        "showUnfilled": True,
-        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": True},
-    }
+        "color": {"mode": "fixed", "fixedColor": color}, "unit": "short", "mappings": [],
+        "thresholds": {"mode": "absolute", "steps": [{"color": color, "value": None}]}}
+    p["options"] = {"displayMode": "gradient", "orientation": "horizontal", "showUnfilled": True,
+                    "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": True}}
     return p
 
 
-def table_panel(title, kql, field, x, y, w, h, size=15,
-                drilldown_kql=None, cell_prefix=None, sort_by="Count", desc=""):
+def table_panel(title, kql, field, x, y, w, h, size=15, metrics=None,
+                drilldown_kql=None, cell_prefix=None, sort_by="Count", order_by="1", desc=""):
     p = base(pid(), title, "table", x, y, w, h, links=[kibana_link(kql)], desc=desc)
-    p["targets"] = [es_target(kql, buckets=terms_bucket(field, size))]
+    p["targets"] = [es_target(kql, metrics=metrics, buckets=terms_bucket(field, size, order_by))]
     p["fieldConfig"]["defaults"] = {"custom": {"align": "auto", "filterable": True}, "mappings": []}
-    overrides = []
-    link = None
-    if cell_prefix is not None:
-        link = kibana_cell_link(cell_prefix)
-    elif drilldown_kql is not None:
-        link = kibana_link(drilldown_kql, title="Open in Kibana")
-    if link is not None:
-        overrides.append({
-            "matcher": {"id": "byName", "options": field},
-            "properties": [{"id": "links", "value": [link]}],
-        })
-    p["fieldConfig"]["overrides"] = overrides
+    link = kibana_cell_link(cell_prefix) if cell_prefix is not None else (
+        kibana_link(drilldown_kql, title="Open in Kibana") if drilldown_kql is not None else None)
+    p["fieldConfig"]["overrides"] = [{
+        "matcher": {"id": "byName", "options": field},
+        "properties": [{"id": "links", "value": [link]}]}] if link else []
     p["options"] = {"showHeader": True, "footer": {"show": False}}
     p["transformations"] = [{"id": "sortBy", "options": {"sort": [{"field": sort_by, "desc": True}]}}]
     return p
 
 
 def timeseries_levels(title, x, y, w, h, desc=""):
+    """Stacked level timeline from one date_histogram target per level."""
     p = base(pid(), title, "timeseries", x, y, w, h,
              links=[kibana_link('level.keyword:"Error" or level.keyword:"Fatal"')], desc=desc)
-    p["targets"] = [es_target('level.keyword:"Error" or level.keyword:"Fatal" or level.keyword:"Warning"',
-                              buckets=date_hist(level_split=True))]
+    p["targets"] = [
+        es_target('level.keyword:"Error"', buckets=date_hist(), ref="A", alias="Error"),
+        es_target('level.keyword:"Fatal"', buckets=date_hist(), ref="B", alias="Fatal"),
+        es_target('level.keyword:"Warning"', buckets=date_hist(), ref="C", alias="Warning"),
+    ]
     p["fieldConfig"]["defaults"] = {
         "custom": {"drawStyle": "bars", "fillOpacity": 70, "lineWidth": 1,
                    "stacking": {"group": "A", "mode": "normal"}, "axisPlacement": "auto"},
-        "color": {"mode": "palette-classic"},
-        "unit": "short",
-    }
+        "color": {"mode": "palette-classic"}, "unit": "short"}
+    p["fieldConfig"]["overrides"] = [
+        {"matcher": {"id": "byFrameRefID", "options": r},
+         "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": c}}]}
+        for r, c in (("A", "orange"), ("B", "red"), ("C", "yellow"))]
     p["options"] = {"legend": {"calcs": ["sum"], "displayMode": "table", "placement": "right",
                                "showLegend": True}, "tooltip": {"mode": "multi", "sort": "desc"}}
     return p
@@ -205,8 +198,7 @@ def piechart_panel(title, kql, field, x, y, w, h, size=10, desc=""):
 def text_panel(title, x, y, w, h, md):
     p = base(pid(), title, "text", x, y, w, h)
     p["options"] = {"mode": "markdown", "content": md}
-    del p["targets"]
-    del p["datasource"]
+    del p["targets"]; del p["datasource"]
     return p
 
 
@@ -223,9 +215,9 @@ def build_panels():
         "## WD Kibana Daily Report — Grafana edition\n"
         "Same insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over "
         "**`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource — **no LLM cost**. "
-        "Use the **time-range picker** (top-right) to pick any window; default is the report window "
-        "*yesterday 09:00 → today 09:00 IST*. Every panel links out to the matching **Kibana Discover** "
-        "view with the same time range."))
+        "Use the **time-range picker** (top-right); default is the report window *yesterday 09:00 → "
+        "today 09:00 IST*. Error Rate = *Errors / Total*. Every panel deep-links to the matching "
+        "**Kibana Discover** view with the same time range."))
     y += 3
 
     # 1. Executive Summary
@@ -235,27 +227,11 @@ def build_panels():
     panels.append(stat_panel("Fatals", 'level.keyword:"Fatal"', 8, y, color="red"))
     panels.append(stat_panel("Warnings", 'level.keyword:"Warning"', 12, y, color="yellow"))
     panels.append(stat_panel("Info", 'level.keyword:"Info"', 16, y, color="green"))
-    er = base(pid(), "Error Rate", "gauge", 20, y, 4, 4,
-              links=[kibana_link('level.keyword:"Error"')],
-              desc="Errors / Total events for the selected window")
-    er["targets"] = [es_target('level.keyword:"Error"', ref="A"), es_target("*", ref="B")]
-    er["transformations"] = [{
-        "id": "calculateField",
-        "options": {"mode": "binary", "binary": {"left": "A", "operator": "/", "right": "B"},
-                    "alias": "Error Rate", "replaceFields": True},
-    }]
-    er["fieldConfig"]["defaults"] = {
-        "unit": "percentunit", "min": 0, "max": 1,
-        "thresholds": {"mode": "absolute", "steps": [
-            {"color": "green", "value": None}, {"color": "yellow", "value": 0.1},
-            {"color": "orange", "value": 0.25}, {"color": "red", "value": 0.5}]},
-    }
-    er["options"] = {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
-                     "showThresholdLabels": False, "showThresholdMarkers": True}
-    panels.append(er)
+    panels.append(stat_panel("Error Subscribers", 'level.keyword:"Error"', 20, y, color="purple",
+        agg="unique", field="subscriberID", desc="Distinct subscriberID with at least one Error"))
     y += 4
 
-    # 2. Hourly timeline
+    # 2. Timeline
     panels.append(row("⏱ Error / Fatal / Warning Timeline", y)); y += 1
     panels.append(timeseries_levels("Events over time by level", 0, y, 24, 8,
         desc="Stacked counts by level across the selected window (bucketed automatically)."))
@@ -288,19 +264,16 @@ def build_panels():
     panels.append(row("💳 Shopify Payout Performance", y)); y += 1
     payout_q = 'store.keyword:"Shopify" AND module.keyword:"PayoutPosting"'
     panels.append(stat_panel("Payouts Processed", payout_q, 0, y, 6, 4, "green", "short",
-        metrics=[{"id": "1", "type": "sum", "field": "processedRecords"}],
-        desc="Sum of processedRecords for Shopify PayoutPosting"))
+        agg="sum", field="processedRecords", desc="Sum of processedRecords for Shopify PayoutPosting"))
     panels.append(stat_panel("Payout Log Events", payout_q, 6, y, 6, 4, "blue"))
     panels.append(stat_panel("Payout Subscribers", payout_q, 12, y, 6, 4, "purple", "short",
-        metrics=[{"id": "1", "type": "cardinality", "field": "subscriberID"}]))
+        agg="unique", field="subscriberID"))
     panels.append(stat_panel("Avg Rate (rec/s)", payout_q + ' AND averagePerSecond:>0', 18, y, 6, 4, "orange", "short",
-        metrics=[{"id": "1", "type": "avg", "field": "averagePerSecond"}]))
+        agg="avg", field="averagePerSecond", desc="Mean of per-hour averagePerSecond"))
     y += 4
-    pt = table_panel("Top Payout Subscribers (by records)", payout_q, "subscriberID", 0, y, 24, 8, 10,
-        cell_prefix='module.keyword:"PayoutPosting" AND subscriberID:', sort_by="processedRecords Sum")
-    pt["targets"] = [es_target(payout_q, metrics=[{"id": "1", "type": "sum", "field": "processedRecords"}],
-                               buckets=terms_bucket("subscriberID", 10, order_by="1"))]
-    panels.append(pt)
+    panels.append(table_panel("Top Payout Subscribers (by records)", payout_q, "subscriberID", 0, y, 24, 8, 10,
+        metrics=[{"id": "1", "type": "sum", "field": "processedRecords"}],
+        cell_prefix='module.keyword:"PayoutPosting" AND subscriberID:', sort_by="Sum"))
     y += 8
 
     # 8. Amazon settlement
@@ -309,45 +282,40 @@ def build_panels():
     panels.append(stat_panel("Settlement Events", amz_q, 0, y, 6, 4, "blue"))
     panels.append(stat_panel("Settlement Errors", amz_q + ' AND level.keyword:"Error"', 6, y, 6, 4, "red"))
     panels.append(stat_panel("Records Processed", amz_q, 12, y, 6, 4, "green", "short",
-        metrics=[{"id": "1", "type": "sum", "field": "processedRecords"}]))
+        agg="sum", field="processedRecords"))
     panels.append(stat_panel("Affected Subscribers", amz_q, 18, y, 6, 4, "purple", "short",
-        metrics=[{"id": "1", "type": "cardinality", "field": "subscriberID"}]))
+        agg="unique", field="subscriberID"))
     y += 4
     panels.append(table_panel("Top Settlement Subscribers", amz_q, "subscriberID", 0, y, 24, 8, 10,
         cell_prefix='module.keyword:"AmazonSettlementReport" AND subscriberID:'))
     y += 8
 
-    # 9. Performance deep-dive (raw runs)
-    panels.append(row("🏃 Performance Deep-Dive (raw run logs)", y)); y += 1
+    # 9. Performance deep-dive
+    panels.append(row("🏃 Performance Deep-Dive (run logs)", y)); y += 1
     panels.append(text_panel("note", 0, y, 24, 2,
-        "Per-step timing bars in the HTML report are produced by parsing the free-text `detail` field "
-        "(regex over `Step N: … ms`) — not natively reproducible in a Grafana panel. The panels below show "
-        "the raw performance-summary runs and counts; for the step-by-step breakdown use the Kibana links."))
+        "Per-step timing bars in the HTML report come from regex-parsing the free-text `detail` field "
+        "(`Step N: … ms`) — not natively reproducible in a Grafana panel. The panels below show "
+        "performance-summary run counts and per-subscriber runs; use the Kibana links for the step breakdown."))
     y += 2
     perf_payout = 'module.keyword:"PayoutPosting" AND tag.keyword:"Performance"'
     perf_amz = 'module.keyword:"AmazonSettlementReport" AND tag.keyword:"Performance"'
     panels.append(stat_panel("Shopify Payout Perf Runs", perf_payout, 0, y, 6, 4, "blue"))
     panels.append(stat_panel("Amazon Settlement Perf Runs", perf_amz, 6, y, 6, 4, "blue"))
     panels.append(stat_panel("Payout Perf Subscribers", perf_payout, 12, y, 6, 4, "purple", "short",
-        metrics=[{"id": "1", "type": "cardinality", "field": "subscriberID"}]))
+        agg="unique", field="subscriberID"))
     panels.append(stat_panel("Settlement Perf Subscribers", perf_amz, 18, y, 6, 4, "purple", "short",
-        metrics=[{"id": "1", "type": "cardinality", "field": "subscriberID"}]))
+        agg="unique", field="subscriberID"))
     y += 4
-    logs = base(pid(), "Performance Summary Logs (latest 50)", "logs", 0, y, 24, 11,
-                links=[kibana_link('tag.keyword:"Performance"')],
-                desc="Raw Payout_/Settlement_PerformanceSummary documents — open in Kibana for the parsed steps.")
-    logs["targets"] = [es_target('tag.keyword:"Performance"',
-                                 metrics=[{"id": "1", "type": "logs", "settings": {"limit": "50"}}])]
-    logs["options"] = {"showTime": True, "wrapLogMessage": True, "enableLogDetails": True,
-                       "sortOrder": "Descending", "dedupStrategy": "none"}
-    panels.append(logs)
-    y += 11
+    panels.append(table_panel("Top Payout Perf Subscribers (runs)", perf_payout, "subscriberID", 0, y, 12, 8, 15,
+        cell_prefix='module.keyword:"PayoutPosting" AND tag.keyword:"Performance" AND subscriberID:'))
+    panels.append(table_panel("Top Settlement Perf Subscribers (runs)", perf_amz, "subscriberID", 12, y, 12, 8, 15,
+        cell_prefix='module.keyword:"AmazonSettlementReport" AND tag.keyword:"Performance" AND subscriberID:'))
+    y += 8
 
     return panels, y
 
 
 def attach_legacy(panels, y, existing):
-    """Move the pre-existing panels into a collapsed row so nothing is lost."""
     legacy = [p for p in (existing or []) if p.get("type") != "row"]
     if not legacy:
         return panels
@@ -361,22 +329,15 @@ def build(existing_panels=None):
     panels, y = build_panels()
     panels = attach_legacy(panels, y, existing_panels)
     return {
-        "uid": DASH_UID,
-        "title": DASH_TITLE,
+        "uid": DASH_UID, "title": DASH_TITLE,
         "tags": ["wd", "kibana", "daily-report", "logs"],
-        "timezone": "Asia/Kolkata",
-        "schemaVersion": 37,
-        "version": 0,
-        "refresh": "",
+        "timezone": "Asia/Kolkata", "schemaVersion": 37, "version": 0, "refresh": "",
         "time": {"from": "now-24h", "to": "now"},
         "timepicker": {"refresh_intervals": ["5m", "15m", "30m", "1h", "6h", "12h", "24h"]},
-        "templating": {"list": []},
-        "annotations": {"list": []},
-        "editable": True,
-        "fiscalYearStartMonth": 0,
-        "graphTooltip": 0,
+        "templating": {"list": []}, "annotations": {"list": []},
+        "editable": True, "fiscalYearStartMonth": 0, "graphTooltip": 0,
         "links": [{"title": "Open WD Kibana", "type": "link", "icon": "external link",
-                   "tags": [], "url": "https://kibana-wd.webgility.com", "targetBlank": True}],
+                   "tags": [], "url": KIBANA_BASE, "targetBlank": True}],
         "panels": panels,
     }
 

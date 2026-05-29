@@ -61,7 +61,7 @@
         "links": [],
         "options": {
           "mode": "markdown",
-          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Use the **time-range picker** (top-right) to pick any window; default is the report window *yesterday 09:00 \u2192 today 09:00 IST*. Every panel links out to the matching **Kibana Discover** view with the same time range."
+          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Use the **time-range picker** (top-right); default is the report window *yesterday 09:00 \u2192 today 09:00 IST*. Error Rate = *Errors / Total*. Every panel deep-links to the matching **Kibana Discover** view with the same time range."
         },
         "fieldConfig": {
           "defaults": {},
@@ -106,7 +106,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -142,7 +142,17 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "A"
           }
@@ -173,7 +183,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -209,7 +219,17 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "B"
           }
@@ -240,7 +260,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -276,7 +296,17 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "C"
           }
@@ -307,7 +337,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -343,7 +373,17 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "D"
           }
@@ -374,7 +414,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -410,7 +450,17 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "E"
           }
@@ -418,9 +468,9 @@
       },
       {
         "id": 8,
-        "title": "Error Rate",
-        "type": "gauge",
-        "description": "Errors / Total events for the selected window",
+        "title": "Error Subscribers",
+        "type": "stat",
+        "description": "Distinct subscriberID with at least one Error",
         "datasource": {
           "type": "elasticsearch",
           "uid": "QEYi3BIDz"
@@ -441,40 +491,25 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "count"
             ],
-            "fields": "",
+            "fields": "/^Count$/",
             "values": false
           },
-          "showThresholdLabels": false,
-          "showThresholdMarkers": true
+          "orientation": "auto",
+          "textMode": "value",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto"
         },
         "fieldConfig": {
           "defaults": {
-            "unit": "percentunit",
-            "min": 0,
-            "max": 1,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 0.1
-                },
-                {
-                  "color": "orange",
-                  "value": 0.25
-                },
-                {
-                  "color": "red",
-                  "value": 0.5
-                }
-              ]
-            }
+            "unit": "short",
+            "color": {
+              "mode": "fixed",
+              "fixedColor": "purple"
+            },
+            "mappings": []
           },
           "overrides": []
         },
@@ -492,41 +527,21 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
-            "timeField": "timestamp",
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "elasticsearch",
-              "uid": "QEYi3BIDz"
-            },
-            "query": "*",
-            "alias": "",
-            "metrics": [
+            "bucketAggs": [
               {
-                "id": "1",
-                "type": "count"
+                "id": "2",
+                "type": "terms",
+                "field": "subscriberID",
+                "settings": {
+                  "size": "5000",
+                  "order": "desc",
+                  "orderBy": "1",
+                  "min_doc_count": "1"
+                }
               }
             ],
-            "bucketAggs": [],
             "timeField": "timestamp",
-            "refId": "B"
-          }
-        ],
-        "transformations": [
-          {
-            "id": "calculateField",
-            "options": {
-              "mode": "binary",
-              "binary": {
-                "left": "A",
-                "operator": "/",
-                "right": "B"
-              },
-              "alias": "Error Rate",
-              "replaceFields": true
-            }
+            "refId": "F"
           }
         ]
       },
@@ -596,7 +611,53 @@
             },
             "unit": "short"
           },
-          "overrides": []
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byFrameRefID",
+                "options": "A"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "orange"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byFrameRefID",
+                "options": "B"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "red"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byFrameRefID",
+                "options": "C"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "yellow"
+                  }
+                }
+              ]
+            }
+          ]
         },
         "targets": [
           {
@@ -604,8 +665,8 @@
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "level.keyword:\"Error\" or level.keyword:\"Fatal\" or level.keyword:\"Warning\"",
-            "alias": "",
+            "query": "level.keyword:\"Error\"",
+            "alias": "Error",
             "metrics": [
               {
                 "id": "1",
@@ -613,17 +674,6 @@
               }
             ],
             "bucketAggs": [
-              {
-                "id": "3",
-                "type": "terms",
-                "field": "level.keyword",
-                "settings": {
-                  "size": "5",
-                  "order": "desc",
-                  "orderBy": "_count",
-                  "min_doc_count": "1"
-                }
-              },
               {
                 "id": "2",
                 "type": "date_histogram",
@@ -635,7 +685,61 @@
               }
             ],
             "timeField": "timestamp",
-            "refId": "F"
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "query": "level.keyword:\"Fatal\"",
+            "alias": "Fatal",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "auto",
+                  "min_doc_count": "0"
+                }
+              }
+            ],
+            "timeField": "timestamp",
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "query": "level.keyword:\"Warning\"",
+            "alias": "Warning",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "auto",
+                  "min_doc_count": "0"
+                }
+              }
+            ],
+            "timeField": "timestamp",
+            "refId": "C"
           }
         ]
       },
@@ -728,7 +832,7 @@
                 "settings": {
                   "size": "12",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -814,7 +918,7 @@
                 "settings": {
                   "size": "12",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -900,7 +1004,7 @@
                 "settings": {
                   "size": "12",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -986,7 +1090,7 @@
                 "settings": {
                   "size": "12",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -1088,7 +1192,7 @@
                 "settings": {
                   "size": "15",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -1190,7 +1294,7 @@
                 "settings": {
                   "size": "15",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -1305,7 +1409,7 @@
                 "settings": {
                   "size": "15",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -1408,7 +1512,7 @@
                 "settings": {
                   "size": "10",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
@@ -1456,7 +1560,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -1493,7 +1597,17 @@
                 "field": "processedRecords"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "O"
           }
@@ -1524,7 +1638,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -1560,7 +1674,17 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "P"
           }
@@ -1591,9 +1715,9 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "count"
             ],
-            "fields": "",
+            "fields": "/^Count$/",
             "values": false
           },
           "orientation": "auto",
@@ -1624,11 +1748,22 @@
             "metrics": [
               {
                 "id": "1",
-                "type": "cardinality",
-                "field": "subscriberID"
+                "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "subscriberID",
+                "settings": {
+                  "size": "5000",
+                  "order": "desc",
+                  "orderBy": "1",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "Q"
           }
@@ -1638,7 +1773,7 @@
         "id": 26,
         "title": "Avg Rate (rec/s)",
         "type": "stat",
-        "description": "",
+        "description": "Mean of per-hour averagePerSecond",
         "datasource": {
           "type": "elasticsearch",
           "uid": "QEYi3BIDz"
@@ -1659,7 +1794,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "mean"
             ],
             "fields": "",
             "values": false
@@ -1696,7 +1831,17 @@
                 "field": "averagePerSecond"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
             "refId": "R"
           }
@@ -1788,7 +1933,7 @@
               }
             ],
             "timeField": "timestamp",
-            "refId": "T"
+            "refId": "S"
           }
         ],
         "transformations": [
@@ -1797,7 +1942,7 @@
             "options": {
               "sort": [
                 {
-                  "field": "processedRecords Sum",
+                  "field": "Sum",
                   "desc": true
                 }
               ]
@@ -1843,7 +1988,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -1879,9 +2024,19 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "U"
+            "refId": "T"
           }
         ]
       },
@@ -1910,7 +2065,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -1946,9 +2101,19 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "V"
+            "refId": "U"
           }
         ]
       },
@@ -1977,7 +2142,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -2014,9 +2179,19 @@
                 "field": "processedRecords"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "W"
+            "refId": "V"
           }
         ]
       },
@@ -2045,9 +2220,9 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "count"
             ],
-            "fields": "",
+            "fields": "/^Count$/",
             "values": false
           },
           "orientation": "auto",
@@ -2078,13 +2253,24 @@
             "metrics": [
               {
                 "id": "1",
-                "type": "cardinality",
-                "field": "subscriberID"
+                "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "subscriberID",
+                "settings": {
+                  "size": "5000",
+                  "order": "desc",
+                  "orderBy": "1",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "X"
+            "refId": "W"
           }
         ]
       },
@@ -2167,13 +2353,13 @@
                 "settings": {
                   "size": "10",
                   "order": "desc",
-                  "orderBy": "_count",
+                  "orderBy": "1",
                   "min_doc_count": "1"
                 }
               }
             ],
             "timeField": "timestamp",
-            "refId": "Y"
+            "refId": "X"
           }
         ],
         "transformations": [
@@ -2193,7 +2379,7 @@
       {
         "id": 34,
         "type": "row",
-        "title": "\ud83c\udfc3 Performance Deep-Dive (raw run logs)",
+        "title": "\ud83c\udfc3 Performance Deep-Dive (run logs)",
         "collapsed": false,
         "gridPos": {
           "x": 0,
@@ -2217,7 +2403,7 @@
         "links": [],
         "options": {
           "mode": "markdown",
-          "content": "Per-step timing bars in the HTML report are produced by parsing the free-text `detail` field (regex over `Step N: \u2026 ms`) \u2014 not natively reproducible in a Grafana panel. The panels below show the raw performance-summary runs and counts; for the step-by-step breakdown use the Kibana links."
+          "content": "Per-step timing bars in the HTML report come from regex-parsing the free-text `detail` field (`Step N: \u2026 ms`) \u2014 not natively reproducible in a Grafana panel. The panels below show performance-summary run counts and per-subscriber runs; use the Kibana links for the step breakdown."
         },
         "fieldConfig": {
           "defaults": {},
@@ -2249,7 +2435,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -2285,9 +2471,19 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "Z"
+            "refId": "Y"
           }
         ]
       },
@@ -2316,7 +2512,7 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "sum"
             ],
             "fields": "",
             "values": false
@@ -2352,9 +2548,19 @@
                 "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "A1"
+            "refId": "Z"
           }
         ]
       },
@@ -2383,9 +2589,9 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "count"
             ],
-            "fields": "",
+            "fields": "/^Count$/",
             "values": false
           },
           "orientation": "auto",
@@ -2416,13 +2622,24 @@
             "metrics": [
               {
                 "id": "1",
-                "type": "cardinality",
-                "field": "subscriberID"
+                "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "subscriberID",
+                "settings": {
+                  "size": "5000",
+                  "order": "desc",
+                  "orderBy": "1",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "B1"
+            "refId": "A1"
           }
         ]
       },
@@ -2451,9 +2668,9 @@
         "options": {
           "reduceOptions": {
             "calcs": [
-              "lastNotNull"
+              "count"
             ],
-            "fields": "",
+            "fields": "/^Count$/",
             "values": false
           },
           "orientation": "auto",
@@ -2484,21 +2701,32 @@
             "metrics": [
               {
                 "id": "1",
-                "type": "cardinality",
-                "field": "subscriberID"
+                "type": "count"
               }
             ],
-            "bucketAggs": [],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "subscriberID",
+                "settings": {
+                  "size": "5000",
+                  "order": "desc",
+                  "orderBy": "1",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
             "timeField": "timestamp",
-            "refId": "C1"
+            "refId": "B1"
           }
         ]
       },
       {
         "id": 40,
-        "title": "Performance Summary Logs (latest 50)",
-        "type": "logs",
-        "description": "Raw Payout_/Settlement_PerformanceSummary documents \u2014 open in Kibana for the parsed steps.",
+        "title": "Top Payout Perf Subscribers (runs)",
+        "type": "table",
+        "description": "",
         "datasource": {
           "type": "elasticsearch",
           "uid": "QEYi3BIDz"
@@ -2506,26 +2734,50 @@
         "gridPos": {
           "x": 0,
           "y": 80,
-          "w": 24,
-          "h": 11
+          "w": 12,
+          "h": 8
         },
         "links": [
           {
             "title": "Open in Kibana (synced time range)",
-            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
             "targetBlank": true
           }
         ],
         "options": {
-          "showTime": true,
-          "wrapLogMessage": true,
-          "enableLogDetails": true,
-          "sortOrder": "Descending",
-          "dedupStrategy": "none"
+          "showHeader": true,
+          "footer": {
+            "show": false
+          }
         },
         "fieldConfig": {
-          "defaults": {},
-          "overrides": []
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "filterable": true
+            },
+            "mappings": []
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "subscriberID"
+              },
+              "properties": [
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "title": "Open this row in Kibana",
+                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22PayoutPosting%22%20AND%20tag.keyword%3A%22Performance%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
+                      "targetBlank": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         },
         "targets": [
           {
@@ -2533,31 +2785,155 @@
               "type": "elasticsearch",
               "uid": "QEYi3BIDz"
             },
-            "query": "tag.keyword:\"Performance\"",
+            "query": "module.keyword:\"PayoutPosting\" AND tag.keyword:\"Performance\"",
             "alias": "",
             "metrics": [
               {
                 "id": "1",
-                "type": "logs",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "subscriberID",
                 "settings": {
-                  "limit": "50"
+                  "size": "15",
+                  "order": "desc",
+                  "orderBy": "1",
+                  "min_doc_count": "1"
                 }
               }
             ],
-            "bucketAggs": [],
             "timeField": "timestamp",
-            "refId": "D1"
+            "refId": "C1"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "sortBy",
+            "options": {
+              "sort": [
+                {
+                  "field": "Count",
+                  "desc": true
+                }
+              ]
+            }
           }
         ]
       },
       {
         "id": 41,
+        "title": "Top Settlement Perf Subscribers (runs)",
+        "type": "table",
+        "description": "",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "QEYi3BIDz"
+        },
+        "gridPos": {
+          "x": 12,
+          "y": 80,
+          "w": 12,
+          "h": 8
+        },
+        "links": [
+          {
+            "title": "Open in Kibana (synced time range)",
+            "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22'),sort:!(!(timestamp,desc)))",
+            "targetBlank": true
+          }
+        ],
+        "options": {
+          "showHeader": true,
+          "footer": {
+            "show": false
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "filterable": true
+            },
+            "mappings": []
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "subscriberID"
+              },
+              "properties": [
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "title": "Open this row in Kibana",
+                      "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'module.keyword%3A%22AmazonSettlementReport%22%20AND%20tag.keyword%3A%22Performance%22%20AND%20subscriberID%3A${__value.raw}'),sort:!(!(timestamp,desc)))",
+                      "targetBlank": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "QEYi3BIDz"
+            },
+            "query": "module.keyword:\"AmazonSettlementReport\" AND tag.keyword:\"Performance\"",
+            "alias": "",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "subscriberID",
+                "settings": {
+                  "size": "15",
+                  "order": "desc",
+                  "orderBy": "1",
+                  "min_doc_count": "1"
+                }
+              }
+            ],
+            "timeField": "timestamp",
+            "refId": "D1"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "sortBy",
+            "options": {
+              "sort": [
+                {
+                  "field": "Count",
+                  "desc": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": 42,
         "type": "row",
         "title": "\ud83d\uddc2 Legacy panels (pre-existing)",
         "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 91,
+          "y": 88,
           "w": 24,
           "h": 1
         },
@@ -2628,7 +3004,7 @@
             },
             "gridPos": {
               "x": 0,
-              "y": 92,
+              "y": 89,
               "w": 12,
               "h": 8
             },
@@ -2756,7 +3132,7 @@
             },
             "gridPos": {
               "x": 12,
-              "y": 92,
+              "y": 89,
               "w": 12,
               "h": 8
             },
