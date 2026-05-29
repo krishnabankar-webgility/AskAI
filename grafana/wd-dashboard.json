@@ -44,6 +44,14 @@
         "tags": [],
         "url": "https://kibana-wd.webgility.com",
         "targetBlank": true
+      },
+      {
+        "title": "Step Breakdown (HTML)",
+        "type": "link",
+        "icon": "external link",
+        "tags": [],
+        "url": "https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/master/reports/wd-kibana-logs/wd-step-breakdown.html",
+        "targetBlank": true
       }
     ],
     "panels": [
@@ -2341,7 +2349,7 @@
       {
         "id": 33,
         "type": "row",
-        "title": "\ud83c\udfc3 Performance Deep-Dive (run logs)",
+        "title": "\ud83c\udfc3 Performance Deep-Dive (run logs + step breakdown)",
         "collapsed": true,
         "gridPos": {
           "x": 0,
@@ -2359,12 +2367,12 @@
               "x": 0,
               "y": 76,
               "w": 24,
-              "h": 2
+              "h": 3
             },
             "links": [],
             "options": {
               "mode": "markdown",
-              "content": "Per-step timing bars in the HTML report come from regex-parsing the free-text `detail` field (`Step N: \u2026 ms`) \u2014 not natively reproducible in a Grafana panel. The panels below show performance-summary run counts and per-subscriber runs; use the Kibana links for the step breakdown."
+              "content": "**Per-step timing bars** (the report's *Avg Step Processing Time \u2014 Shopify Payout / Amazon Settlement* charts) are parsed from the free-text `detail` field (`Step N: \u2026 ms`), which Grafana cannot aggregate natively. Generate them with **`grafana/wd_step_breakdown.py`** (no LLM \u2014 it writes a step-breakdown HTML and posts a Slack summary): [\ud83d\udcc8 Open latest step breakdown](https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/AskAI/blob/master/reports/wd-kibana-logs/wd-step-breakdown.html).\n\nThe panels below show performance-summary **run counts** and **per-subscriber runs**; click any subscriber to open that client's runs (with the raw `detail` steps) in Kibana."
             },
             "fieldConfig": {
               "defaults": {},
@@ -2382,7 +2390,7 @@
             },
             "gridPos": {
               "x": 0,
-              "y": 78,
+              "y": 79,
               "w": 6,
               "h": 4
             },
@@ -2459,7 +2467,7 @@
             },
             "gridPos": {
               "x": 6,
-              "y": 78,
+              "y": 79,
               "w": 6,
               "h": 4
             },
@@ -2536,7 +2544,7 @@
             },
             "gridPos": {
               "x": 12,
-              "y": 78,
+              "y": 79,
               "w": 6,
               "h": 4
             },
@@ -2615,7 +2623,7 @@
             },
             "gridPos": {
               "x": 18,
-              "y": 78,
+              "y": 79,
               "w": 6,
               "h": 4
             },
@@ -2694,7 +2702,7 @@
             },
             "gridPos": {
               "x": 0,
-              "y": 82,
+              "y": 83,
               "w": 12,
               "h": 8
             },
@@ -2796,7 +2804,7 @@
             },
             "gridPos": {
               "x": 12,
-              "y": 82,
+              "y": 83,
               "w": 12,
               "h": 8
             },
@@ -2896,7 +2904,7 @@
         "collapsed": true,
         "gridPos": {
           "x": 0,
-          "y": 90,
+          "y": 91,
           "w": 24,
           "h": 1
         },
@@ -2967,7 +2975,7 @@
             },
             "gridPos": {
               "x": 0,
-              "y": 91,
+              "y": 92,
               "w": 12,
               "h": 8
             },
@@ -3095,7 +3103,7 @@
             },
             "gridPos": {
               "x": 12,
-              "y": 91,
+              "y": 92,
               "w": 12,
               "h": 8
             },

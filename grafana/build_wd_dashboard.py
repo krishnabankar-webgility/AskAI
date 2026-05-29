@@ -21,19 +21,22 @@ DRILL-DOWN LINKS
   exact filter for that row so the Kibana hit count matches the panel:
     * table message/subscriber cells -> the clicked cell value (${__value.raw})
     * bar-gauge / pie slices          -> the clicked category (${__field.name})
-  Grafana URL-encodes the substituted value, and the value is wrapped in the
-  KQL phrase (e.g. message.keyword:"<value>") so spaces/punctuation are safe.
+
+STEP-WISE PERFORMANCE BREAKDOWN
+  The report's per-step bars ("Avg Step Processing Time — …") are parsed from
+  the free-text `detail` field, which Grafana cannot aggregate. Produce them
+  with grafana/wd_step_breakdown.py (no LLM); a dashboard link + the Performance
+  Deep-Dive note point to it.
 
 PERFORMANCE NOTE
   `Elasticsearch-WD` points at the WILDCARD index `webgilitydesktop-*`; a
   wildcard fans every query across all daily indices. `date_histogram` scales
   OK but `terms` aggregations time out under dashboard concurrency. So the
   always-open Executive Summary uses only date_histogram count tiles and every
-  terms-based detail section is COLLAPSED by default (a collapsed Grafana row
-  does not query until expanded). Permanent fix: set the datasource to a daily
-  index pattern (`[webgilitydesktop-]YYYY.MM.DD`, Pattern `Daily`) — needs
-  Grafana datasources:write; see grafana/apply_datasource_fix.py and
-  docs/grafana-wd-dashboard.md.
+  terms-based detail section is COLLAPSED by default. Permanent fix: set the
+  datasource to a daily index pattern (`[webgilitydesktop-]YYYY.MM.DD`,
+  Pattern `Daily`) — needs Grafana datasources:write; see
+  grafana/apply_datasource_fix.py and docs/grafana-wd-dashboard.md.
 
 Verified Grafana 9.2 Elasticsearch backend quirks:
   * terms bucket MUST order by a metric id ("1"), NOT "_count" (500 error).
@@ -55,6 +58,8 @@ DASH_TITLE = "WD-Dashboard"
 KIBANA_INDEX = "61237d60-0ed9-11eb-816a-cde07dc15a1f"
 KIBANA_BASE = "https://kibana-wd.webgility.com"
 UNIQUE_TERMS_SIZE = "5000"
+STEP_HTML_PREVIEW = ("https://htmlpreview.github.io/?https://github.com/krishnabankar-webgility/"
+                     "AskAI/blob/master/reports/wd-kibana-logs/wd-step-breakdown.html")
 
 ALWAYS_OPEN = {"\U0001F4CA Executive Summary"}
 
@@ -85,17 +90,10 @@ def _kibana_url(query_body):
 
 
 def kibana_link(kql, title="Open in Kibana (synced time range)"):
-    """Static KQL drilldown (section-level)."""
     return {"title": title, "url": _kibana_url(urllib.parse.quote(kql, safe="")), "targetBlank": True}
 
 
 def kibana_value_link(prefix, suffix="", var="${__value.raw}", title="Open this row in Kibana"):
-    """Drilldown whose KQL embeds a clicked value (a table cell or a category).
-
-    prefix/suffix are the static KQL around the value, URL-encoded here; `var`
-    is a Grafana data-link variable left literal so Grafana substitutes (and
-    URL-encodes) the value at click time. For text fields wrap with quotes via
-    suffix='"' and prefix ending in '"', e.g. message.keyword:"<value>"."""
     body = urllib.parse.quote(prefix, safe="") + var + urllib.parse.quote(suffix, safe="")
     return {"title": title, "url": _kibana_url(body), "targetBlank": True}
 
@@ -149,8 +147,6 @@ def stat_panel(title, kql, x, y, w=4, h=4, color="blue", unit="short",
 
 
 def bargauge_panel(title, base_kql, field, x, y, w, h, size=10, color="orange", desc=""):
-    """Bar gauge of a terms agg; each bar deep-links to that category in Kibana
-    via ${__field.name} (the bar's term)."""
     p = base(pid(), title, "bargauge", x, y, w, h, links=[kibana_link(base_kql)], desc=desc)
     p["targets"] = [es_target(base_kql, buckets=terms_bucket(field, size))]
     cat_link = kibana_value_link(f'{base_kql} AND {field}:"', '"', var="${__field.name}",
@@ -306,12 +302,15 @@ def build_flat():
         cell_prefix='module.keyword:"AmazonSettlementReport" AND subscriberID:'))
     y += 8
 
-    panels.append(row("\U0001F3C3 Performance Deep-Dive (run logs)", y)); y += 1
-    panels.append(text_panel("note", 0, y, 24, 2,
-        "Per-step timing bars in the HTML report come from regex-parsing the free-text `detail` field "
-        "(`Step N: \u2026 ms`) \u2014 not natively reproducible in a Grafana panel. The panels below show "
-        "performance-summary run counts and per-subscriber runs; use the Kibana links for the step breakdown."))
-    y += 2
+    panels.append(row("\U0001F3C3 Performance Deep-Dive (run logs + step breakdown)", y)); y += 1
+    panels.append(text_panel("note", 0, y, 24, 3,
+        "**Per-step timing bars** (the report's *Avg Step Processing Time \u2014 Shopify Payout / Amazon "
+        "Settlement* charts) are parsed from the free-text `detail` field (`Step N: \u2026 ms`), which Grafana "
+        "cannot aggregate natively. Generate them with **`grafana/wd_step_breakdown.py`** (no LLM \u2014 it "
+        f"writes a step-breakdown HTML and posts a Slack summary): [\U0001F4C8 Open latest step breakdown]({STEP_HTML_PREVIEW}).\n\n"
+        "The panels below show performance-summary **run counts** and **per-subscriber runs**; click any "
+        "subscriber to open that client's runs (with the raw `detail` steps) in Kibana."))
+    y += 3
     perf_payout = 'module.keyword:"PayoutPosting" AND tag.keyword:"Performance"'
     perf_amz = 'module.keyword:"AmazonSettlementReport" AND tag.keyword:"Performance"'
     panels.append(stat_panel("Shopify Payout Perf Runs", perf_payout, 0, y, 6, 4, "blue"))
@@ -377,8 +376,12 @@ def build(existing_panels=None):
         "timepicker": {"refresh_intervals": ["5m", "15m", "30m", "1h", "6h", "12h", "24h"]},
         "templating": {"list": []}, "annotations": {"list": []},
         "editable": True, "fiscalYearStartMonth": 0, "graphTooltip": 0,
-        "links": [{"title": "Open WD Kibana", "type": "link", "icon": "external link",
-                   "tags": [], "url": KIBANA_BASE, "targetBlank": True}],
+        "links": [
+            {"title": "Open WD Kibana", "type": "link", "icon": "external link",
+             "tags": [], "url": KIBANA_BASE, "targetBlank": True},
+            {"title": "Step Breakdown (HTML)", "type": "link", "icon": "external link",
+             "tags": [], "url": STEP_HTML_PREVIEW, "targetBlank": True},
+        ],
         "panels": panels,
     }
 
