@@ -61,7 +61,7 @@
         "links": [],
         "options": {
           "mode": "markdown",
-          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Pick any window with the **time-range picker** (top-right); default = report window *yesterday 09:00 \u2192 today 09:00 IST*. Every panel deep-links to the matching **Kibana Discover** view.\n\n**Expand a section below to load it.** Detail sections are collapsed by default because the Elasticsearch-WD datasource uses a wildcard index (`webgilitydesktop-*`); running every panel at once overwhelms the cluster. *Permanent fix (admin): set the datasource to a daily index pattern (`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 then every panel loads instantly and sections can stay open. See `grafana/apply_datasource_fix.py` and `docs/grafana-wd-dashboard.md`.*"
+          "content": "## WD Kibana Daily Report \u2014 Grafana edition\nSame insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over **`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. Pick any window with the **time-range picker** (top-right); default = report window *yesterday 09:00 \u2192 today 09:00 IST*. Click any table row or chart bar to open the matching **Kibana Discover** view (same filter + time range).\n\n**Expand a section below to load it.** Detail sections are collapsed by default because the Elasticsearch-WD datasource uses a wildcard index (`webgilitydesktop-*`); running every panel at once overwhelms the cluster. *Permanent fix (admin): set the datasource to a daily index pattern (`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 then every panel loads instantly. See `grafana/apply_datasource_fix.py` and `docs/grafana-wd-dashboard.md`.*"
         },
         "fieldConfig": {
           "defaults": {},
@@ -719,6 +719,13 @@
                 },
                 "unit": "short",
                 "mappings": [],
+                "links": [
+                  {
+                    "title": "Open this category in Kibana",
+                    "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20AND%20module.keyword%3A%22${__field.name}%22'),sort:!(!(timestamp,desc)))",
+                    "targetBlank": true
+                  }
+                ],
                 "thresholds": {
                   "mode": "absolute",
                   "steps": [
@@ -805,6 +812,13 @@
                 },
                 "unit": "short",
                 "mappings": [],
+                "links": [
+                  {
+                    "title": "Open this category in Kibana",
+                    "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20AND%20store.keyword%3A%22${__field.name}%22'),sort:!(!(timestamp,desc)))",
+                    "targetBlank": true
+                  }
+                ],
                 "thresholds": {
                   "mode": "absolute",
                   "steps": [
@@ -891,6 +905,13 @@
                 },
                 "unit": "short",
                 "mappings": [],
+                "links": [
+                  {
+                    "title": "Open this category in Kibana",
+                    "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20AND%20tag.keyword%3A%22${__field.name}%22'),sort:!(!(timestamp,desc)))",
+                    "targetBlank": true
+                  }
+                ],
                 "thresholds": {
                   "mode": "absolute",
                   "steps": [
@@ -977,6 +998,13 @@
                 },
                 "unit": "short",
                 "mappings": [],
+                "links": [
+                  {
+                    "title": "Open this category in Kibana",
+                    "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20AND%20process.keyword%3A%22${__field.name}%22'),sort:!(!(timestamp,desc)))",
+                    "targetBlank": true
+                  }
+                ],
                 "thresholds": {
                   "mode": "absolute",
                   "steps": [
@@ -1082,8 +1110,8 @@
                       "id": "links",
                       "value": [
                         {
-                          "title": "Open in Kibana",
-                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22'),sort:!(!(timestamp,desc)))",
+                          "title": "Open this row in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Error%22%20AND%20message.keyword%3A%22${__value.raw}%22'),sort:!(!(timestamp,desc)))",
                           "targetBlank": true
                         }
                       ]
@@ -1300,8 +1328,8 @@
                       "id": "links",
                       "value": [
                         {
-                          "title": "Open in Kibana",
-                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22'),sort:!(!(timestamp,desc)))",
+                          "title": "Open this row in Kibana",
+                          "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22%20AND%20message.keyword%3A%22${__value.raw}%22'),sort:!(!(timestamp,desc)))",
                           "targetBlank": true
                         }
                       ]
@@ -1403,6 +1431,13 @@
                   "mode": "palette-classic"
                 },
                 "mappings": [],
+                "links": [
+                  {
+                    "title": "Open this category in Kibana",
+                    "url": "https://kibana-wd.webgility.com/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))&_a=(columns:!(timestamp,level,message,store,module,subscriberID),index:'61237d60-0ed9-11eb-816a-cde07dc15a1f',interval:auto,query:(language:kuery,query:'level.keyword%3A%22Fatal%22%20AND%20store.keyword%3A%22${__field.name}%22'),sort:!(!(timestamp,desc)))",
+                    "targetBlank": true
+                  }
+                ],
                 "custom": {
                   "hideFrom": {
                     "legend": false,

@@ -15,31 +15,32 @@ Push reads:
     GRAFANA_URL        (default https://systems.webgility.com/graph)
     GRAFANA_AUTH       (default $KIBANA_WD_AUTH -> "user:pass" basic auth)
 
-PERFORMANCE NOTE (important):
-  The `Elasticsearch-WD` datasource points at the WILDCARD index
-  `webgilitydesktop-*`. A wildcard fans every query out across *all* historical
-  daily indices. In isolation a 24h query is fast, but:
-    * `date_histogram` aggregations scale OK (5+ concurrent ~10s), while
-    * `terms` aggregations build global ordinals across every index and time
-      out even 2-concurrent.
-  So the always-open Executive Summary uses only date_histogram count tiles,
-  and every terms-based detail section is COLLAPSED by default (a collapsed
-  Grafana row does not run its panels until expanded).
+DRILL-DOWN LINKS
+  Every panel deep-links to Kibana 7.6.2 Discover with the dashboard's time
+  range (via ${__from:date:iso}/${__to:date:iso}). Row/value links carry the
+  exact filter for that row so the Kibana hit count matches the panel:
+    * table message/subscriber cells -> the clicked cell value (${__value.raw})
+    * bar-gauge / pie slices          -> the clicked category (${__field.name})
+  Grafana URL-encodes the substituted value, and the value is wrapped in the
+  KQL phrase (e.g. message.keyword:"<value>") so spaces/punctuation are safe.
 
-  The clean, permanent fix is to set the datasource to a time-based index
-  pattern (Index name `[webgilitydesktop-]YYYY.MM.DD`, Pattern `Daily`) so each
-  query only touches the relevant day(s) — then every panel, terms included,
-  loads in ~0.3s and the sections can be left open. That requires Grafana
-  `datasources:write`; run grafana/apply_datasource_fix.py as an admin, or set
-  it in the Grafana UI. See docs/grafana-wd-dashboard.md.
+PERFORMANCE NOTE
+  `Elasticsearch-WD` points at the WILDCARD index `webgilitydesktop-*`; a
+  wildcard fans every query across all daily indices. `date_histogram` scales
+  OK but `terms` aggregations time out under dashboard concurrency. So the
+  always-open Executive Summary uses only date_histogram count tiles and every
+  terms-based detail section is COLLAPSED by default (a collapsed Grafana row
+  does not query until expanded). Permanent fix: set the datasource to a daily
+  index pattern (`[webgilitydesktop-]YYYY.MM.DD`, Pattern `Daily`) — needs
+  Grafana datasources:write; see grafana/apply_datasource_fix.py and
+  docs/grafana-wd-dashboard.md.
 
-Verified quirks of this Grafana 9.2 Elasticsearch backend:
-  * A `terms` bucket MUST order by a metric id ("1"), NOT "_count" (500 error).
-  * A `terms` bucket nested with a `date_histogram` times out — the level
-    timeline uses one `date_histogram` target per level instead.
-  * A metric with NO bucket agg returns no frames, so single-value stats use a
-    `date_histogram` (reducer=sum/mean) and unique counts use a large `terms`
-    bucket (number of rows == unique count).
+Verified Grafana 9.2 Elasticsearch backend quirks:
+  * terms bucket MUST order by a metric id ("1"), NOT "_count" (500 error).
+  * terms nested with date_histogram times out — level timeline uses one
+    date_histogram target per level instead.
+  * a metric with NO bucket agg returns no frames — single-value stats use a
+    date_histogram (reducer=sum/mean); unique counts use a large terms bucket.
 """
 import base64
 import json
@@ -72,24 +73,31 @@ def qref():
     return chr(ord("A") + (n - 1) % 26) + ("" if n <= 26 else str((n - 1) // 26))
 
 
-def _kibana_url(encoded_query):
+def _kibana_url(query_body):
     return (
         f"{KIBANA_BASE}/app/kibana#/discover?"
         "_g=(refreshInterval:(pause:!t,value:0),"
         "time:(from:'${__from:date:iso}',to:'${__to:date:iso}'))"
         "&_a=(columns:!(timestamp,level,message,store,module,subscriberID),"
         f"index:'{KIBANA_INDEX}',interval:auto,"
-        f"query:(language:kuery,query:'{encoded_query}'),sort:!(!(timestamp,desc)))"
+        f"query:(language:kuery,query:'{query_body}'),sort:!(!(timestamp,desc)))"
     )
 
 
 def kibana_link(kql, title="Open in Kibana (synced time range)"):
+    """Static KQL drilldown (section-level)."""
     return {"title": title, "url": _kibana_url(urllib.parse.quote(kql, safe="")), "targetBlank": True}
 
 
-def kibana_cell_link(kql_prefix, title="Open this row in Kibana"):
-    enc = urllib.parse.quote(kql_prefix, safe="")
-    return {"title": title, "url": _kibana_url(enc + "${__value.raw}"), "targetBlank": True}
+def kibana_value_link(prefix, suffix="", var="${__value.raw}", title="Open this row in Kibana"):
+    """Drilldown whose KQL embeds a clicked value (a table cell or a category).
+
+    prefix/suffix are the static KQL around the value, URL-encoded here; `var`
+    is a Grafana data-link variable left literal so Grafana substitutes (and
+    URL-encodes) the value at click time. For text fields wrap with quotes via
+    suffix='"' and prefix ending in '"', e.g. message.keyword:"<value>"."""
+    body = urllib.parse.quote(prefix, safe="") + var + urllib.parse.quote(suffix, safe="")
+    return {"title": title, "url": _kibana_url(body), "targetBlank": True}
 
 
 def es_target(query="*", metrics=None, buckets=None, ref=None, alias=""):
@@ -120,7 +128,6 @@ def base(panel_id, title, ptype, x, y, w, h, links=None, desc=""):
 
 def stat_panel(title, kql, x, y, w=4, h=4, color="blue", unit="short",
                agg="count", field=None, desc=""):
-    """agg in {count, sum, avg, unique}."""
     p = base(pid(), title, "stat", x, y, w, h, links=[kibana_link(kql)], desc=desc)
     if agg == "unique":
         p["targets"] = [es_target(kql, metrics=[{"id": "1", "type": "count"}],
@@ -141,11 +148,16 @@ def stat_panel(title, kql, x, y, w=4, h=4, color="blue", unit="short",
     return p
 
 
-def bargauge_panel(title, kql, field, x, y, w, h, size=10, color="orange", desc=""):
-    p = base(pid(), title, "bargauge", x, y, w, h, links=[kibana_link(kql)], desc=desc)
-    p["targets"] = [es_target(kql, buckets=terms_bucket(field, size))]
+def bargauge_panel(title, base_kql, field, x, y, w, h, size=10, color="orange", desc=""):
+    """Bar gauge of a terms agg; each bar deep-links to that category in Kibana
+    via ${__field.name} (the bar's term)."""
+    p = base(pid(), title, "bargauge", x, y, w, h, links=[kibana_link(base_kql)], desc=desc)
+    p["targets"] = [es_target(base_kql, buckets=terms_bucket(field, size))]
+    cat_link = kibana_value_link(f'{base_kql} AND {field}:"', '"', var="${__field.name}",
+                                 title="Open this category in Kibana")
     p["fieldConfig"]["defaults"] = {
         "color": {"mode": "fixed", "fixedColor": color}, "unit": "short", "mappings": [],
+        "links": [cat_link],
         "thresholds": {"mode": "absolute", "steps": [{"color": color, "value": None}]}}
     p["options"] = {"displayMode": "gradient", "orientation": "horizontal", "showUnfilled": True,
                     "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": True}}
@@ -153,11 +165,12 @@ def bargauge_panel(title, kql, field, x, y, w, h, size=10, color="orange", desc=
 
 
 def table_panel(title, kql, field, x, y, w, h, size=15, metrics=None,
-                drilldown_kql=None, cell_prefix=None, sort_by="Count", order_by="1", desc=""):
+                drilldown_kql=None, cell_prefix=None, cell_suffix="",
+                sort_by="Count", order_by="1", desc=""):
     p = base(pid(), title, "table", x, y, w, h, links=[kibana_link(kql)], desc=desc)
     p["targets"] = [es_target(kql, metrics=metrics, buckets=terms_bucket(field, size, order_by))]
     p["fieldConfig"]["defaults"] = {"custom": {"align": "auto", "filterable": True}, "mappings": []}
-    link = kibana_cell_link(cell_prefix) if cell_prefix is not None else (
+    link = kibana_value_link(cell_prefix, cell_suffix) if cell_prefix is not None else (
         kibana_link(drilldown_kql, title="Open in Kibana") if drilldown_kql is not None else None)
     p["fieldConfig"]["overrides"] = [{
         "matcher": {"id": "byName", "options": field},
@@ -188,10 +201,13 @@ def timeseries_levels(title, x, y, w, h, desc=""):
     return p
 
 
-def piechart_panel(title, kql, field, x, y, w, h, size=10, desc=""):
-    p = base(pid(), title, "piechart", x, y, w, h, links=[kibana_link(kql)], desc=desc)
-    p["targets"] = [es_target(kql, buckets=terms_bucket(field, size))]
+def piechart_panel(title, base_kql, field, x, y, w, h, size=10, desc=""):
+    p = base(pid(), title, "piechart", x, y, w, h, links=[kibana_link(base_kql)], desc=desc)
+    p["targets"] = [es_target(base_kql, buckets=terms_bucket(field, size))]
+    cat_link = kibana_value_link(f'{base_kql} AND {field}:"', '"', var="${__field.name}",
+                                 title="Open this category in Kibana")
     p["fieldConfig"]["defaults"] = {"color": {"mode": "palette-classic"}, "mappings": [],
+                                    "links": [cat_link],
                                     "custom": {"hideFrom": {"legend": False, "tooltip": False, "viz": False}}}
     p["options"] = {"pieType": "donut", "reduceOptions": {"calcs": ["lastNotNull"], "values": True},
                     "legend": {"displayMode": "table", "placement": "right", "values": ["value", "percent"]},
@@ -220,15 +236,15 @@ def build_flat():
         "Same insights as the daily HTML/Slack report (`reports/wd-kibana-logs/`) over "
         "**`webgilitydesktop-*`** via the **Elasticsearch-WD** datasource \u2014 **no LLM cost**. "
         "Pick any window with the **time-range picker** (top-right); default = report window "
-        "*yesterday 09:00 \u2192 today 09:00 IST*. Every panel deep-links to the matching **Kibana Discover** view.\n\n"
+        "*yesterday 09:00 \u2192 today 09:00 IST*. Click any table row or chart bar to open the matching "
+        "**Kibana Discover** view (same filter + time range).\n\n"
         "**Expand a section below to load it.** Detail sections are collapsed by default because the "
         "Elasticsearch-WD datasource uses a wildcard index (`webgilitydesktop-*`); running every panel at "
         "once overwhelms the cluster. *Permanent fix (admin): set the datasource to a daily index pattern "
-        "(`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 then every panel loads instantly and sections "
-        "can stay open. See `grafana/apply_datasource_fix.py` and `docs/grafana-wd-dashboard.md`.*"))
+        "(`[webgilitydesktop-]YYYY.MM.DD`, Pattern = Daily) \u2014 then every panel loads instantly. "
+        "See `grafana/apply_datasource_fix.py` and `docs/grafana-wd-dashboard.md`.*"))
     y += 4
 
-    # Always-open summary: date_histogram count tiles only (scale to 5 concurrent).
     panels.append(row("\U0001F4CA Executive Summary", y)); y += 1
     panels.append(stat_panel("Total Events", "*", 0, y, 4, 5, "blue"))
     panels.append(stat_panel("Errors", 'level.keyword:"Error"', 4, y, 5, 5, "orange"))
@@ -251,14 +267,14 @@ def build_flat():
 
     panels.append(row("\U0001F51D Top Error Messages & Subscribers", y)); y += 1
     panels.append(table_panel("Top Error Messages", 'level.keyword:"Error"', "message.keyword", 0, y, 12, 10, 15,
-        drilldown_kql='level.keyword:"Error"'))
+        cell_prefix='level.keyword:"Error" AND message.keyword:"', cell_suffix='"'))
     panels.append(table_panel("Top Error Subscribers", 'level.keyword:"Error"', "subscriberID", 12, y, 12, 10, 15,
         cell_prefix='level.keyword:"Error" AND subscriberID:'))
     y += 10
 
     panels.append(row("\U0001F480 Fatal Events", y)); y += 1
     panels.append(table_panel("Fatal by Message", 'level.keyword:"Fatal"', "message.keyword", 0, y, 12, 8, 15,
-        drilldown_kql='level.keyword:"Fatal"'))
+        cell_prefix='level.keyword:"Fatal" AND message.keyword:"', cell_suffix='"'))
     panels.append(piechart_panel("Fatal by Store", 'level.keyword:"Fatal"', "store.keyword", 12, y, 12, 8, 10))
     y += 8
 
@@ -325,9 +341,6 @@ def attach_legacy(panels, y, existing):
 
 
 def collapse_sections(flat):
-    """Nest each section's panels inside its row; collapse all rows except those
-    in ALWAYS_OPEN. A collapsed Grafana row does not run its panels' queries
-    until expanded, which keeps concurrent query load low on initial load."""
     out, i = [], 0
     while i < len(flat):
         p = flat[i]
