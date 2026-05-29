@@ -20,14 +20,23 @@ destination_path — default: \\192.168.0.95\Kits\Unify\Customization
 upload_to_dropbox — default: false
 ```
 
-## Pipeline Session State (initialize ONCE at start)
+## Pipeline Session State (initialize ONCE at Step 1)
+> ⚠️ **CRITICAL: Use file-based state — NOT in-memory variables.**
+> In-memory variables reset every new terminal session, causing duplicate Slack messages and duplicate triggers.
+> Always persist state to `$env:TEMP\wd-pipeline-state.json`.
+
 ```powershell
-$preSlackSent = $false   # Step 2 pre-build Slack  — send ONCE only
-$triggerFired = $false   # Step 3 Jenkins trigger   — fire ONCE only
-$buildNumber  = $null    # Step 3/4 build# tracking — survives retries
-$qaSlackSent  = $false   # Step 9 QA Slack notify   — send ONCE only
+$stateFile = "$env:TEMP\wd-pipeline-state.json"
+if (Test-Path $stateFile) {
+    $state = Get-Content $stateFile | ConvertFrom-Json
+    Write-Host "Resumed: preSlack=$($state.preSlackSent) trigger=$($state.triggerFired) build=$($state.buildNumber) qaSlack=$($state.qaSlackSent)"
+} else {
+    $state = [PSCustomObject]@{ preSlackSent=$false; triggerFired=$false; buildNumber=$null; qaSlackSent=$false }
+    $state | ConvertTo-Json | Set-Content $stateFile
+}
+function Save-State { $state | ConvertTo-Json | Set-Content $stateFile }
 ```
-**Resume rule:** Restore flags from last known state if pipeline restarts mid-run. Never re-run a step whose flag is already true.
+**After pipeline ends, delete state file:** `Remove-Item $stateFile -Force -ErrorAction SilentlyContinue`
 
 ## Pipeline Checklist (print + update after every step)
 ```
@@ -56,20 +65,20 @@ Mark: [ ] pending | [v] done | [x] failed | [-] skipped
 - Follow §1 in skill
 
 ### Step 2 — Pre-Build Slack [send ONCE only]
-- Guard: if `$preSlackSent = $true` → skip, do NOT send again
+- Guard: if `$state.preSlackSent = $true` → skip, do NOT send again
 - Send "@here creating installer from <branch>" to slack_channel
-- Set `$preSlackSent = $true` after sending
+- After sending: `$state.preSlackSent = $true; Save-State`
 - Log failure but continue if Slack fails
 - Follow §2 in skill
 
 ### Step 3 — Trigger Jenkins Build [fire ONCE only]
-- Guard: if `$triggerFired = $true` → skip trigger entirely
+- Guard: if `$state.triggerFired = $true` → skip trigger entirely
 - **Auto-prepend origin/ prefix**: if branch does NOT start with `origin/`, prepend it automatically — Git Parameter plugin requires `origin/<branchName>`
 - **Param name**: `Branch` (capital B) — NOT `branch` or `BRANCH`
 - **Param value**: `origin/<branchName>` URL-encoded
 - **Body format**: `application/x-www-form-urlencoded` — NOT JSON
-- Trigger ONCE, record $buildNumber = nextBuildNumber
-- Set `$triggerFired = $true` immediately after triggering
+- Trigger ONCE, record `$state.buildNumber = nextBuildNumber`
+- After triggering: `$state.triggerFired = $true; Save-State`
 - ❌ NEVER trigger a second time even if first appears to fail — check queue first
 - Follow §3 in skill
 
@@ -101,11 +110,11 @@ Mark: [ ] pending | [v] done | [x] failed | [-] skipped
 - Follow §8 in skill
 
 ### Step 9 — Slack QA Notification [send ONCE only]
-- Guard: if `$qaSlackSent = $true` → skip, do NOT send again
+- Guard: if `$state.qaSlackSent = $true` → skip, do NOT send again
 - Send ONLY AFTER Step 6 succeeds
 - Show ONLY the QA share path (never the source \\inwsfs02 path)
 - Append Dropbox link only if Step 7 succeeded
-- Set `$qaSlackSent = $true` after sending
+- After sending: `$state.qaSlackSent = $true; Save-State`
 - Follow §9 in skill
 
 ### Step 10 — Post QA Comment to Jira [SKIP if not requested]

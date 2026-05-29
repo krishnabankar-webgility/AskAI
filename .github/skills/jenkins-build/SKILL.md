@@ -11,16 +11,42 @@ This skill is referenced by the agent files at:
 
 ## Pipeline Checklist (Session State)
 
-Initialize these flags at the START of every pipeline run:
+> ⚠️ **CRITICAL: Use file-based state — NOT in-memory variables.**
+> In-memory PowerShell variables reset to `$false` every time a new terminal session starts,
+> causing duplicate Slack messages and duplicate Jenkins triggers.
+> Always read/write state from `$env:TEMP\wd-pipeline-state.json`.
+
+**Initialize at the START of every pipeline run (Step 1):**
 ```powershell
-# Session state — prevents double-send and double-trigger across retries
-$preSlackSent = $false   # Step 2 pre-build Slack  — send ONCE only
-$triggerFired = $false   # Step 3 Jenkins trigger   — fire ONCE only
-$buildNumber  = $null    # Step 3/4 build# tracking — survives retries
-$qaSlackSent  = $false   # Step 9 QA Slack notify   — send ONCE only
+$stateFile = "$env:TEMP\wd-pipeline-state.json"
+
+# Load existing state if file exists (resume), otherwise create fresh
+if (Test-Path $stateFile) {
+    $state = Get-Content $stateFile | ConvertFrom-Json
+    Write-Host "  Resumed state: preSlack=$($state.preSlackSent) trigger=$($state.triggerFired) build=$($state.buildNumber) qaSlack=$($state.qaSlackSent)"
+} else {
+    $state = [PSCustomObject]@{
+        preSlackSent = $false   # Step 2 pre-build Slack  — send ONCE only
+        triggerFired = $false   # Step 3 Jenkins trigger   — fire ONCE only
+        buildNumber  = $null    # Step 3/4 build# tracking
+        qaSlackSent  = $false   # Step 9 QA Slack notify   — send ONCE only
+    }
+    $state | ConvertTo-Json | Set-Content $stateFile
+    Write-Host "  Fresh pipeline state created: $stateFile"
+}
 ```
 
-**Resume rule:** If pipeline must restart mid-run, restore these flags from last known state before continuing. Never re-run a step whose flag is $true.
+**After updating any flag, always save state immediately:**
+```powershell
+function Save-State { $state | ConvertTo-Json | Set-Content $stateFile }
+```
+
+**After pipeline completes (success or failure), clean up:**
+```powershell
+Remove-Item $stateFile -Force -ErrorAction SilentlyContinue
+```
+
+**Resume rule:** If pipeline restarts mid-run, the state file is read automatically — already-completed steps are skipped without re-executing.
 
 **Print this checklist after every step:**
 ```
@@ -147,7 +173,7 @@ if (-not $slackToken) {
     $slackToken = [System.Environment]::GetEnvironmentVariable("SLACK_BOT_TOKEN","User")
 }
 
-if ($preSlackSent -eq $true) {
+if ($state.preSlackSent -eq $true) {
     Write-Host "  Skip: pre-build Slack already sent this run — no duplicate"
 } else {
 if ($slackToken -and $slackChannel) {
@@ -166,8 +192,8 @@ if ($slackToken -and $slackChannel) {
     Write-Warning "  ⚠️ Skipping pre-build Slack (no token or channel)"
 }
 
-}  # end $preSlackSent guard
-$preSlackSent = $true
+}  # end $state.preSlackSent guard
+$state.preSlackSent = $true; Save-State
 Write-Host "✅ [Step 2 — Pre-Build Slack Notification] DONE"
 ```
 
@@ -193,7 +219,7 @@ $branchEncoded = [uri]::EscapeDataString($branch)
 Write-Host "  Branch for Jenkins: $branch  (encoded: $branchEncoded)"
 
 # Guard: trigger exactly ONCE per pipeline run
-if ($triggerFired -eq $true) {
+if ($state.triggerFired -eq $true) {
     Write-Host "  Skip: trigger already fired this run — no duplicate build"
 } else {
 # Trigger build EXACTLY ONCE
@@ -202,8 +228,8 @@ $body = @{ Branch = $branch; PostSharp = "Yes" }
 
 Invoke-RestMethod -Uri $buildUri -Method Post -Headers $headers -Body $body
 Write-Host "  ✅ Build triggered for branch: $branch (expected #$expectedBuildNumber)"
-$triggerFired = $true
-}  # end triggerFired guard
+$state.triggerFired = $true; $state.buildNumber = $expectedBuildNumber; Save-State
+}  # end $state.triggerFired guard
 
 # IMPORTANT: Do NOT call buildWithParameters again. The build is now queued/running.
 ```
@@ -678,7 +704,7 @@ $slackChannel = "<USER_PROVIDED_CHANNEL>"   # e.g. "#my-daily-update" — from u
 
 if (-not $slackToken) {
 # Guard: send QA Slack notification ONCE only
-if ($qaSlackSent -eq $true) {
+if ($state.qaSlackSent -eq $true) {
     Write-Host "  Skip: QA Slack already sent this run — no duplicate"
 } else {
     Write-Error "❌ SLACK_BOT_TOKEN not set. Printing message for manual post:"
@@ -712,8 +738,8 @@ $jiraLink
     }
 }
 
-}  # end qaSlackSent guard
-$qaSlackSent = $true
+}  # end $state.qaSlackSent guard
+$state.qaSlackSent = $true; Save-State
 Write-Host "✅ [Step 9 — Slack Notification] DONE"
 ```
 
