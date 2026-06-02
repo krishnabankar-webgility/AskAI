@@ -29,9 +29,9 @@ upload_to_dropbox — default: false
 $stateFile = "$env:TEMP\wd-pipeline-state.json"
 if (Test-Path $stateFile) {
     $state = Get-Content $stateFile | ConvertFrom-Json
-    Write-Host "Resumed: preSlack=$($state.preSlackSent) trigger=$($state.triggerFired) build=$($state.buildNumber) qaSlack=$($state.qaSlackSent)"
+    Write-Host "Resumed: preSlack=$($state.preSlackSent) trigger=$($state.triggerFired) build=$($state.buildNumber) qaSlack=$($state.qaSlackSent) qaComment=$($state.qaCommentPosted)"
 } else {
-    $state = [PSCustomObject]@{ preSlackSent=$false; triggerFired=$false; buildNumber=$null; qaSlackSent=$false }
+    $state = [PSCustomObject]@{ preSlackSent=$false; triggerFired=$false; buildNumber=$null; qaSlackSent=$false; qaCommentPosted=$false }
     $state | ConvertTo-Json | Set-Content $stateFile
 }
 function Save-State { $state | ConvertTo-Json | Set-Content $stateFile }
@@ -118,6 +118,8 @@ Mark: [ ] pending | [v] done | [x] failed | [-] skipped
 - Follow §9 in skill
 
 ### Step 10 — Post QA Comment to Jira [SKIP if not requested]
+- Guard: if `$state.qaCommentPosted = $true` → skip, do NOT post again (prevents duplicates when terminal output is truncated but command succeeded)
+- After posting: `$state.qaCommentPosted = $true; Save-State`
 - Follow §10 in skill
 
 ### FINAL SUMMARY — Always print at end
@@ -129,6 +131,7 @@ Mark: [ ] pending | [v] done | [x] failed | [-] skipped
 - ❌ Triggers Jenkins more than once per pipeline run
 - ❌ Sends pre-build Slack more than once per pipeline run
 - ❌ Sends QA Slack more than once per pipeline run
+- ❌ Posts QA Jira comment more than once per pipeline run
 - ❌ Asks "is build done?" (polls autonomously)
 - ❌ Asks approval between steps (except Step 8)
 - ❌ Shows alternative/wrong share paths in Slack

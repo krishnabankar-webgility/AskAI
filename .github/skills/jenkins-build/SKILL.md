@@ -23,13 +23,14 @@ $stateFile = "$env:TEMP\wd-pipeline-state.json"
 # Load existing state if file exists (resume), otherwise create fresh
 if (Test-Path $stateFile) {
     $state = Get-Content $stateFile | ConvertFrom-Json
-    Write-Host "  Resumed state: preSlack=$($state.preSlackSent) trigger=$($state.triggerFired) build=$($state.buildNumber) qaSlack=$($state.qaSlackSent)"
+    Write-Host "  Resumed state: preSlack=$($state.preSlackSent) trigger=$($state.triggerFired) build=$($state.buildNumber) qaSlack=$($state.qaSlackSent) qaComment=$($state.qaCommentPosted)"
 } else {
     $state = [PSCustomObject]@{
-        preSlackSent = $false   # Step 2 pre-build Slack  — send ONCE only
-        triggerFired = $false   # Step 3 Jenkins trigger   — fire ONCE only
-        buildNumber  = $null    # Step 3/4 build# tracking
-        qaSlackSent  = $false   # Step 9 QA Slack notify   — send ONCE only
+        preSlackSent     = $false   # Step 2 pre-build Slack  — send ONCE only
+        triggerFired     = $false   # Step 3 Jenkins trigger   — fire ONCE only
+        buildNumber      = $null    # Step 3/4 build# tracking
+        qaSlackSent      = $false   # Step 9 QA Slack notify   — send ONCE only
+        qaCommentPosted  = $false   # Step 10 QA Jira comment — post ONCE only
     }
     $state | ConvertTo-Json | Set-Content $stateFile
     Write-Host "  Fresh pipeline state created: $stateFile"
@@ -862,6 +863,12 @@ CC: @Hitesh Devashrayee @Arvind Chavan
 ```powershell
 Write-Host "🔄 [Step 10 — QA Testing Jira Comment] IN PROGRESS..."
 
+# Guard: post ONCE only — prevents duplicate comments if terminal output was truncated
+# and the command appeared to fail but actually succeeded.
+if ($state.qaCommentPosted -eq $true) {
+    Write-Host "  Skip: QA Jira comment already posted this run — no duplicate"
+} else {
+
 $base64Auth = [Convert]::ToBase64String(
     [Text.Encoding]::ASCII.GetBytes("$($env:JIRA_EMAIL):$($env:JIRA_API_TOKEN)")
 )
@@ -879,13 +886,16 @@ $body = @{
     }
 } | ConvertTo-Json -Depth 10
 
-Invoke-RestMethod `
+$r = Invoke-RestMethod `
     -Uri "$($env:JIRA_BASE_URL)/rest/api/3/issue/$jiraTicketId/comment" `
     -Method Post `
     -Headers @{ Authorization = "Basic $base64Auth"; "Content-Type" = "application/json" } `
     -Body $body
 
-Write-Host "  ✅ QA Testing Jira comment posted on $jiraTicketId"
+Write-Host "  ✅ QA Testing Jira comment posted on $jiraTicketId (id: $($r.id))"
+$state.qaCommentPosted = $true; Save-State
+
+}  # end $state.qaCommentPosted guard
 Write-Host "✅ [Step 10 — QA Testing Jira Comment] DONE"
 ```
 
