@@ -50,3 +50,34 @@ git push origin develop
 - Never delete branches without explicit confirmation.
 - Never rewrite remote shared branch history unless explicitly requested.
 - Avoid destructive commands by default.
+
+## Feature Branch Sync Safety (mandatory)
+
+**Root cause of past incidents (UD-32682, UD-32643):** When a branch is created from `develop` using `git checkout -b <branch> origin/develop`, git sets the upstream tracking to `origin/develop`. VS Code "Sync Changes" then pushes commits directly to `origin/develop`, bypassing PR review entirely. Bitbucket auto-closes the PR as "MERGED" even though the Merge button was never clicked.
+
+### Rule: always sync with the feature branch's own remote — never with `origin/develop`
+
+**Step 1 — Immediately after every new feature branch push, set correct tracking:**
+```bash
+git push -u origin <current-branch-name>
+```
+The `-u` flag sets upstream to `origin/<current-branch-name>`. After this, VS Code Sync targets the feature branch, not develop.
+
+**Step 2 — Before every Sync, verify tracking:**
+```bash
+git status
+```
+The tracking line must read `Your branch is ... 'origin/<current-branch-name>'`.
+- ✅ `origin/UD-32682_Krishna` — safe to sync
+- 🔴 `origin/develop` — **do NOT sync** — fix tracking first
+
+**Step 3 — Auto-fix if wrong upstream detected:**
+```bash
+git branch --set-upstream-to=origin/<current-branch-name>
+```
+
+**Agent behavior:**
+- Always verify upstream tracking before any sync or push operation.
+- If upstream is not `origin/<current-branch-name>` — correct it before proceeding.
+- Never sync a feature branch to `origin/develop` or any base branch.
+- Apply `git push -u origin <branch>` immediately after every new feature branch push.

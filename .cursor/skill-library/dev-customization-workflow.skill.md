@@ -19,35 +19,44 @@ Use this skill for **customer-specific customization** tasks in this repository.
 
 ## Git workflow safety (critical before coding)
 
-**Learning from UD-32643 incident:** Misconfigured branch tracking in local git can cause accidental direct pushes to `develop`, bypassing PR review entirely.
+**Root cause (UD-32682 + UD-32643 incidents):** When a branch is created from `develop` using `git checkout -b <branch> origin/develop`, git sets the upstream tracking to `origin/develop`. VS Code "Sync Changes" then pushes commits directly to `origin/develop`, bypassing PR review. Bitbucket auto-closes the PR as "MERGED" even though the Merge button was never clicked.
 
-Before starting **any** code changes:
+### Rule: always sync with the feature branch's own remote — never with `origin/develop`
 
-1. **Verify branch tracking** in the terminal:
-   ```powershell
-   git branch -vv
-   ```
-   - Expected output: `* UD-XXXXX-feature [origin/UD-XXXXX-feature] ...` (tracking the remote **feature branch**)
-   - **Danger sign:** `* UD-XXXXX-feature [origin/develop] ...` (tracking `develop` instead!)
+**Prevention — immediately after every new feature branch push:**
+```powershell
+git push -u origin <current-branch-name>
+```
+The `-u` flag sets upstream to `origin/<current-branch-name>`. VS Code Sync will now target the feature branch, not develop.
 
-2. **If tracking is wrong** (pointing to `origin/develop`):
-   ```powershell
-   git branch --set-upstream-to=origin/UD-XXXXX-feature UD-XXXXX-feature
-   ```
+**Detection — before every Sync, verify tracking:**
+```powershell
+git status
+```
+- ✅ `Your branch is ... 'origin/UD-XXXXX-feature'` — safe
+- 🔴 `Your branch is ... 'origin/develop'` — **do NOT sync** — fix first
 
-3. **When using VS Code "Sync Changes"** or any `git push` without explicit arguments:
-   - It **always pushes to the tracking branch** — not the branch name.
-   - Misconfigured tracking = direct push to `develop` = accidental merge bypass = revert required later.
+```powershell
+# Also check with:
+git branch -vv
+# Expected: * UD-XXXXX-feature [origin/UD-XXXXX-feature] ...
+# Danger:   * UD-XXXXX-feature [origin/develop] ...
+```
 
-4. **Best practice:** Always use explicit push syntax to be sure:
-   ```powershell
-   git push origin HEAD:UD-XXXXX-feature
-   ```
-   This pushes the current HEAD to the named remote branch (not the tracking upstream).
+**Auto-fix — if wrong upstream detected:**
+```powershell
+git branch --set-upstream-to=origin/UD-XXXXX-feature
+```
 
-5. **After push:** In Bitbucket, verify that the PR shows your new commit(s) **only** on the feature branch — not on `develop`.
+**Agent behavior:**
+- Always verify upstream tracking before any sync or push operation.
+- If upstream is not `origin/<current-branch-name>` — auto-correct it before proceeding.
+- Never sync a feature branch to `origin/develop` or any base branch.
+- Apply `git push -u origin <branch>` immediately after every new feature branch push.
 
-**Why this matters:** Accidental direct pushes to `develop` trigger auto-close of the PR (Bitbucket sees the commit is already on the target branch) and bypass all review gates.
+> ⚠️ **Rule of Thumb:** If VS Code shows outgoing changes on a feature branch and tracked upstream is `origin/develop` — **do not click Sync**. It will push directly to `develop`. Always verify first.
+
+**After push:** Verify in Bitbucket that the PR shows your new commit(s) only on the feature branch — not on `develop`.
 
 ## Implementation pattern
 
