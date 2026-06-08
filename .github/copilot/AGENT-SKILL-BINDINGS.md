@@ -12,6 +12,29 @@
 ├── skill-library/       # CANONICAL skills (*.skill.md)
 .github/
 ├── agents/
+<<<<<<< HEAD
+│   ├── db-automation.agent.md
+│   ├── git-automation.agent.md
+│   ├── jira-automation.agent.md
+│   ├── dev-customization.agent.md
+│   └── [other agents].agent.md
+├── skills/
+│   ├── db-automation/
+│   │   ├── db-restore.md
+│   │   └── [other db skills].md
+│   ├── git-automation/
+│   │   └── git-sync.md
+│   ├── jira-automation/
+│   │   ├── jira-story-workflow.md
+│   │   ├── jira-worklogs.md
+│   │   ├── jira-sprint-lifecycle.md
+│   │   └── jira-create-ud-issue.md
+│   ├── dev-customization/
+│   │   ├── dev-customization-expertise.md
+│   │   └── dev-customization-workflow.md
+│   └── [other agent folders]/
+└── AGENT-SKILL-BINDINGS.md (this file)
+=======
 │   ├── KrishnaAiGen.agent.md          # VS Code picker — master (synced from copilot/agents)
 │   ├── KrishnaAIGen-autonomous.agent.md  # VS Code — autonomous tooling variant
 │   └── …                              # other AskAI specialists (synced from copilot/agents)
@@ -20,10 +43,19 @@
 │   └── skills/                        # Legacy — prefer .cursor/skill-library
 ├── prompts/
 │   └── *.prompt.md                    # optional routing prompts
+>>>>>>> origin/master
 ```
 
 ## Agent → Skills
 
+<<<<<<< HEAD
+| Agent (`.agent.md`) | Skills Folder | Skill Files | Purpose |
+|--|--|--|--|
+| `db-automation` | `skills/db-automation/` | `db-restore.md` | SQL Server database restore, DDL/DML operations |
+| `git-automation` | `skills/git-automation/` | `git-sync.md` | Git commit/push/merge and branch sync (e.g. `develop` with `master`) |
+| `jira-automation` | `skills/jira-automation/` | `jira-story-workflow.md`, `jira-worklogs.md`, `jira-sprint-lifecycle.md`, `jira-create-ud-issue.md` | Jira workflow automation: story creation, subtasks, worklogs, sprint lifecycle |
+| `dev-customization` | `skills/dev-customization/` | `dev-customization-expertise.md`, `dev-customization-workflow.md` | Customization implementation workflow with architecture-first planning, scoped gated changes, and review/build safety checks |
+=======
 | Agent (`.agent.md`) | Canonical skills (`.cursor/skill-library/`) |
 |---------------------|-----------------------------------------------|
 | `KrishnaAiGen` | Bindings + meta skills always; domain packs loaded **via routing** (see master agent §B). Optional full sweep lists `jira-workflow.skill.md`, `git-sync.skill.md`, `db-restore.skill.md`, `bitbucket-unify-enterprise.skill.md`, `slack-integration.skill.md`, `dev-customization-expertise.skill.md`, `dev-customization-workflow.skill.md`, `confluence-workflow.skill.md`, `daily-work-update.skill.md`, `wd-es-kibana.skill.md`. |
@@ -39,6 +71,7 @@
 | `sys-troubleshoot` | `vpn-smb-access.skill.md`, `network-profile-fix.skill.md`, `sys-cleanup-optimization.skill.md` |
 | `wd-es-kibana` | `wd-es-kibana.skill.md`, `slack-integration.skill.md` (Slack MCP fallback only) |
 | `wd-jenkins-build` | `wd-jenkins-build.skill.md`, `vpn-smb-access.skill.md` (if network share fails), `slack-integration.skill.md` (Slack posting) |
+>>>>>>> origin/master
 
 ## Deprecated
 
