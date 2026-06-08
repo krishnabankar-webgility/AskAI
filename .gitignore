@@ -359,5 +359,15 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+# Ephemeral agent session scratch (optional path if not under ignored logs/)
+.cursor/agent-session-notes.log
+
+# One-off agent outputs (reports, dumps, temp exports — not committed)
+local/ephemeral/
+
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# transient agent files
+.grafana_creds.tmp
+.tmp_render/
+.live-backup-*.json

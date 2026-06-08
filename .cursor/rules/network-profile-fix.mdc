@@ -1,0 +1,66 @@
+---
+description: "Use when: network adapter stuck on Public, cannot change network to Private, file sharing not working, network discovery disabled, Windows says network is Public but should be Private, VPN adapter shows Public profile, cannot see other computers on network, HomeGroup or workgroup not working, SMB blocked by Public firewall profile."
+alwaysApply: false
+---
+
+# Network Profile Fix (Public → Private)
+
+## When to Use
+
+- A network adapter (especially a VPN adapter) shows `NetworkCategory = Public`
+- File sharing, network discovery, or SMB is blocked because of Public profile firewall rules
+- Windows firewall is preventing NTLM/SMB traffic based on Public profile
+
+---
+
+## Quick Diagnosis
+
+```powershell
+Get-NetConnectionProfile | Format-Table Name, InterfaceAlias, NetworkCategory, IPv4Connectivity
+```
+
+| Profile | Effect |
+|---|---|
+| `Public` | Blocks file sharing, network discovery, NTLM/SMB |
+| `Private` | Allows file sharing and domain-style auth |
+| `DomainAuthenticated` | Auto-set when DC is reachable at login — ideal |
+
+---
+
+## Fix: Change Adapter to Private
+
+```powershell
+# Change a specific adapter to Private
+Set-NetConnectionProfile -InterfaceAlias "<AdapterName>" -NetworkCategory Private
+
+# Common adapter names:
+#   "OpenVPN TAP-Windows6"   — Sophos / OpenVPN
+#   "Ethernet"               — Wired
+#   "Wi-Fi"                  — Wireless
+
+# Verify
+Get-NetConnectionProfile | Format-Table InterfaceAlias, NetworkCategory
+```
+
+No reboot required — takes effect immediately.
+
+---
+
+## Verify Firewall Rules After Change
+
+```powershell
+Get-NetFirewallRule -DisplayGroup "File and Printer Sharing" |
+  Where-Object { $_.Enabled -eq $true } |
+  Format-Table DisplayName, Profile, Direction
+```
+
+Confirm these are enabled on Private/Domain profile:
+- `File and Printer Sharing (SMB-In)`
+- `File and Printer Sharing (NB-Session-In)`
+
+---
+
+## Notes
+
+- VPN adapters often reset to Public on reconnect — re-apply after each VPN reconnect if needed
+- For a permanent fix, ask your VPN admin to push a network location policy that marks the VPN interface as Private/Domain

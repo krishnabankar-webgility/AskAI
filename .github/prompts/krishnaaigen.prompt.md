@@ -1,0 +1,23 @@
+# KrishnaAiGen — prompt routing (GitHub Copilot / VS Code)
+
+Use this prompt when the user wants **orchestration** across Jira, Git, DB, Bitbucket, or Slack, or when the request does not name a single specialist.
+
+**Load first**
+
+1. `.cursor/agent-skill-bindings.md`
+2. `.cursor/skill-library/krishnaaigen-ephemeral-output.skill.md`
+3. `.cursor/skill-library/krishnaaigen-skill-evolution.skill.md`
+4. All domain skills listed in `.cursor/agents/KrishnaAiGen.agent.md` **or** narrow to one domain per specialist agent.
+
+**Invoke specialists**
+
+- Jira → `jira-automation.prompt.md` or `jira-automation` agent  
+- Git → `git-automation.prompt.md`  
+- DB → `db-automation.prompt.md`  
+- Bitbucket → `bitbucket-automation.prompt.md` or `bitbucket-automation` agent  
+- Slack → `slack-automation.prompt.md` or `slack-automation` agent  
+- Confluence → `confluence-automation.prompt.md` or `confluence-automation` agent  
+- Windows/VPN/SMB/network → `sys-troubleshoot.prompt.md` or `sys-troubleshoot` agent  
+- Doc/skill fixes only → `agent-learning.prompt.md` or `agent-learning` agent  
+
+**Master agent files:** `.cursor/agents/KrishnaAiGen.agent.md`, `.github/copilot/agents/KrishnaAiGen.agent.md`, `.github/agents/KrishnaAiGen.agent.md`.

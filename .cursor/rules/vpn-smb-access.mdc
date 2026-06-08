@@ -1,0 +1,226 @@
+---
+description: "Use when: cannot access UNC path over VPN, network share not accessible from home, net use hangs, SMB share access denied, \\server\\share not opening, file share works at office but not remote, VPN connected but cannot browse shares, Kerberos authentication failed, MTU issue VPN, SMB negotiation timeout, net use hangs forever, cannot access Jenkins over VPN, RDP not working over VPN, internal web services not loading."
+alwaysApply: false
+---
+
+# VPN + SMB Network Share Access Fix
+
+## When to Use
+
+- Connected to VPN (Sophos, OpenVPN, Cisco AnyConnect, etc.)
+- Can **ping** the server but `net use \\server\share` **hangs or fails**
+- Share works from office but not from home/remote
+- Error: `The password is invalid`, `System error 53/64/67`, or command freezes
+- Cannot access internal web services (Jenkins, web apps) over VPN
+- RDP/Remote Desktop fails to VMs over VPN
+
+## Real-World Success Examples
+
+✅ **Jenkins** — http://jenkins.webgility.com:8080 not loading → Fixed with MTU 1200 + Private profile
+
+✅ **RDP to VMs** — Remote Desktop failing → Fixed with network profile + Kerberos refresh
+
+✅ **UNC paths** — `\\inwsfs02\UDInstaller` inaccessible → Fixed with MTU 1200 + NTLM auth
+
+**Pattern**: Same MTU fix resolves HTTP, RDP, and SMB simultaneously.
+
+---
+
+## Root Causes (in order of frequency)
+
+| # | Root Cause | Symptom |
+|---|---|---|
+| 1 | **MTU too high on VPN adapter** | `net use` hangs; TCP 445 open but SMB never completes |
+| 2 | **No Kerberos tickets** (logged in before VPN connected) | `klist` shows 0 tickets; auth fails silently |
+| 3 | **Network adapter on Public profile** | File sharing / NTLM blocked by Windows firewall |
+| 4 | **Stale credentials in Credential Manager** | Wrong password cached for server |
+| 5 | **Wrong VPN split-tunnel route** | Traffic to server subnet not going through VPN |
+
+---
+
+## Step 1 — Full Diagnostics
+
+```powershell
+# Adapters & network profiles
+Get-NetConnectionProfile | Format-Table Name, InterfaceAlias, NetworkCategory, IPv4Connectivity
+
+# VPN adapter IP
+Get-NetIPAddress | Where-Object AddressFamily -eq 'IPv4' | Format-Table InterfaceAlias, IPAddress, PrefixLength
+
+# DNS resolve the server
+[System.Net.Dns]::GetHostAddresses("inwsfs02")   # replace hostname
+
+# SMB port reachable?
+Test-NetConnection -ComputerName <server-ip> -Port 445 -WarningAction SilentlyContinue
+
+# Kerberos tickets
+$r = & cmd /c "klist 2>&1"; $r | ForEach-Object { $_ }
+
+# Route to server subnet
+route print | Select-String "192.168."
+
+# Current MTU
+netsh interface ipv4 show subinterface
+
+# Stored credentials
+cmdkey /list
+```
+
+---
+
+## Step 2 — Fix: MTU (Most Common Root Cause)
+
+**Identify**: `net use` hangs, BUT `Test-NetConnection -Port 445` = `True`.
+TCP 3-way handshake uses small packets (succeeds); SMB negotiation uses large packets (silently dropped by VPN tunnel).
+
+### Find the working MTU boundary
+
+```powershell
+# Test with Don't-Fragment flag — binary search between 1100 and 1400
+cmd /c "ping -n 1 -f -l 1200 <server-ip>"   # reply = good
+cmd /c "ping -n 1 -f -l 1300 <server-ip>"   # timeout = too big
+# Keep halving/narrowing until you find the highest value that gets a reply
+# Actual MTU = highest working payload + 28 (IP + ICMP headers)
+```
+
+### Apply MTU fix (requires admin/UAC)
+
+```powershell
+# Get VPN adapter name
+Get-NetAdapter | Where-Object Status -eq 'Up'
+
+# Set MTU — replace adapter name and value as appropriate
+Start-Process -FilePath "netsh" `
+  -ArgumentList 'interface ipv4 set subinterface "OpenVPN TAP-Windows6" mtu=1200 store=persistent' `
+  -Verb RunAs -Wait
+
+# Verify
+netsh interface ipv4 show subinterface | Select-String "OpenVPN"
+```
+
+> **This environment**: VPN adapter = `OpenVPN TAP-Windows6` | Correct MTU = **1200**
+> Anything above 1200 payload (1228 total) is silently dropped on this VPN tunnel.
+
+---
+
+## Step 3 — Fix: No Kerberos Tickets
+
+**Identify**: `klist` shows `Cached Tickets: (0)` AND `klist get krbtgt/CORP` fails.
+Cause: Logged in with cached creds before VPN connected — logon session has no live Kerberos tokens.
+
+### Option A — Explicit credentials (NTLM fallback, works immediately)
+
+```powershell
+net use \\<server>\<share> /user:<DOMAIN>\<username> "<password>"
+
+# Example:
+net use \\inwsfs02\UDInstaller /user:CORP\krishna.bankar "Password"
+```
+
+### Option B — Lock & Unlock workstation (gets a fresh Kerberos TGT)
+
+```powershell
+rundll32.exe user32.dll,LockWorkStation
+# Unlock with domain password while VPN is connected
+# Then check: klist should show tickets
+```
+
+---
+
+## Step 4 — Fix: VPN Adapter on Public Profile
+
+**Identify**: `Get-NetConnectionProfile` shows `NetworkCategory = Public` for VPN adapter.
+
+```powershell
+Set-NetConnectionProfile -InterfaceAlias "OpenVPN TAP-Windows6" -NetworkCategory Private
+
+# Verify
+Get-NetConnectionProfile | Format-Table InterfaceAlias, NetworkCategory
+```
+
+---
+
+## Step 5 — Fix: Stale Credentials
+
+```powershell
+# Remove stale entry
+cmdkey /delete:<servername>     # e.g. cmdkey /delete:inwsfs02
+cmdkey /delete:<server-ip>
+
+# Re-add correct credentials
+cmdkey /add:<servername> /user:<DOMAIN>\<username> /pass:<password>
+```
+
+---
+
+## Step 6 — Verify & Clean Up
+
+```powershell
+# Map the share
+net use \\inwsfs02\UDInstaller /user:CORP\krishna.bankar "<password>"
+
+# List contents
+dir \\inwsfs02\UDInstaller | Select-Object -First 10
+
+# Open in Explorer
+explorer.exe "\\inwsfs02\UDInstaller"
+
+# Show active connections
+net use
+
+# Clean up session-only stored credentials
+cmdkey /delete:<servername>
+```
+
+---
+
+## Environment Reference (corp.webgility.com)
+
+| Item | Value |
+|---|---|
+| Domain | `CORP` / `corp.webgility.com` |
+| Domain Controller | `INWSDC01` @ `192.168.0.51` |
+| File Server | `inwsfs02` @ `192.168.0.95` |
+| VPN Adapter | `OpenVPN TAP-Windows6` |
+| VPN Client IP | `192.168.100.x` subnet |
+| Route to office | `192.168.0.0/16` → `192.168.100.1` |
+| Working MTU | **1200** (above this = silent drop) |
+| DNS servers via VPN | `192.168.0.51`, `192.168.0.70` |
+| Domain user | `CORP\krishna.bankar` |
+
+---
+
+## Automated Fix Script
+
+```powershell
+param(
+    [string]$Share      = "\\inwsfs02\UDInstaller",
+    [string]$User       = "CORP\krishna.bankar",
+    [string]$Pass       = "",           # pass at runtime, never hardcode
+    [string]$VPNAdapter = "OpenVPN TAP-Windows6",
+    [int]$MTU           = 1200
+)
+
+Write-Host "=== 1: Set VPN network profile to Private ===" -ForegroundColor Cyan
+Set-NetConnectionProfile -InterfaceAlias $VPNAdapter -NetworkCategory Private -ErrorAction SilentlyContinue
+
+Write-Host "=== 2: Fix MTU (needs admin UAC) ===" -ForegroundColor Cyan
+Start-Process -FilePath "netsh" `
+  -ArgumentList "interface ipv4 set subinterface `"$VPNAdapter`" mtu=$MTU store=persistent" `
+  -Verb RunAs -Wait
+
+Write-Host "=== 3: Clear stale connections ===" -ForegroundColor Cyan
+net use * /delete /y 2>$null
+
+Write-Host "=== 4: Map the share ===" -ForegroundColor Cyan
+if ($Pass) {
+    net use $Share /user:$User $Pass
+} else {
+    $cred = Get-Credential -UserName $User -Message "Enter your domain password"
+    net use $Share /user:$User $cred.GetNetworkCredential().Password
+}
+
+Write-Host "=== 5: Verify ===" -ForegroundColor Cyan
+net use
+dir $Share | Select-Object -First 5
+```

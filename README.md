@@ -33,3 +33,13 @@ dotnet run --project src/AskAI -- "What is the capital of France?"
 ```bash
 dotnet test
 ```
+
+## Agent catalog (web)
+
+The **`AskAI.Web`** project serves a small dashboard that scans this repository for Cursor agents, canonical skills, GitHub Copilot mirrors, VS Code picker agents, and GitHub prompts. It includes editable **insights** (capabilities, weaknesses, performance notes, learnings, suggestions) in `src/AskAI.Web/Data/agent-insights.json`, and a floating **catalog assistant** that answers from keyword matches over the catalog (no external LLM required).
+
+```bash
+dotnet run --project src/AskAI.Web
+```
+
+If the app cannot find `.cursor/agents` (for example when publishing to a folder without the repo), set **`AgentCatalog:RepoRoot`** in `appsettings.json` or the **`AGENT_CATALOG_REPO_ROOT`** environment variable to the folder that **contains** `.cursor/agents`. In the **Agentic_Unify-Enterprise** monorepo that is the **repository root**, not only the `AskAI/` subfolder—`RepoRootResolver` walks up from the web process until it finds `.cursor/agents`.
