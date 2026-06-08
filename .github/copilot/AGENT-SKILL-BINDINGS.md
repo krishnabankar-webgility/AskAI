@@ -10,6 +10,7 @@ This directory contains **GitHub Copilot custom agents** and their associated **
 │   ├── db-automation.agent.md
 │   ├── git-automation.agent.md
 │   ├── jira-automation.agent.md
+│   ├── dev-customization.agent.md
 │   └── [other agents].agent.md
 ├── skills/
 │   ├── db-automation/
@@ -22,6 +23,9 @@ This directory contains **GitHub Copilot custom agents** and their associated **
 │   │   ├── jira-worklogs.md
 │   │   ├── jira-sprint-lifecycle.md
 │   │   └── jira-create-ud-issue.md
+│   ├── dev-customization/
+│   │   ├── dev-customization-expertise.md
+│   │   └── dev-customization-workflow.md
 │   └── [other agent folders]/
 └── AGENT-SKILL-BINDINGS.md (this file)
 ```
@@ -33,6 +37,7 @@ This directory contains **GitHub Copilot custom agents** and their associated **
 | `db-automation` | `skills/db-automation/` | `db-restore.md` | SQL Server database restore, DDL/DML operations |
 | `git-automation` | `skills/git-automation/` | `git-sync.md` | Git commit/push/merge and branch sync (e.g. `develop` with `master`) |
 | `jira-automation` | `skills/jira-automation/` | `jira-story-workflow.md`, `jira-worklogs.md`, `jira-sprint-lifecycle.md`, `jira-create-ud-issue.md` | Jira workflow automation: story creation, subtasks, worklogs, sprint lifecycle |
+| `dev-customization` | `skills/dev-customization/` | `dev-customization-expertise.md`, `dev-customization-workflow.md` | Customization implementation workflow with architecture-first planning, scoped gated changes, and review/build safety checks |
 
 ## How It Works with GitHub Copilot
 
