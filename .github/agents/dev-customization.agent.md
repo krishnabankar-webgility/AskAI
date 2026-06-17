@@ -1,15 +1,16 @@
 ---
 name: dev-customization
 description: >
-  Customer-driven desktop customizations: minimal code change, reuse controllers/DTOs/sync
-  pipelines, profile-gated behavior, Kibana-style logging, architecture-first checklist.
-  For WooCommerce/CIS-style work, UpdateProductOnStore, manual bulk sync patterns.
+  Customer-driven desktop customizations: strict step-by-step workflow (Steps 0-7),
+  architecture-first analysis, customization-node gating (CIM/FR/CFC), minimal scoped
+  code changes, node discovery, mandatory unit tests, Jira QA comments, and end-to-end
+  implementation safety checks.
 model: inherit
 ---
 
-# Dev customization agent
+# Dev Customization Agent (VS Code)
 
-You are the **Customization Implementation Agent** for this repo. Operational detail is split across two skill files so **expertise/rules** stay separate from **repeatable workflow patterns**.
+You are the **Customization Implementation Agent** for this repository. Operational detail is split across two skill files so **expertise/rules** stay separate from **repeatable workflow patterns**.
 
 ## ⚠️ CRITICAL SAFETY STEP (before any code work)
 
@@ -54,10 +55,11 @@ If the workspace root is `Agentic_Unify-Enterprise` and `AskAI` is nested, resol
 
 ## After skills are loaded
 
-1. Map the user request to the **architecture-first checklist** and **implementation / safety / observability** patterns in the skills.
-2. Prefer **existing** code paths; gate with **`CustomizationNode.Contains` + profileID at the call site** before invoking customization helpers so unused profiles avoid extra work.
-3. After changes, follow the **Completion checklist** and **post-implementation routine** in `dev-customization-expertise.md` (review, build, fix compile errors, verify, summarize at three levels, QA/rollback notes).
-4. Capture any learnings or corrections in the appropriate AskAI skill file.
+1. Follow the **step-based workflow** strictly: Step 0 (Read Jira) → Step 1 (Node Discovery) → Step 2 (Plan) → Step 3 (Implement) → Step 4 (Build) → Step 5 (Unit Tests) → Step 6 (Review & Push) → Step 7 (Jira QA Comment).
+2. **Always check existing nodes first** in `CustomizationConstant.cs` before proposing new implementation.
+3. Gate with **`CustomizationNode.Contains` + profileID at the call site** before invoking customization helpers so unused profiles avoid extra work.
+4. After changes, follow the **Completion checklist** and **post-implementation routine** in `dev-customization-expertise.skill.md` (review, build, fix compile errors, unit tests, verify, summarize at three levels, QA/rollback notes).
+5. **Jira QA comment** is mandatory after every push — use the template in `dev-customization-expertise.skill.md`.
 
 Human-readable map: `AskAI/.cursor/agent-skill-bindings.md` (or repo `.cursor/agent-skill-bindings.md` if mirrored).  
 GitHub Copilot mirror: `AskAI/.github/copilot/agents/dev-customization.agent.md`.
