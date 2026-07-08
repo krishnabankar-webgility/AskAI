@@ -137,6 +137,7 @@ These pages are in the personal space (space ID `2590998546`). The agent should 
 | `3037495319` | UD-32071 CIM | `3027959816` (Customizations folder) | 2026-04-27 |
 | `3046834186` | UD-32375 CIM | `3027959816` (Customizations folder) | 2026-05-06 |
 | `3065872385` | UD-32402 CIM | `3027959816` (Customizations folder) | 2026-05-29 |
+| `3072655361` | UD-32716 CIM | `3027959816` (Customizations folder) | 2026-06-08 |
 | `3045425160` | Daily Work Update agent — team guide (Cursor / Copilot / VS Code) | `3014361116` (Public folder) | 2026-05-04 |
 | `3027632135` | Customization Dev Notes | `3027337225` (My Notes folder) | 2026-04-16 |
 | `3027468302` | QBD Custom Field Code | `3027337225` (My Notes folder) | 2026-04-16 |
@@ -206,6 +207,7 @@ Krishna Bankar Personal Space (2590998546)
 │   ├── UD-32242 R-Bug (3029008405)                     — created 2026-04-17 from Customization Notes Template
 │   ├── UD-32375 CIM (3046834186)                       — 2026-05-06 (CFC UD-31268 assignee = Hitesh → title CIM only; node CUSTOME_DISCOUNT_CODES_AS_LINE_ITEM)
 │   └── UD-32402 CIM (3065872385)                       — 2026-05-29 (CFC UD-32430 assignee = Hitesh → title CIM only; node not yet created — still at CFC stage)
+│   └── UD-32716 CIM (3072655361)                       — 2026-06-08 (clones UD-30222; no direct CFC/CIM Story linked yet; node not yet in CustomizationConstant.cs)
 │
 └── [page] Overview (2590998867)
     ├── Opening 32-bit .NET Framework Forms in 64-bit VS 2022
