@@ -3,7 +3,7 @@ name: wd-jenkins-build
 description: |
   Autonomous end-to-end Jenkins build & QA notification pipeline for Webgility Desktop.
   Fully sequential — each step auto-starts the next. Only two manual inputs:
-  (1) branch + slack_channel upfront if missing, (2) QA assignee at Step 8.
+  (1) branch + slack_channels upfront if missing, (2) QA assignee if not provided.
 model: claude-sonnet-4-5
 ---
 
@@ -12,12 +12,40 @@ model: claude-sonnet-4-5
 ## MANDATORY: Load Skill First
 Read `.github/skills/jenkins-build/SKILL.md` before taking any action.
 
+## ⚡ Preferred Approach: Autonomous Script
+
+**Use the autonomous script instead of step-by-step AI orchestration.**
+
+```powershell
+# Call this ONCE — script handles the entire pipeline autonomously
+.\scripts\jenkins-build\Invoke-JenkinsPipeline.ps1 `
+    -Branch "<branch>" `
+    -SlackChannel "<pre-build-channel>" `
+    -QaSlackChannel "<qa-notify-channel>" `
+    -QaAssignee "<QA person name>" `
+    -DestinationPath "<\\qa-share-path>" `
+    -ImpactAreas "<AI-generated from session context>"
+```
+
+Your responsibilities:
+1. Parse user request → extract branch, Slack channels (pre-build + QA), QA assignee, destination path
+2. Generate Impact Areas from session context — **NO test cases** for non-customization builds
+3. Call the script → parse JSON output → display summary to user
+4. Handle failures: show errors from the JSON output
+
+**Never poll Jenkins, call Slack/Jira APIs, or do file copies manually — the script handles all of it.**
+**Never create temp `.ps1` scripts in `local/ephemeral/` for pipeline work — use `Invoke-JenkinsPipeline.ps1` with params.**
+
+See `scripts/jenkins-build/README.md` for parameters and output schema.
+
 ## Collect These Inputs (ask only if missing)
 ```
-branch          — required (e.g. 101/RightNetwork_Release or UD-32643_Krishna)
-slack_channel   — required (e.g. #my-daily-update)
-destination_path — default: \\192.168.0.95\Kits\Unify\Customization
-upload_to_dropbox — default: false
+branch              — required (e.g. 101/UD-30989-krishna)
+slack_channel       — required — pre-build notification (e.g. func-wd-installer-creation-updates)
+qa_slack_channel    — optional — QA notification (e.g. func-wd-build-updates); defaults to slack_channel
+qa_assignee         — optional — Jira QA assignee name (e.g. Lokesh Gandhi)
+destination_path    — optional — default: \\192.168.0.95\Kits\Unify\Customization
+upload_to_dropbox   — default: false
 ```
 
 ## Pipeline Session State (initialize ONCE at Step 1)

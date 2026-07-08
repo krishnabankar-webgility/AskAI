@@ -3,7 +3,7 @@ name: wd-jenkins-build
 description: "Use when: triggering Jenkins build for unify-enterprise, deploying build to QA share, uploading installer to Dropbox, posting QA Testing Jira comment, sending Slack build notification, checking Jenkins build status, copying WebgilityInstaller to network share, changing Jira assignee/status to RFT."
 ---
 # Skill: Jenkins Build ΓÇö Unify Enterprise (UD-32299)
-<!-- Last updated: 2026-05-23 ΓÇö Dropbox refresh-token + chunked upload, reordered steps, added Jira assignee/RFT step -->
+<!-- Last updated: 2026-07-08 — Added: Invoke-JenkinsJson helper (-AsHashtable), -QaSlackChannel param, Jira RFT+Assign (Step 7.5), full Jira URL in QA Slack, temp script cleanup rule -->
 
 Full pipeline: Check running builds ΓåÆ Pre-build Slack (`@here creating installer from <branch>`) ΓåÆ trigger Jenkins build ΓåÆ poll ΓåÆ verify network share (auto-fix if needed) ΓåÆ copy to QA share ΓåÆ optional Dropbox upload (+ shareable link) ΓåÆ Change Jira assignee + transition to RFT ΓåÆ Slack notification ΓåÆ Jira comment (LAST).
 
@@ -12,6 +12,35 @@ This skill is referenced by the agent files at:
 - `.cursor/agents/wd-jenkins-build.agent.md`
 
 ---
+
+## ⚡ Preferred: Autonomous Script (97% Token Reduction)
+
+**Use the autonomous PowerShell script instead of manual step-by-step AI orchestration.**
+
+The script at **`scripts/jenkins-build/Invoke-JenkinsPipeline.ps1`** runs the ENTIRE pipeline in one call — all polling, retries, VPN checks, Slack, Jira, and Dropbox happen in PowerShell with zero AI token consumption.
+
+```powershell
+# AI agent calls this ONCE — that's it. Parse the JSON output and display to user.
+.\scripts\jenkins-build\Invoke-JenkinsPipeline.ps1 `
+    -Branch "101/UD-32643-user/krishna" `
+    -SlackChannel "func-wd-installer-creation-updates" `
+    -QaSlackChannel "func-wd-build-updates" `
+    -QaAssignee "Lokesh Gandhi" `
+    -ImpactAreas "<AI-generated from session context>" `
+    -TestCases "<AI-generated from session context>"
+```
+
+**AI agent responsibilities (2 turns max):**
+1. Parse user request → extract branch + channel(s), QA assignee, destination path
+2. Generate Impact Areas from session context (NO test cases for non-customization builds) → call script → display result
+
+**Script handles everything else:** pre-flight, pre-build Slack, trigger, poll, verify, copy, Dropbox, Jira RFT + Assign, QA Slack (with full Jira URL), Jira comment.
+
+> **TEMP SCRIPTS RULE:** Never create one-off `.ps1` scripts in `unify-enterprise/local/ephemeral/` for the pipeline. Always use `Invoke-JenkinsPipeline.ps1` with the right parameters. Any temp scripts left in `local/ephemeral/` after a pipeline run should be deleted.
+
+See `scripts/jenkins-build/README.md` for full parameter reference and output schema.
+
+> The manual step-by-step sections below are **reference documentation** — kept for understanding the pipeline internals and for debugging if the script fails.
 
 ## ┬º0 Pre-flight: Extract Jira Ticket ID from Branch
 
@@ -654,6 +683,29 @@ Write-Host "Γ£à [Step 7 ΓÇö Jira Assignee + RFT] DONE"
 
 **Execute AFTER Jira assignee/RFT change, BEFORE Jira comment.**
 
+**Dual-channel pattern:** Pre-build notification goes to one channel (e.g. `func-wd-installer-creation-updates`), QA notification goes to a different channel (e.g. `func-wd-build-updates`). Use `-QaSlackChannel` for the QA notification channel.
+
+**Jira in QA notification MUST be full URL**, not just the ticket ID:
+```
+Jira: https://webgility.atlassian.net/browse/UD-32888   ✅
+Jira: UD-32888                                          ❌
+```
+
+**QA Slack message format:**
+```
+@here Build Ready for QA Testing
+
+Branch: <branch>
+Build No: <N>
+Jira: https://webgility.atlassian.net/browse/<JiraTicketId>
+
+Installer:
+\\<destPath>\WebgilityInstaller-BuildNo_<N>.exe
+
+QA Assignee: <name>
+Status: Ready For Testing
+```
+
 ```powershell
 Write-Host "≡ƒöä [Step 8 ΓÇö Slack Notification] IN PROGRESS..."
 
@@ -666,14 +718,14 @@ $slackChannel = "<USER_PROVIDED_CHANNEL>"   # e.g. "#my-daily-update" ΓÇö fro
 if (-not $slackToken) {
     Write-Error "Γ¥î SLACK_BOT_TOKEN not set. Printing message for manual post:"
 } else {
+    $jiraUrl = if ($jiraTicketId) { "$($env:JIRA_BASE_URL)/browse/$jiraTicketId" } else { "" }
+    $jiraLine = if ($jiraUrl) { "`nJira: $jiraUrl" } else { "" }
+    $dropboxLine = if ($dropboxLink) { "`nDropbox: $dropboxLink" } else { "" }
+
     $slackText = @"
 @QA
 Please find the latest installer Build No $buildNumber from Branch: $branch
-\\192.168.0.95\Kits\Unify\Customization\WebgilityInstaller-BuildNo_$buildNumber.exe
-or \\inwsfs02\UDInstaller\WebgilityInstaller-BuildNo_$buildNumber.exe
-$(if ($dropboxLink) { "Dropbox: $dropboxLink" })
-It's includes :
-$jiraLink
+QA Share: $destinationPath\WebgilityInstaller-BuildNo_$buildNumber.exe$dropboxLine$jiraLine
 "@
 
     $slackBody = @{
