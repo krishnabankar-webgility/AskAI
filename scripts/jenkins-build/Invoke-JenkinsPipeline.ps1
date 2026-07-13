@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # Invoke-JenkinsPipeline.ps1 — Autonomous Jenkins Build → QA Pipeline
 #
 # Runs the ENTIRE wd-jenkins-build workflow in one script invocation.
@@ -117,8 +117,8 @@ function Exit-Pipeline {
 # that conflict as duplicate keys with different casing (e.g. refs/remotes/origin/Hotfix/hotfix_7121 vs hotfix/hotfix_7121)
 function Invoke-JenkinsJson {
     param([string]$Url)
-    $raw = curl -s -u "$($env:JENKINS_USERNAME):$($env:JENKINS_API_TOKEN)" $Url
-    return ($raw | ConvertFrom-Json -AsHashtable)
+    $raw = curl.exe -s -u "$($env:JENKINS_USERNAME):$($env:JENKINS_API_TOKEN)" $Url
+    return ($raw | ConvertFrom-Json)
 }
 
 # =============================================================================
@@ -200,11 +200,11 @@ $jenkinsHeaders = @{ Authorization = "Basic $base64Auth" }
 Write-Step "Step 1" "START" "Pre-flight check — checking for running builds..."
 
 try {
-    $jobInfo = Invoke-JenkinsJson $jenkinsUrl/job/UnifyEnterprise/api/json
+    $jobInfo = Invoke-JenkinsJson "$jenkinsUrl/job/UnifyEnterprise/api/json?tree=lastBuild[number,result,building]"
 
     if ($jobInfo.lastBuild) {
         $lastBuildNum = $jobInfo.lastBuild.number
-        $lastBuildInfo = Invoke-JenkinsJson $jenkinsUrl/job/UnifyEnterprise/$lastBuildNum/api/json
+        $lastBuildInfo = Invoke-JenkinsJson "$jenkinsUrl/job/UnifyEnterprise/$lastBuildNum/api/json?tree=building,result,timestamp"
 
         if ($lastBuildInfo.building -eq $true) {
             Write-Step "Step 1" "WARN" "Build #$lastBuildNum is RUNNING — waiting for it to finish..."
@@ -212,7 +212,7 @@ try {
 
             do {
                 Start-Sleep -Seconds 30
-                $lastBuildInfo = Invoke-JenkinsJson $jenkinsUrl/job/UnifyEnterprise/$lastBuildNum/api/json
+                $lastBuildInfo = Invoke-JenkinsJson "$jenkinsUrl/job/UnifyEnterprise/$lastBuildNum/api/json?tree=building,result,timestamp"
                 $elapsed = [math]::Round(((Get-Date) - [datetimeOffset]::FromUnixTimeMilliseconds($lastBuildInfo.timestamp).LocalDateTime).TotalMinutes, 0)
                 Write-Host "  ⏳ Build #$lastBuildNum still running... ($elapsed min elapsed)" -ForegroundColor DarkGray
             } while ($lastBuildInfo.building -eq $true)
@@ -352,7 +352,7 @@ try {
     while (-not $buildCompleted) {
         Start-Sleep -Seconds $PollIntervalSec
 
-        $buildInfo = Invoke-JenkinsJson $jenkinsUrl/job/UnifyEnterprise/$expectedBuildNumber/api/json
+        $buildInfo = Invoke-JenkinsJson "$jenkinsUrl/job/UnifyEnterprise/$expectedBuildNumber/api/json?tree=building,result,duration"
         $elapsed = (Get-Date) - $pollStart
         $elapsedMin = [int]$elapsed.TotalMinutes
 

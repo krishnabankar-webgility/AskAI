@@ -339,3 +339,121 @@ When a customization syncs a **nullable field** from QBD to an online store:
 2. **Persist null** through the DAL — use `DBNull.Value` or `NULL` in SQL, not `"0"`.
 3. **Exclude null items** from the sync payload — do not send a default value; skip them entirely.
 4. **Audit DTO type changes** across all consumers before committing — especially NetSuite, POS, Canada/Australia VB files, and DAL insert/update paths.
+
+---
+
+## PR Comment Review and Replies Workflow
+
+When responding to bot review comments on a Bitbucket PR, follow this workflow for consistent, clean threaded replies:
+
+### ✅ Use Bitbucket MCP API (NOT Browser UI)
+
+**Why:** Browser-based manual comment management is unreliable:
+- Authentication tokens expire during manual interaction
+- Multiple comment posts/retries create duplicates
+- Comment threading gets inconsistent
+- Cannot programmatically verify/clean up
+
+**How:** Always use MCP Bitbucket API tools for comment operations.
+
+### ✅ Authenticate Correctly
+
+When using Bitbucket REST API directly (for operations MCP doesn't cover, like thread deletion):
+
+```powershell
+# ❌ WRONG — x-token-auth only works with HTTP Access Token
+$base64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-token-auth:${token}"))
+
+# ✅ CORRECT — username:token (token is HTTP Access Token, not Atlassian API token)
+$base64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${username}:${token}"))
+```
+
+**Important:** `BITBUCKET_TOKEN` must be an **HTTP Access Token** (created from Bitbucket repository settings → Access tokens), NOT an Atlassian API token from `id.atlassian.com`.
+
+### ✅ Threaded Reply API Format
+
+When posting a threaded reply to a bot comment using Bitbucket REST API:
+
+```json
+POST /2.0/repositories/{workspace}/{repo}/pullrequests/{pr_id}/comments
+{
+  "content": {
+    "raw": "Your reply text here"
+  },
+  "parent": {
+    "id": <bot_comment_id>
+  }
+}
+```
+
+**Critical Details:**
+- `content.raw` only — do NOT include `markup` field
+- `parent.id` must be the numeric ID of the bot's review comment
+- If `markup` is present → returns 400 Bad Request with "extra keys not allowed"
+- If `content` is a string instead of object → returns 400 with "expected a dictionary"
+
+### ✅ 1:1 Comment Mapping (No Duplicates)
+
+**Standard structure for code review responses:**
+- 1 bot review comment = 1 threaded reply
+- Each reply is a direct child of that bot comment
+- No branching or nested threads within a reply thread
+
+**Cleanup protocol if duplicates exist:**
+
+1. **Fetch all PR comments** via MCP: `getPullRequestComments(all=true)`
+2. **Identify duplicates** — look for:
+   - Multiple replies with same `parent.id` (same bot comment)
+   - Stray standalone comments (not threaded, or orphaned threads)
+   - Comments marked `deleted: true` in the API response (still appear in fetch, but are hidden in UI)
+3. **Delete systematically** — via REST API `DELETE /comments/{comment_id}`
+   - Status 204 (No Content) = success
+   - Takes 1-2 seconds to propagate to next API fetch
+   - Deleted comments appear in subsequent fetches with `deleted: true`
+   - Use `Invoke-WebRequest -SkipHttpErrorCheck` to handle all status codes
+
+4. **Verify clean state** — re-fetch comments and confirm:
+   - Only 3 bot comments exist (from reviewer, not deleted)
+   - Exactly 3 threaded replies exist (one per bot comment)
+   - All non-active replies have `deleted: true`
+
+### ✅ Typical Workflow Steps
+
+1. Fetch all PR comments
+   ```powershell
+   mcp_bitbucket-mcp_getPullRequestComments(all=true, pull_request_id=<pr_id>, ...)
+   ```
+
+2. Parse structure (separate bot comments from replies)
+   ```powershell
+   $botComments = $json | Where-Object { $_.user.display_name -eq "ReviewerName" }
+   $replies = $json | Where-Object { $_.parent -ne $null }
+   ```
+
+3. For each bot comment, post exactly one threaded reply
+   ```powershell
+   $body = @{
+     content = @{ raw = "Your response text" }
+     parent = @{ id = $botCommentId }
+   } | ConvertTo-Json -Depth 3
+   
+   Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body
+   ```
+
+4. Clean up any stray/duplicate replies
+   ```powershell
+   Invoke-WebRequest -Uri $url -Method DELETE -Headers $headers -SkipHttpErrorCheck
+   ```
+
+5. Final verification — re-fetch and confirm 1:1 mapping
+
+### ⚠️ Common Pitfalls
+
+| Pitfall | Solution |
+|---------|----------|
+| **Token expires during manual UI work** | Use MCP/API automation from the start — no manual browser comments |
+| **Multiple replies on same bot comment** | Audit and delete duplicates; re-post single clean reply via API |
+| **Comments not deleted despite 204 response** | 204 means success; check `deleted: true` in next fetch; may take 2-3 seconds to appear |
+| **Stray standalone comments** | These are not threaded (no `parent` field); identify and delete via REST API |
+| **Mixed auth schemes (x-token-auth vs username:token)** | Always use `username:token` with HTTP Access Token; x-token-auth may fail with "must be used with an atlassian registered email" |
+| **Forgotten to verify final state** | Always re-fetch comments after cleanup to confirm exactly 3 active replies (1 per bot comment) |
